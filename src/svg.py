@@ -8,10 +8,15 @@ import svgwrite.container
 import time
 import datetime
 import pyte
+import pyte.screens
+import logging
 
-BUFFER_SIZE = 1040
+BUFFER_SIZE = 1024
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
+# TODO: Animation pausing
 def record():
     shell = os.environ.get('SHELL', 'sh')
     timings = []
@@ -28,7 +33,7 @@ def record():
 
     footer = f'Script done on {time.asctime()}'
     print(footer)
-    print(b''.join(d for d, _ in timings))
+    # print(b''.join(d for d, _ in timings))
     return timings
 
 
@@ -71,6 +76,7 @@ def render_animation(timings, filename, end_pause=1):
     first_animation_begin = f'0s; animation_{len(input_data)-1}.end'
     for index, bs in enumerate(input_data):
         stream.feed(bs)
+
         frame = draw_screen(screen.buffer, font_size, f'frame_{index}')
 
         try:
@@ -93,17 +99,30 @@ def render_animation(timings, filename, end_pause=1):
     dwg.save()
 
 
-def draw_screen(screen_buffer, font_size, group_id):
+def draw_screen(screen_buffer, font_size, group_id, line_size=80):
     frame = svgwrite.container.Group(id=group_id, display='none')
-    for row in screen_buffer:
+    # TODO: If a line is empty, is it missing from the buffer?
+    for row in screen_buffer.keys():
         height = (font_size + 2) * (row + 1)
         text = svgwrite.text.Text('', y=[height], id=f'line_{row}')
         tspan_text = ''
         last_tspan_attributes = {}
-        for col in screen_buffer[row]:
-            char = screen_buffer[row][col]
-            print(f'char.data = "{char.data}"')
+        default_char = pyte.screens.Char(data=' ', fg='default', bg='default', bold=False,
+                                         italics=False, underscore=False, strikethrough=False,
+                                         reverse=False)
+
+        # Empty screen cells are missing from the buffer so add them back as 'default_char'
+        columns = screen_buffer[row].keys()
+        if len(columns) == 0:
+            whole_line_len = 0
+        else:
+            whole_line_len = min(line_size, max(columns) + 1)
+        whole_line = [screen_buffer[row][col] if col in screen_buffer[row] else default_char
+                      for col in range(whole_line_len)]
+
+        for char in whole_line:
             tspan_attributes = {}
+            # TODO: breaks with 256 colors
             # if char.fg != 'default':
             #     tspan_attributes['fill'] = char.fg
             if char.bold:
