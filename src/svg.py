@@ -7,21 +7,9 @@ import svgwrite.animate
 import svgwrite.container
 import time
 import datetime
-#import cairo
 import pyte
 
 BUFFER_SIZE = 1040
-
-
-# TODO: Get rid off Cairo dependence
-# http://blog.mathieu-leplatre.info/text-extents-with-python-cairo.html
-# def textwidth(text: str, font: str, fontsize: int) -> int:
-#     surface = cairo.SVGSurface('undefined.svg', 1280, 200)
-#     cr = cairo.Context(surface)
-#     cr.select_font_face(font, cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_BOLD)
-#     cr.set_font_size(fontsize)
-#     xbearing, ybearing, width, height, xadvance, yadvance = cr.text_extents(text)
-#     return width
 
 
 def record():
@@ -68,7 +56,7 @@ def group_by_time(timings, threshold=datetime.timedelta(milliseconds=50)):
     return grouped_timings
 
 
-def render_animation(timings, filename, end_pause=0.5):
+def render_animation(timings, filename, end_pause=1):
     if end_pause < 0:
         raise ValueError('End pause duration must be greater than or equal to 0 seconds')
 
@@ -77,40 +65,39 @@ def render_animation(timings, filename, end_pause=0.5):
     style = f'font-family: {font}; font-style: normal; font-size: {font_size}px; white-space: pre;'
     dwg = svgwrite.Drawing(filename, (900, 900), debug=True, style=style)
     input_data, times = zip(*timings)
-    duration = (times[-1] - times[0]).total_seconds()
-    key_times = [(time - times[0]).total_seconds()/duration for time in times]
 
-    counter = 0
     screen = pyte.Screen(80, 24)
     stream = pyte.ByteStream(screen)
-    for bs, key_time in zip(input_data, key_times):
+    first_animation_begin = f'0s; animation_{len(input_data)-1}.end'
+    for index, bs in enumerate(input_data):
         stream.feed(bs)
-        frame = draw_screen(screen.buffer, font_size, f'frame_{counter}')
-        values = ['none'] * len(input_data)
-        values[counter] = 'inline'
+        frame = draw_screen(screen.buffer, font_size, f'frame_{index}')
 
-        # animation with duration == 0 won't work
-        assert duration > 0
+        try:
+            frame_duration = (times[index+1] - times[index]).total_seconds()
+        except IndexError:
+            frame_duration = end_pause
+
+        assert frame_duration > 0
         extra = {
-            'id': f'animation_{counter}',
-            'begin': '0s',
-            'dur': f'{duration:.3f}s',
-            'values': ';'.join(values),
-            'keyTimes': ';'.join(f'{t:.3f}' for t in key_times),
-            'repeatCount': 'indefinite'
+            'id': f'animation_{index}',
+            'begin': f'animation_{index-1}.end' if index > 0 else first_animation_begin,
+            'dur': f'{frame_duration:.3f}s',
+            'values': 'inline',
+            'keyTimes': '0.0',
+            'fill': 'remove'
         }
         frame.add(svgwrite.animate.Animate('display', **extra))
         dwg.add(frame)
-        counter += 1
 
     dwg.save()
 
 
 def draw_screen(screen_buffer, font_size, group_id):
-    frame = svgwrite.container.Group(id=group_id)
+    frame = svgwrite.container.Group(id=group_id, display='none')
     for row in screen_buffer:
         height = (font_size + 2) * (row + 1)
-        text = svgwrite.text.Text('', y=[height], id=row)
+        text = svgwrite.text.Text('', y=[height], id=f'line_{row}')
         tspan_text = ''
         last_tspan_attributes = {}
         for col in screen_buffer[row]:
@@ -138,59 +125,6 @@ def draw_screen(screen_buffer, font_size, group_id):
             frame.add(text)
 
     return frame
-
-
-# def draw(lines, filename: str):
-#     font = 'Dejavu Sans Mono'
-#     font_size = 48
-#     style = f'font-family: {font}; font-style: normal; font-size: {font_size}px;'
-#     dwg = svgwrite.Drawing(filename, (900, 900), debug=True)
-#     paragraph = dwg.add(dwg.g(style=style))
-#     for counter, line in enumerate(lines):
-#         partial_text = ''
-#         animation = []
-#         begin_time = line[0][1]
-#         end_time = line[-1][1]
-#         total_time = (end_time - begin_time).total_seconds()
-#         row = 2 * font_size + counter * (font_size + 2)
-#         for item, time in line:
-#             if end_time == begin_time:
-#                 # For discrete animations, the first value in the keyTimes list
-#                 # must be 0 (SVG specification)
-#                 keytime = 0.0
-#             else:
-#                 elapsed_time = (time - begin_time).total_seconds()
-#                 keytime = elapsed_time / total_time
-#
-#             assert 0.0 <= keytime <= 1.0
-#
-#             print(partial_text)
-#             partial_text = partial_text + item.decode('utf-8')
-#             end = textwidth(partial_text, font, font_size)
-#             d = f'm0,{row} h{end}'
-#             animation.append((d, keytime))
-#
-#         values, keytimes = zip(*animation)
-#
-#         # duration must not be 0
-#         extra = {
-#             'begin': f'animation_{counter-1}.end' if counter > 0 else '0s',
-#             'dur': f'{total_time}s' if total_time != 0 else '0.01s',
-#             'fill': 'freeze',
-#             'id': f'animation_{counter}',
-#             'values': ';'.join(values),
-#             'keyTimes': ';'.join(map(str, keytimes))
-#         }
-#         hidden_path = f'm0,{row} h0'
-#         path = svgwrite.path.Path(d=hidden_path, id=f'path_{counter}')
-#         path.add(svgwrite.animate.Animate('d', **extra))
-#         paragraph.add(path)
-#
-#         text = svgwrite.text.Text('')
-#         text.add(svgwrite.text.TextPath(path=path, text=partial_text))
-#         paragraph.add(text)
-#
-#     dwg.save()
 
 
 if __name__ == '__main__':

@@ -54,4 +54,3 @@ class TestSVG(unittest.TestCase):
                            (b'd', now + datetime.timedelta(milliseconds=180)),
                            (b'\r\n $ ', now + datetime.timedelta(milliseconds=260))]
         self.assertEqual(expected_result, result)
-
