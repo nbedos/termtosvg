@@ -10,11 +10,27 @@ import datetime
 import pyte
 import pyte.screens
 import logging
+from typing import Union
 
 BUFFER_SIZE = 1024
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+
+def ansi_color_to_xml(color: str) -> Union[str, None]:
+    if color == "default":
+        return None
+
+    svg_named_colors = {'black', 'red', 'green', 'brown', 'blue', 'magenta', 'cyan', 'white'}
+    if color in svg_named_colors:
+        return color
+
+    if len(color) == 6 and int(color, 16):
+        return f'#{color}'.upper()
+
+    raise ValueError(f'Invalid color: "{color}"')
+
 
 # TODO: Animation pausing
 def record():
@@ -63,7 +79,7 @@ def group_by_time(timings, threshold=datetime.timedelta(milliseconds=50)):
 
 def render_animation(timings, filename, end_pause=1):
     if end_pause < 0:
-        raise ValueError('End pause duration must be greater than or equal to 0 seconds')
+        raise ValueError('Invalid end_pause (must be >= 0): "{end_pause}"')
 
     font = 'Dejavu Sans Mono'
     font_size = 14
@@ -130,8 +146,10 @@ def draw_screen(screen_buffer, font_size, group_id, line_size=80):
             data = char.data if char.data != ' ' else u'\u00A0'
             tspan_attributes = {}
             # TODO: breaks with 256 colors
-            # if char.fg != 'default':
-            #     tspan_attributes['fill'] = char.fg
+            xml_color = ansi_color_to_xml(char.fg)
+            if xml_color is not None:
+                tspan_attributes['fill'] = xml_color
+
             if char.bold:
                 tspan_attributes['style'] = 'font-weight:bold;'
 
