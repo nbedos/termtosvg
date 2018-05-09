@@ -13,7 +13,7 @@ import logging
 
 BUFFER_SIZE = 1024
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 # TODO: Animation pausing
@@ -67,7 +67,7 @@ def render_animation(timings, filename, end_pause=1):
 
     font = 'Dejavu Sans Mono'
     font_size = 14
-    style = f'font-family: {font}; font-style: normal; font-size: {font_size}px; white-space: pre;'
+    style = f'font-family: {font}; font-style: normal; font-size: {font_size}px;'
     dwg = svgwrite.Drawing(filename, (900, 900), debug=True, style=style)
     input_data, times = zip(*timings)
 
@@ -76,7 +76,6 @@ def render_animation(timings, filename, end_pause=1):
     first_animation_begin = f'0s; animation_{len(input_data)-1}.end'
     for index, bs in enumerate(input_data):
         stream.feed(bs)
-
         frame = draw_screen(screen.buffer, font_size, f'frame_{index}')
 
         try:
@@ -89,8 +88,8 @@ def render_animation(timings, filename, end_pause=1):
             'id': f'animation_{index}',
             'begin': f'animation_{index-1}.end' if index > 0 else first_animation_begin,
             'dur': f'{frame_duration:.3f}s',
-            'values': 'inline',
-            'keyTimes': '0.0',
+            'values': 'inline;inline',
+            'keyTimes': '0.0;1.0',
             'fill': 'remove'
         }
         frame.add(svgwrite.animate.Animate('display', **extra))
@@ -104,10 +103,11 @@ def draw_screen(screen_buffer, font_size, group_id, line_size=80):
     # TODO: If a line is empty, is it missing from the buffer?
     for row in screen_buffer.keys():
         height = (font_size + 2) * (row + 1)
-        text = svgwrite.text.Text('', y=[height], id=f'line_{row}')
+        #text = svgwrite.text.Text('', y=[height], id=f'line_{row}')
+        text = svgwrite.text.Text('', y=[height])
         tspan_text = ''
         last_tspan_attributes = {}
-        default_char = pyte.screens.Char(data=' ', fg='default', bg='default', bold=False,
+        default_char = pyte.screens.Char(data=u'\u00A0', fg='default', bg='default', bold=False,
                                          italics=False, underscore=False, strikethrough=False,
                                          reverse=False)
 
@@ -117,10 +117,17 @@ def draw_screen(screen_buffer, font_size, group_id, line_size=80):
             whole_line_len = 0
         else:
             whole_line_len = min(line_size, max(columns) + 1)
+
         whole_line = [screen_buffer[row][col] if col in screen_buffer[row] else default_char
                       for col in range(whole_line_len)]
 
+        # Remove spaces at the end of a line, they're useless
+        while whole_line and whole_line[-1].data.isspace():
+            whole_line.pop(-1)
+
         for char in whole_line:
+            # Replace spaces with non breaking spaces so that they are not ignored by browsers
+            data = char.data if char.data != ' ' else u'\u00A0'
             tspan_attributes = {}
             # TODO: breaks with 256 colors
             # if char.fg != 'default':
@@ -132,9 +139,9 @@ def draw_screen(screen_buffer, font_size, group_id, line_size=80):
                 if tspan_text:
                     tspan = svgwrite.text.TSpan(text=tspan_text, **last_tspan_attributes)
                     text.add(tspan)
-                tspan_text = char.data
+                tspan_text = data
             else:
-                tspan_text += char.data
+                tspan_text += data
 
             last_tspan_attributes = tspan_attributes
 
