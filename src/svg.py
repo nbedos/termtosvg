@@ -1,16 +1,18 @@
+import datetime
+import logging
 import os
 import pty
-import svgwrite
-import svgwrite.text
-import svgwrite.path
-import svgwrite.animate
-import svgwrite.container
-import time
-import datetime
 import pyte
 import pyte.screens
-import logging
+import svgwrite
+import svgwrite.animate
+import svgwrite.container
+import svgwrite.path
+import svgwrite.shapes
+import svgwrite.text
+import time
 from typing import Union
+
 
 BUFFER_SIZE = 1024
 
@@ -22,11 +24,16 @@ def ansi_color_to_xml(color: str) -> Union[str, None]:
     if color == "default":
         return None
 
+    # Named colors are also defined in the SVG specification
     svg_named_colors = {'black', 'red', 'green', 'brown', 'blue', 'magenta', 'cyan', 'white'}
     if color in svg_named_colors:
         return color
 
-    if len(color) == 6 and int(color, 16):
+    # Non named colors are passed to us as a six digit hexadecimal number
+    if len(color) == 6:
+        # The following instruction will raise a ValueError exception if 'color' is not a
+        # valid hexadecimal string
+        int(color, 16)
         return f'#{color}'.upper()
 
     raise ValueError(f'Invalid color: "{color}"')
@@ -90,10 +97,20 @@ def render_animation(timings, filename, end_pause=1):
     screen = pyte.Screen(80, 24)
     stream = pyte.ByteStream(screen)
     first_animation_begin = f'0s; animation_{len(input_data)-1}.end'
+    line_height = font_size + 2
     for index, bs in enumerate(input_data):
         stream.feed(bs)
-        frame = draw_screen(screen.buffer, font_size, f'frame_{index}')
+        frame = svgwrite.container.Group(id=f'frame_{index}', display='none')
 
+        # Background
+        frame_bg = draw_bg(screen.buffer, line_height, f'frame_bg_{index}')
+        frame.add(frame_bg)
+
+        # Foreground
+        frame_fg = draw_fg(screen.buffer, line_height, f'frame_fg_{index}')
+        frame.add(frame_fg)
+
+        # Animation
         try:
             frame_duration = (times[index+1] - times[index]).total_seconds()
         except IndexError:
@@ -113,61 +130,65 @@ def render_animation(timings, filename, end_pause=1):
 
     dwg.save()
 
-
-def draw_screen(screen_buffer, font_size, group_id, line_size=80):
-    frame = svgwrite.container.Group(id=group_id, display='none')
-    # TODO: If a line is empty, is it missing from the buffer?
+# TODO: Merge adjacent cells with the same background color into a polygon
+def draw_bg(screen_buffer, line_height, group_id):
+    frame = svgwrite.container.Group(id=group_id)
     for row in screen_buffer.keys():
-        height = (font_size + 2) * (row + 1)
-        #text = svgwrite.text.Text('', y=[height], id=f'line_{row}')
-        text = svgwrite.text.Text('', y=[height])
-        tspan_text = ''
-        last_tspan_attributes = {}
-        default_char = pyte.screens.Char(data=u'\u00A0', fg='default', bg='default', bold=False,
-                                         italics=False, underscore=False, strikethrough=False,
-                                         reverse=False)
+        for col in screen_buffer[row]:
+            char = screen_buffer[row][col]
+            xml_color = ansi_color_to_xml(char.fg if char.reverse else char.bg)
+            if xml_color is None:
+                continue
 
-        # Empty screen cells are missing from the buffer so add them back as 'default_char'
-        columns = screen_buffer[row].keys()
-        if len(columns) == 0:
-            whole_line_len = 0
-        else:
-            whole_line_len = min(line_size, max(columns) + 1)
+            r = svgwrite.shapes.Rect(insert=(f'{col}ex', 3 + row * line_height),
+                                     size=("1ex", line_height),
+                                     fill=xml_color)
+            frame.add(r)
+    return frame
 
-        whole_line = [screen_buffer[row][col] if col in screen_buffer[row] else default_char
-                      for col in range(whole_line_len)]
 
-        # Remove spaces at the end of a line, they're useless
-        while whole_line and whole_line[-1].data.isspace():
-            whole_line.pop(-1)
+def draw_fg(screen_buffer, line_height, group_id, line_size=80):
+    frame = svgwrite.container.Group(id=group_id)
+    for row in screen_buffer.keys():
+        height = 1 + (row + 1) * line_height
+        content = ''
+        last_text_attributes = {}
+        current_text_position = 0
+        last_col = -1
 
-        for char in whole_line:
+        for col in sorted(screen_buffer[row].keys()):
+            char = screen_buffer[row][col]
             # Replace spaces with non breaking spaces so that they are not ignored by browsers
             data = char.data if char.data != ' ' else u'\u00A0'
-            tspan_attributes = {}
-            # TODO: breaks with 256 colors
-            xml_color = ansi_color_to_xml(char.fg)
+            text_attributes = {}
+
+            xml_color = ansi_color_to_xml(char.bg if char.reverse else char.fg)
             if xml_color is not None:
-                tspan_attributes['fill'] = xml_color
+                text_attributes['fill'] = xml_color
 
             if char.bold:
-                tspan_attributes['style'] = 'font-weight:bold;'
+                text_attributes['style'] = 'font-weight:bold;'
 
-            if tspan_attributes != last_tspan_attributes:
-                if tspan_text:
-                    tspan = svgwrite.text.TSpan(text=tspan_text, **last_tspan_attributes)
-                    text.add(tspan)
-                tspan_text = data
-            else:
-                tspan_text += data
+            if text_attributes != last_text_attributes or col != last_col + 1:
+                if content:
+                    text = svgwrite.text.Text(text=content,
+                                              textLength=f'{len(content)}ex',
+                                              x=[f'{current_text_position}ex'],
+                                              y=[height],
+                                              **last_text_attributes)
+                    frame.add(text)
+                content = ''
+                current_text_position = col
+            content += data
+            last_text_attributes = text_attributes
 
-            last_tspan_attributes = tspan_attributes
-
-        if tspan_text:
-            tspan = svgwrite.text.TSpan(text=tspan_text, **last_tspan_attributes)
-            text.add(tspan)
+        if content:
+            text = svgwrite.text.Text(text=content,
+                                      textLength=f'{len(content)}ex',
+                                      x=[f'{current_text_position}ex'],
+                                      y=[height],
+                                      **last_text_attributes)
             frame.add(text)
-
     return frame
 
 
