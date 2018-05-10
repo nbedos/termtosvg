@@ -1,17 +1,19 @@
+from collections import defaultdict
 import datetime
 import logging
 import os
 import pty
 import pyte
 import pyte.screens
-import svgwrite
+from shapely.geometry import Polygon
+from shapely.ops import unary_union
 import svgwrite.animate
 import svgwrite.container
 import svgwrite.path
 import svgwrite.shapes
 import svgwrite.text
 import time
-from typing import Union
+from typing import Union, Dict, Set, FrozenSet, Tuple, Any, Callable
 
 
 BUFFER_SIZE = 1024
@@ -20,11 +22,43 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
+def cell_neighbours(cell: Tuple[int, int]) -> Set[Tuple[int, int]]:
+    i, j = cell
+    return {(i-1, j), (i+1, j), (i, j-1), (i, j+1)}
+
+
+def link_cells(matrix: Dict[int, Dict[int, Any]], key: Callable=lambda x: x) \
+        -> Dict[Any, Set[FrozenSet]]:
+    """Group the cells of a matrix by value"""
+    values = defaultdict(set)
+    visited = set()
+    for row in matrix:
+        for column in matrix[row]:
+            if (row, column) in visited:
+                continue
+
+            visited_neighbours = set()
+            neighbours = cell_neighbours((row, column))
+            linked_cells = set()
+            while neighbours:
+                i, j = neighbours.pop()
+                visited_neighbours.add((i, j))
+                if i in matrix and j in matrix[i]:
+                    if key(matrix[i][j]) == key(matrix[row][column]):
+                        linked_cells.add((i, j))
+                        neighbours |= (cell_neighbours((i, j)) - visited_neighbours)
+            visited |= linked_cells
+
+            values[key(matrix[row][column])].add(frozenset(linked_cells))
+
+    return values
+
+
 def ansi_color_to_xml(color: str) -> Union[str, None]:
-    if color == "default":
+    if color == 'default':
         return None
 
-    # Named colors are also defined in the SVG specification
+    # Named colors are also defined in the SVG specification so we can keep them as is
     svg_named_colors = {'black', 'red', 'green', 'brown', 'blue', 'magenta', 'cyan', 'white'}
     if color in svg_named_colors:
         return color
@@ -86,7 +120,7 @@ def group_by_time(timings, threshold=datetime.timedelta(milliseconds=50)):
 
 def render_animation(timings, filename, end_pause=1):
     if end_pause < 0:
-        raise ValueError('Invalid end_pause (must be >= 0): "{end_pause}"')
+        raise ValueError(f'Invalid end_pause (must be >= 0): "{end_pause}"')
 
     font = 'Dejavu Sans Mono'
     font_size = 14
@@ -130,41 +164,59 @@ def render_animation(timings, filename, end_pause=1):
 
     dwg.save()
 
+
+def cell_to_rectangle(row, column, width, height):
+    return Polygon([(row, column), (row + height, column), (row + height, column + width),
+                    (row, column + width)])
+
+
 # TODO: Merge adjacent cells with the same background color into a polygon
 def draw_bg(screen_buffer, line_height, group_id):
-    frame = svgwrite.container.Group(id=group_id)
-    for row in screen_buffer.keys():
-        for col in screen_buffer[row]:
-            char = screen_buffer[row][col]
-            xml_color = ansi_color_to_xml(char.fg if char.reverse else char.bg)
-            if xml_color is None:
-                continue
+    def get_bg_color(c):
+        return c.fg if c.reverse else c.bg
 
-            r = svgwrite.shapes.Rect(insert=(f'{col}ex', 3 + row * line_height),
-                                     size=("1ex", line_height),
-                                     fill=xml_color)
-            frame.add(r)
+    frame = svgwrite.container.Group(id=group_id)
+    values = link_cells(screen_buffer, key=get_bg_color)
+    for color in values:
+        bg_color_xml = ansi_color_to_xml(color)
+        if bg_color_xml is None:
+            continue
+
+        for cells in values[color]:
+            rectangles = [cell_to_rectangle(3 + row * line_height, column, 1, line_height)
+                          for row, column in cells]
+            print(rectangles)
+            polygon = unary_union(rectangles)
+            print(polygon)
+            svg_points = [(f'{i}ex', f'{j}px') for i, j in polygon.exterior.coords]
+            svg_polygon = svgwrite.shapes.Polygon(svg_points)
+
+            # r = svgwrite.shapes.Rect(insert=(f'{col}ex', 3 + row * line_height),
+            #                          size=('1ex', line_height),
+            #                          fill=bg_color_xml)
+            # frame.add(svg_polygon)
     return frame
 
 
-def draw_fg(screen_buffer, line_height, group_id, line_size=80):
+def draw_fg(screen_buffer, line_height, group_id):
     frame = svgwrite.container.Group(id=group_id)
-    for row in screen_buffer.keys():
+    for row in screen_buffer:
         height = 1 + (row + 1) * line_height
         content = ''
         last_text_attributes = {}
         current_text_position = 0
         last_col = -1
 
-        for col in sorted(screen_buffer[row].keys()):
+        for col in sorted(screen_buffer[row]):
             char = screen_buffer[row][col]
-            # Replace spaces with non breaking spaces so that they are not ignored by browsers
+            # Replace spaces with non breaking spaces so that consecutive spaces
+            # are preserved
             data = char.data if char.data != ' ' else u'\u00A0'
             text_attributes = {}
 
-            xml_color = ansi_color_to_xml(char.bg if char.reverse else char.fg)
-            if xml_color is not None:
-                text_attributes['fill'] = xml_color
+            fg_color_xml = ansi_color_to_xml(char.bg if char.reverse else char.fg)
+            if fg_color_xml is not None:
+                text_attributes['fill'] = fg_color_xml
 
             if char.bold:
                 text_attributes['style'] = 'font-weight:bold;'
@@ -179,8 +231,10 @@ def draw_fg(screen_buffer, line_height, group_id, line_size=80):
                     frame.add(text)
                 content = ''
                 current_text_position = col
+
             content += data
             last_text_attributes = text_attributes
+            last_col = col
 
         if content:
             text = svgwrite.text.Text(text=content,
