@@ -1,11 +1,16 @@
+from collections import defaultdict
 from contextlib import contextmanager
 import datetime
-import unittest
+import logging
 import os
 import sys
-import svgwrite
+import unittest
 
 from src import svg
+
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
 
 data = 'Script started on 2018-05-05 16:56:18+02:00\n' \
        '\x1b_nico@arch:/tmp\x1b\\\x1b[91mnico \x1b[34m/tmp\x1b[91m $ \x1b[0mecho "aaa"\n' \
@@ -36,8 +41,6 @@ class TestSVG(unittest.TestCase):
             os.dup2(fdr, sys.stdin.fileno())
             os.write(fdw, commands.encode('utf-8'))
             timings = svg.record()
-            squashed_timings = svg.group_by_time(timings)
-            svg.render_animation(squashed_timings, '/tmp/test.svg')
 
     def test_group_by_time(self):
         timings = [(b' ', 0), (b'$', 0), (b' ', 0), (b'c', 60), (b'm', 120), (b'd', 180),
@@ -54,3 +57,57 @@ class TestSVG(unittest.TestCase):
                            (b'd', now + datetime.timedelta(milliseconds=180)),
                            (b'\r\n $ ', now + datetime.timedelta(milliseconds=260))]
         self.assertEqual(expected_result, result)
+
+    def test_ansi_color_to_xml(self):
+        with self.subTest(case='Named color'):
+            self.assertEqual('black', svg.ansi_color_to_xml('black'))
+
+        with self.subTest(case='Valid hexadecimal color'):
+            self.assertEqual('#000000', svg.ansi_color_to_xml('000000'))
+            self.assertEqual('#123456', svg.ansi_color_to_xml('123456'))
+            self.assertEqual('#ABCDEF', svg.ansi_color_to_xml('abcdef').upper())
+            self.assertEqual('#FFFFFF', svg.ansi_color_to_xml('ffffff').upper())
+
+        with self.subTest(case='Invalid hexadecimal color'):
+            with self.assertRaises(ValueError):
+                svg.ansi_color_to_xml('00000z')
+
+            with self.assertRaises(ValueError):
+                svg.ansi_color_to_xml('12345')
+
+    def test_render_animation(self):
+        pass
+
+    def test_link_cells(self):
+        matrix_size = 10
+
+        matrix = defaultdict(dict)
+        # Mapping between a value found in the matrix and the sets of adjacent cells containing this
+        # value
+        expected = {
+            0: {
+                frozenset({(0, j) for j in range(matrix_size)})
+            },
+            1: {
+                frozenset({(i, 0) for i in range(1, matrix_size)}),
+                frozenset({(6, 6), (6, 7), (6, 8), (7, 8), (8, 8), (8, 7), (8, 6), (7, 6)})
+            },
+            2: {
+                frozenset({(1, 1), (1, 2), (2, 2)}),
+                frozenset({(4, 4), (5, 4), (5, 5)})
+            }
+        }
+
+        for value in expected:
+            for cells in expected[value]:
+                for (i, j) in cells:
+                    assert i not in matrix or j not in matrix[i]
+                    matrix[i][j] = value
+
+        self.assertEqual(svg.link_cells(matrix), expected)
+
+    def test_draw_bg(self):
+        pass
+
+    def test_draw_fg(self):
+        pass
