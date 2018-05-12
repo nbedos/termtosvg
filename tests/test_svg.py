@@ -120,9 +120,6 @@ class TestSVG(unittest.TestCase):
                     buffer[i][j] = mock_char('black')
             svg.draw_bg(buffer, 10, 'test_bg').tostring()
 
-    def test_draw_fg(self):
-        pass
-
     def test_get_Xresources_colors(self):
         print(svg.get_Xresources_colors())
 
@@ -140,3 +137,5 @@ class TestSVG(unittest.TestCase):
         }
         print(svg.serialize_css_dict(css))
 
+    def test_draw_fg(self):
+        pass

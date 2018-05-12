@@ -157,6 +157,7 @@ def serialize_css_dict(css: Dict[str, Dict[str, str]]) -> str:
 def render_animation(timings, filename, end_pause=1):
     if end_pause < 0:
         raise ValueError(f'Invalid end_pause (must be >= 0): "{end_pause}"')
+
     font_size = 14
     color_conf = get_Xresources_colors()
     css = {
