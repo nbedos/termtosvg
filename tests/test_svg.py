@@ -14,9 +14,9 @@ logger = logging.getLogger(__name__)
 
 
 data = 'Script started on 2018-05-05 16:56:18+02:00\n' \
-       '\x1b_nico@arch:/tmp\x1b\\\x1b[91mnico \x1b[34m/tmp\x1b[91m $ \x1b[0mecho "aaa"\n' \
-       'aaa\n\x1b_nico@arch:/tmp\x1b\\\x1b[91mnico \x1b[34m/tmp\x1b[91m $ \x1b[0mecho "bbb"\n' \
-       'bbb\n\x1b_nico@arch:/tmp\x1b\\\x1b[91mnico \x1b[34m/tmp\x1b[91m $ \x1b[0mexit\n\n' \
+       '\x1b_user@arch:/tmp\x1b\\\x1b[91muser \x1b[34m/tmp\x1b[91m $ \x1b[0mecho "aaa"\n' \
+       'aaa\n\x1b_user@arch:/tmp\x1b\\\x1b[91muser \x1b[34m/tmp\x1b[91m $ \x1b[0mecho "bbb"\n' \
+       'bbb\n\x1b_user@arch:/tmp\x1b\\\x1b[91muser \x1b[34m/tmp\x1b[91m $ \x1b[0mexit\n\n' \
        'Script done on 2018-05-05 16:56:27+02:00\n'
 
 
@@ -122,3 +122,21 @@ class TestSVG(unittest.TestCase):
 
     def test_draw_fg(self):
         pass
+
+    def test_get_Xresources_colors(self):
+        print(svg.get_Xresources_colors())
+
+    def test_serialize_css_dict(self):
+        css = {
+            'text': {
+                'font-family': 'Dejavu Sans Mono',
+                'font-style': 'normal',
+                'font-size': '14px',
+                'fill':  '#839496'
+            },
+            '.red': {
+                'fill': '#dc322f'
+            }
+        }
+        print(svg.serialize_css_dict(css))
+

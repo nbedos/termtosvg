@@ -8,7 +8,7 @@ setup(
     packages=['src'],
     install_requires=[
         'pyte',
-        'shapely',
-        'svgwrite',
+        'python-xlib',
+        'svgwrite'
     ]
 )
