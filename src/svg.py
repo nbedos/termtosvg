@@ -1,4 +1,3 @@
-from collections import defaultdict
 import datetime
 import logging
 import os
@@ -10,51 +9,135 @@ import svgwrite.container
 import svgwrite.path
 import svgwrite.shapes
 import svgwrite.text
-import time
-from typing import Union, Dict, Set, FrozenSet, Tuple, Any, Callable
+import selectors
+import tty
+
+from typing import Union, Dict, Tuple, Generator
 from Xlib import display, rdb, Xatom
 
-
-BUFFER_SIZE = 1024
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+"""
+Use case: Record a TERMINAL SESSION and RENDER it as an SVG ANIMATION. The idea
+is to produce a short (<2 minutes) animation that can be showcased on a project page to
+illustrate a use case.
 
-# TODO: Group rectangles vertically
-# TODO: Use a viewBox to display completed lines (~history)
+RECORD a TERMINAL SESSION: CAPTURE input from the terminal session and save it together with both 
+TIMINGS (when key are pressed or output is written to screen) and CONFIGURATION (how are 
+colors rendered by the terminal, bold... etc). All this data will be used to replay the 
+terminal session (since we captured the input of the session, not the output).
+
+Once the terminal session has been replayed, it can be CONVERTED FRAME by frame to an 
+SVG ANIMATION that mimicks the terminal session.
+
+The terminal session should be SAVED so that it can be replayed and rendered with different
+options at any time.
+
+"""
 
 
-def cell_neighbours(cell: Tuple[int, int]) -> Set[Tuple[int, int]]:
-    i, j = cell
-    return {(i-1, j), (i+1, j), (i, j-1), (i, j+1)}
+class AsciiAnimation:
+    """
+    Feed on a set of ASCII screens and convert them to SVG frames
+    """
+    def __init__(self):
+        pass
+
+    def _render_frame_bg(self):
+        pass
+
+    def _render_frame_fg(self):
+        pass
+
+    def _render_frame(self):
+        pass
+
+    def render(self):
+        pass
 
 
-def link_cells(matrix: Dict[int, Dict[int, Any]], key: Callable=lambda x: x) \
-        -> Dict[Any, Set[FrozenSet]]:
-    """Group the cells of a matrix by value"""
-    values = defaultdict(set)
-    visited = set()
-    for row in matrix:
-        for column in matrix[row]:
-            if (row, column) in visited:
-                continue
+class TerminalSession:
+    """
+    Record, save and replay a terminal session
+    """
+    def __init__(self):
+        self.buffer_size = 1024
+        pass
 
-            visited_neighbours = set()
-            neighbours = cell_neighbours((row, column))
-            linked_cells = set()
-            while neighbours:
-                i, j = neighbours.pop()
-                visited_neighbours.add((i, j))
-                if i in matrix and j in matrix[i]:
-                    if key(matrix[i][j]) == key(matrix[row][column]):
-                        linked_cells.add((i, j))
-                        neighbours |= (cell_neighbours((i, j)) - visited_neighbours)
-            visited |= linked_cells
+    def get_configuration(self):
+        pass
 
-            values[key(matrix[row][column])].add(frozenset(linked_cells))
+    def record(self) -> Generator[Tuple[bytes, datetime.datetime], None, int]:
+        """Record raw input and output of a shell session
 
-    return values
+        This function forks the current process. The child process is a shell which is a session
+        leader, has a controlling terminal and is run in the background. The parent process, which
+        runs in the foreground, transmits data between the standard input, output and the shell
+        process and logs it. From the user point of view, it appears they are communicating with
+        their shell (through their terminal emulator) when in fact they communicate with our parent
+        process which logs all the data exchanged with the shell.
+
+        The implementation of this method is copied from the pty.spawn function of the CPython
+        standard library. It has been modified in order to make the record function a generator.
+        """
+        shell = os.environ.get('SHELL', 'sh')
+
+        pid, master_fd = pty.fork()
+        if pid == 0:
+            # Child
+            os.execlp(shell, shell)
+
+        # Parent
+        stdin_fileno = 0
+        stdout_fileno = 1
+        sel = selectors.DefaultSelector()
+        sel.register(master_fd, selectors.EVENT_READ)
+        sel.register(stdin_fileno, selectors.EVENT_READ)
+
+        try:
+            mode = tty.tcgetattr(stdin_fileno)
+            tty.setraw(stdin_fileno)
+            restore = 1
+        except tty.error:
+            restore = 0
+
+        while all(fd in sel.get_map() for fd in {master_fd, stdin_fileno}):
+            events = sel.select()
+            for key, _ in events:
+                try:
+                    data = os.read(key.fileobj, self.buffer_size)
+                except OSError:
+                    sel.unregister(key.fileobj)
+                    break
+
+                if not data:
+                    sel.unregister(key.fileobj)
+                    continue
+
+                yield data, datetime.datetime.now()
+
+                if key.fileobj == stdin_fileno:
+                    while data:
+                        n = os.write(master_fd, data)
+                        data = data[n:]
+                elif key.fileobj == master_fd:
+                    os.write(stdout_fileno, data)
+
+        if restore:
+            tty.tcsetattr(stdin_fileno, tty.TCSAFLUSH, mode)
+
+        os.close(master_fd)
+        return os.waitpid(pid, 0)[1]
+
+    def replay(self):
+        """
+        From the data gathered during a terminal record session, render the screen at each
+        step of the session
+        :return:
+        """
+        pass
 
 
 def get_Xresources_colors() -> Dict[str,str]:
@@ -99,27 +182,6 @@ def ansi_color_to_xml(color: str, color_conf: Union[Dict[str, str], None]=None) 
         return f'#{color}'
 
     raise ValueError(f'Invalid color: "{color}"')
-
-
-# TODO: Animation pausing
-def record():
-    shell = os.environ.get('SHELL', 'sh')
-    timings = []
-
-    def read(fd):
-        data = os.read(fd, BUFFER_SIZE)
-        timings.append((data, datetime.datetime.now()))
-        return data
-
-    header = f'Script started on {time.asctime()}'
-    print(header)
-
-    pty.spawn(shell, read)
-
-    footer = f'Script done on {time.asctime()}'
-    print(footer)
-    # print(b''.join(d for d, _ in timings))
-    return timings
 
 
 def group_by_time(timings, threshold=datetime.timedelta(milliseconds=50)):
@@ -322,6 +384,8 @@ def draw_fg(screen_buffer, line_height, group_id):
 
 
 if __name__ == '__main__':
-    timings = record()
-    squashed_timings = group_by_time(timings, threshold=datetime.timedelta(milliseconds=40))
-    render_animation(squashed_timings, '/tmp/test.svg')
+    session = TerminalSession()
+    for data, time in session.record():
+        pass
+    # squashed_timings = group_by_time(timings, threshold=datetime.timedelta(milliseconds=40))
+    # render_animation(squashed_timings, '/tmp/test.svg')

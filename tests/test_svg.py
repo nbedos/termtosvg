@@ -28,7 +28,7 @@ def pipe_fds():
     os.close(fd_write)
 
 
-class TestSVG(unittest.TestCase):
+class TestTerminalSession(unittest.TestCase):
     def test_record(self):
         commands = '\r\n'.join(['echo $SHELL && sleep 0.1;',
                                 'tree && 0.1;',
@@ -41,7 +41,9 @@ class TestSVG(unittest.TestCase):
         with pipe_fds() as (fdr, fdw):
             os.dup2(fdr, sys.stdin.fileno())
             os.write(fdw, commands.encode('utf-8'))
-            timings = svg.record()
+            session = svg.TerminalSession()
+            for _ in session.record():
+                pass
 
     def test_group_by_time(self):
         timings = [(b' ', 0), (b'$', 0), (b' ', 0), (b'c', 60), (b'm', 120), (b'd', 180),
@@ -79,33 +81,33 @@ class TestSVG(unittest.TestCase):
     def test_render_animation(self):
         pass
 
-    def test_link_cells(self):
-        matrix_size = 10
-
-        matrix = defaultdict(dict)
-        # Mapping between a value found in the matrix and the sets of adjacent cells containing this
-        # value
-        expected = {
-            0: {
-                frozenset({(0, j) for j in range(matrix_size)})
-            },
-            1: {
-                frozenset({(i, 0) for i in range(1, matrix_size)}),
-                frozenset({(6, 6), (6, 7), (6, 8), (7, 8), (8, 8), (8, 7), (8, 6), (7, 6)})
-            },
-            2: {
-                frozenset({(1, 1), (1, 2), (2, 2)}),
-                frozenset({(4, 4), (5, 4), (5, 5)})
-            }
-        }
-
-        for value in expected:
-            for cells in expected[value]:
-                for (i, j) in cells:
-                    assert i not in matrix or j not in matrix[i]
-                    matrix[i][j] = value
-
-        self.assertEqual(svg.link_cells(matrix), expected)
+    # def test_link_cells(self):
+    #     matrix_size = 10
+    #
+    #     matrix = defaultdict(dict)
+    #     # Mapping between a value found in the matrix and the sets of adjacent cells containing this
+    #     # value
+    #     expected = {
+    #         0: {
+    #             frozenset({(0, j) for j in range(matrix_size)})
+    #         },
+    #         1: {
+    #             frozenset({(i, 0) for i in range(1, matrix_size)}),
+    #             frozenset({(6, 6), (6, 7), (6, 8), (7, 8), (8, 8), (8, 7), (8, 6), (7, 6)})
+    #         },
+    #         2: {
+    #             frozenset({(1, 1), (1, 2), (2, 2)}),
+    #             frozenset({(4, 4), (5, 4), (5, 5)})
+    #         }
+    #     }
+    #
+    #     for value in expected:
+    #         for cells in expected[value]:
+    #             for (i, j) in cells:
+    #                 assert i not in matrix or j not in matrix[i]
+    #                 matrix[i][j] = value
+    #
+    #     self.assertEqual(svg.link_cells(matrix), expected)
 
     def test_draw_bg(self):
         def mock_char(bg):
