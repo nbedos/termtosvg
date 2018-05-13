@@ -1,50 +1,83 @@
 from collections import defaultdict
-from contextlib import contextmanager
 import datetime
-import logging
 import os
 import pyte.screens
-import sys
 import unittest
 
 from src import svg
 
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+xresources_valid = """*background:	#002b36
+*foreground:	#839496
+*color0:	#073642
+*color1:	#dc322f
+*color2:	#859900
+*color3:	#b58900
+*color4:	#268bd2
+*color5:	#d33682
+*color6:	#2aa198
+Svg.color7:	#eee8d5
+*color9:	#cb4b16
+*color8:	#002b36
+*color10:	#586e75
+*color11:	#657b83
+*color12:	#839496
+Svg.color13:	#6c71c4
+*color14:	#93a1a1
+Svg.color15:	#fdf6e3"""
 
+xresources_incomplete = """*background:	#002b36
+*color1:	#dc322f"""
 
-data = 'Script started on 2018-05-05 16:56:18+02:00\n' \
-       '\x1b_user@arch:/tmp\x1b\\\x1b[91muser \x1b[34m/tmp\x1b[91m $ \x1b[0mecho "aaa"\n' \
-       'aaa\n\x1b_user@arch:/tmp\x1b\\\x1b[91muser \x1b[34m/tmp\x1b[91m $ \x1b[0mecho "bbb"\n' \
-       'bbb\n\x1b_user@arch:/tmp\x1b\\\x1b[91muser \x1b[34m/tmp\x1b[91m $ \x1b[0mexit\n\n' \
-       'Script done on 2018-05-05 16:56:27+02:00\n'
-
-
-@contextmanager
-def pipe_fds():
-    fd_read, fd_write = os.pipe()
-    yield (fd_read, fd_write)
-    os.close(fd_read)
-    os.close(fd_write)
+xresources_empty = ''
 
 
 class TestTerminalSession(unittest.TestCase):
     def test_record(self):
-        commands = '\r\n'.join(['echo $SHELL && sleep 0.1;',
-                                'tree && 0.1;',
-                                'ls && sleep 0.1;',
-                                'whoami && sleep 0.1;',
-                                'exit;',
-                                ''])
-        # stdin is replaced by the reading end of the pipe, so that
-        # we can feed it commands to be executed by the shell from the writing end
-        with pipe_fds() as (fdr, fdw):
-            os.dup2(fdr, sys.stdin.fileno())
-            os.write(fdw, commands.encode('utf-8'))
-            session = svg.TerminalSession()
-            for _ in session.record():
-                pass
+        commands = ['echo $SHELL && sleep 0.1;',
+                    'tree && 0.1;',
+                    'ls && sleep 0.1;',
+                    'whoami && sleep 0.1;',
+                    'exit;',
+                    '']
 
+        # Use pipes in lieu of stdin and stdout
+        fd_in_read, fd_in_write = os.pipe()
+        fd_out_read, fd_out_write = os.pipe()
+
+        session = svg.TerminalSession()
+
+        os.write(fd_in_write, '\r\n'.join(commands).encode('utf-8'))
+        for item in session.record(input_fileno=fd_in_read, output_fileno=fd_out_write):
+            pass
+
+        for fd in [fd_in_read, fd_in_write, fd_out_read, fd_out_write]:
+            os.close(fd)
+
+    def test__parse_xresources(self):
+        with self.subTest(case='All valid colors'):
+            color_mapping = svg.TerminalSession._parse_xresources(xresources_valid)
+            for i in range(16):
+                self.assertIn(f'color{i}', color_mapping)
+            self.assertEqual(color_mapping['background'], '#002b36')
+            self.assertEqual(color_mapping['foreground'], '#839496')
+
+        # Should succeed even though colors are missing
+        with self.subTest(case='Not all colors defined'):
+            svg.TerminalSession._parse_xresources(xresources_incomplete)
+
+        with self.subTest(case='Empty Xresource'):
+            svg.TerminalSession._parse_xresources(xresources_empty)
+
+    # TODO: Worth testing?
+    def test__get_xresources(self):
+        svg.TerminalSession._get_xresources()
+
+    def test_get_configuration(self):
+        session = svg.TerminalSession()
+        session.get_configuration()
+
+
+class TestSVG(unittest.TestCase):
     def test_group_by_time(self):
         timings = [(b' ', 0), (b'$', 0), (b' ', 0), (b'c', 60), (b'm', 120), (b'd', 180),
                    (b'\r', 260), (b'\n', 260), (b' ', 260), (b'$', 260), (b' ', 260)]
@@ -61,53 +94,8 @@ class TestTerminalSession(unittest.TestCase):
                            (b'\r\n $ ', now + datetime.timedelta(milliseconds=260))]
         self.assertEqual(expected_result, result)
 
-    def test_ansi_color_to_xml(self):
-        with self.subTest(case='Named color'):
-            self.assertEqual('black', svg.ansi_color_to_xml('black'))
-
-        with self.subTest(case='Valid hexadecimal color'):
-            self.assertEqual('#000000', svg.ansi_color_to_xml('000000'))
-            self.assertEqual('#123456', svg.ansi_color_to_xml('123456'))
-            self.assertEqual('#ABCDEF', svg.ansi_color_to_xml('abcdef').upper())
-            self.assertEqual('#FFFFFF', svg.ansi_color_to_xml('ffffff').upper())
-
-        with self.subTest(case='Invalid hexadecimal color'):
-            with self.assertRaises(ValueError):
-                svg.ansi_color_to_xml('00000z')
-
-            with self.assertRaises(ValueError):
-                svg.ansi_color_to_xml('12345')
-
     def test_render_animation(self):
         pass
-
-    # def test_link_cells(self):
-    #     matrix_size = 10
-    #
-    #     matrix = defaultdict(dict)
-    #     # Mapping between a value found in the matrix and the sets of adjacent cells containing this
-    #     # value
-    #     expected = {
-    #         0: {
-    #             frozenset({(0, j) for j in range(matrix_size)})
-    #         },
-    #         1: {
-    #             frozenset({(i, 0) for i in range(1, matrix_size)}),
-    #             frozenset({(6, 6), (6, 7), (6, 8), (7, 8), (8, 8), (8, 7), (8, 6), (7, 6)})
-    #         },
-    #         2: {
-    #             frozenset({(1, 1), (1, 2), (2, 2)}),
-    #             frozenset({(4, 4), (5, 4), (5, 5)})
-    #         }
-    #     }
-    #
-    #     for value in expected:
-    #         for cells in expected[value]:
-    #             for (i, j) in cells:
-    #                 assert i not in matrix or j not in matrix[i]
-    #                 matrix[i][j] = value
-    #
-    #     self.assertEqual(svg.link_cells(matrix), expected)
 
     def test_draw_bg(self):
         def mock_char(bg):
@@ -121,9 +109,6 @@ class TestTerminalSession(unittest.TestCase):
                 for j in range(buffer_size):
                     buffer[i][j] = mock_char('black')
             svg.draw_bg(buffer, 10, 'test_bg').tostring()
-
-    def test_get_Xresources_colors(self):
-        print(svg.get_Xresources_colors())
 
     def test_serialize_css_dict(self):
         css = {

@@ -10,11 +10,11 @@ import svgwrite.path
 import svgwrite.shapes
 import svgwrite.text
 import selectors
+import sys
 import tty
-
-from typing import Union, Dict, Tuple, Generator
+from typing import Dict, Tuple, Generator
 from Xlib import display, rdb, Xatom
-
+from Xlib.error import DisplayError
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -38,6 +38,132 @@ options at any time.
 """
 
 
+class TerminalSession:
+    """
+    Record, save and replay a terminal session
+    """
+    def __init__(self):
+        self.buffer_size = 1024
+        self.colors = None
+
+    def record(self, input_fileno: int=sys.stdin.fileno(), output_fileno: int=sys.stdout.fileno()) \
+            -> Generator[Tuple[bytes, datetime.datetime], None, int]:
+        """Record raw input and output of a shell session
+
+        This function forks the current process. The child process is a shell which is a session
+        leader, has a controlling terminal and is run in the background. The parent process, which
+        runs in the foreground, transmits data between the standard input, output and the shell
+        process and logs it. From the user point of view, it appears they are communicating with
+        their shell (through their terminal emulator) when in fact they communicate with our parent
+        process which logs all the data exchanged with the shell.
+
+        Alternative file descriptors (filenos) can be passed to the function in replacement of
+        the descriptors for the standard input and output
+
+        The implementation of this method is mostly copied from the pty.spawn function of the
+        CPython standard library. It has been modified in order to make the record function a
+        generator.
+
+        :param input_fileno: File descriptor of the input data stream
+        :param output_fileno: File descriptor of the output data stream
+        """
+        shell = os.environ.get('SHELL', 'sh')
+
+        pid, master_fd = pty.fork()
+        if pid == 0:
+            # Child process
+            os.execlp(shell, shell)
+
+        try:
+            mode = tty.tcgetattr(input_fileno)
+            tty.setraw(input_fileno)
+        except tty.error:
+            mode = None
+
+        # Parent process
+        sel = selectors.DefaultSelector()
+        sel.register(master_fd, selectors.EVENT_READ)
+        sel.register(input_fileno, selectors.EVENT_READ)
+
+        while {master_fd, input_fileno} <= set(sel.get_map().keys()):
+            events = sel.select()
+            for key, _ in events:
+                try:
+                    data = os.read(key.fileobj, self.buffer_size)
+                except OSError:
+                    sel.unregister(key.fileobj)
+                    break
+
+                if not data:
+                    sel.unregister(key.fileobj)
+                    continue
+
+                yield data, datetime.datetime.now()
+
+                if key.fileobj == input_fileno:
+                    while data:
+                        n = os.write(master_fd, data)
+                        data = data[n:]
+                elif key.fileobj == master_fd:
+                    os.write(output_fileno, data)
+
+        if mode is not None:
+            tty.tcsetattr(input_fileno, tty.TCSAFLUSH, mode)
+
+        os.close(master_fd)
+        return os.waitpid(pid, 0)[1]
+
+    def replay(self):
+        """
+        From the data gathered during a terminal record session, render the screen at each
+        step of the session
+        :return:
+        """
+        pass
+
+    def get_configuration(self):
+        """Get configuration information related to terminal output rendering"""
+        xresources_str = self._get_xresources()
+        self.colors = self._parse_xresources(xresources_str)
+
+    @staticmethod
+    def _get_xresources() -> str:
+        """Query the X server about the color configuration for the default display (Xresources)
+
+        :return: Xresources as a string
+        """
+        try:
+            d = display.Display()
+            data = d.screen(0).root.get_full_property(Xatom.RESOURCE_MANAGER,
+                                                      Xatom.STRING)
+        except DisplayError as e:
+            logger.debug(f'No color configuration could be gathered from the X display: {e}')
+        else:
+            if data:
+                return data.value.decode('utf-8')
+        return ''
+
+    @staticmethod
+    def _parse_xresources(xresources: str) -> Dict[str, str]:
+        """Parse the Xresources string and return a mapping between colors and their value
+
+        :return: dictionary mapping the name of each color to its hexadecimal value ('#abcdef')
+        """
+        res_db = rdb.ResourceDB(string=xresources)
+
+        mapping = {}
+        names = ['foreground', 'background'] + [f'color{index}' for index in range(16)]
+        for name in names:
+            res_name = 'Svg.' + name
+            res_class = res_name
+            try:
+                mapping[name] = res_db[res_name, res_class]
+            except KeyError:
+                pass
+
+        return mapping
+
+
 class AsciiAnimation:
     """
     Feed on a set of ASCII screens and convert them to SVG frames
@@ -56,132 +182,6 @@ class AsciiAnimation:
 
     def render(self):
         pass
-
-
-class TerminalSession:
-    """
-    Record, save and replay a terminal session
-    """
-    def __init__(self):
-        self.buffer_size = 1024
-        pass
-
-    def get_configuration(self):
-        pass
-
-    def record(self) -> Generator[Tuple[bytes, datetime.datetime], None, int]:
-        """Record raw input and output of a shell session
-
-        This function forks the current process. The child process is a shell which is a session
-        leader, has a controlling terminal and is run in the background. The parent process, which
-        runs in the foreground, transmits data between the standard input, output and the shell
-        process and logs it. From the user point of view, it appears they are communicating with
-        their shell (through their terminal emulator) when in fact they communicate with our parent
-        process which logs all the data exchanged with the shell.
-
-        The implementation of this method is copied from the pty.spawn function of the CPython
-        standard library. It has been modified in order to make the record function a generator.
-        """
-        shell = os.environ.get('SHELL', 'sh')
-
-        pid, master_fd = pty.fork()
-        if pid == 0:
-            # Child
-            os.execlp(shell, shell)
-
-        # Parent
-        stdin_fileno = 0
-        stdout_fileno = 1
-        sel = selectors.DefaultSelector()
-        sel.register(master_fd, selectors.EVENT_READ)
-        sel.register(stdin_fileno, selectors.EVENT_READ)
-
-        try:
-            mode = tty.tcgetattr(stdin_fileno)
-            tty.setraw(stdin_fileno)
-            restore = 1
-        except tty.error:
-            restore = 0
-
-        while all(fd in sel.get_map() for fd in {master_fd, stdin_fileno}):
-            events = sel.select()
-            for key, _ in events:
-                try:
-                    data = os.read(key.fileobj, self.buffer_size)
-                except OSError:
-                    sel.unregister(key.fileobj)
-                    break
-
-                if not data:
-                    sel.unregister(key.fileobj)
-                    continue
-
-                yield data, datetime.datetime.now()
-
-                if key.fileobj == stdin_fileno:
-                    while data:
-                        n = os.write(master_fd, data)
-                        data = data[n:]
-                elif key.fileobj == master_fd:
-                    os.write(stdout_fileno, data)
-
-        if restore:
-            tty.tcsetattr(stdin_fileno, tty.TCSAFLUSH, mode)
-
-        os.close(master_fd)
-        return os.waitpid(pid, 0)[1]
-
-    def replay(self):
-        """
-        From the data gathered during a terminal record session, render the screen at each
-        step of the session
-        :return:
-        """
-        pass
-
-
-def get_Xresources_colors() -> Dict[str,str]:
-    d = display.Display()
-    xresources_str = d.screen(0).root.get_full_property(Xatom.RESOURCE_MANAGER,
-                                                        Xatom.STRING)
-    if xresources_str:
-        data = xresources_str.value.decode('utf-8')
-    else:
-        data = None
-    res_db = rdb.ResourceDB(string=data)
-
-    mapping = {
-        'foreground': res_db['x.foreground', 'X.Foreground'],
-        'background': res_db['x.background', 'X.Background'],
-        'black': res_db['x.color0', 'X.Color0'],
-        'red': res_db['x.color1', 'X.Color1'],
-        'green': res_db['x.color2', 'X.Color2'],
-        'brown': res_db['x.color3', 'X.Color3'],
-        'blue': res_db['x.color4', 'X.Color4'],
-        'magenta': res_db['x.color5', 'X.Color5'],
-        'cyan': res_db['x.color6', 'X.Color6'],
-        'white': res_db['x.color7', 'X.Color7']
-    }
-    return mapping
-
-
-def ansi_color_to_xml(color: str, color_conf: Union[Dict[str, str], None]=None) -> Union[str, None]:
-    if color_conf is not None and color in color_conf:
-        return color_conf[color]
-
-    # Named colors are also defined in the SVG specification so we can keep them as is
-    svg_named_colors = {'black', 'red', 'green', 'brown', 'blue', 'magenta', 'cyan', 'white'}
-    if color in svg_named_colors:
-        return color
-
-    # Non named colors are passed to this function as a six digit hexadecimal number
-    if len(color) == 6:
-        # The following instruction will raise a ValueError exception if 'color' is not a
-        # valid hexadecimal string
-        int(color, 16)
-        return f'#{color}'
-
-    raise ValueError(f'Invalid color: "{color}"')
 
 
 def group_by_time(timings, threshold=datetime.timedelta(milliseconds=50)):
@@ -221,7 +221,8 @@ def render_animation(timings, filename, end_pause=1):
         raise ValueError(f'Invalid end_pause (must be >= 0): "{end_pause}"')
 
     font_size = 14
-    color_conf = get_Xresources_colors()
+    # color_conf = get_Xresources_colors()
+    color_conf = {}
     css = {
         # Apply this style to each and every element since we are using coordinates that depend on
         # the size of the font
@@ -289,8 +290,7 @@ def render_animation(timings, filename, end_pause=1):
     dwg.save()
 
 
-# TODO: Merge rectangles over multiple lines as in:
-# https://stackoverflow.com/questions/5919298/algorithm-for-finding-the-fewest-rectangles-to-cover-a-set-of-rectangles-without/6634668
+# TODO: Merge rectangles over multiple lines
 def draw_bg(screen_buffer, line_height, group_id):
     frame = svgwrite.container.Group(id=group_id)
     for row in screen_buffer.keys():
@@ -381,11 +381,3 @@ def draw_fg(screen_buffer, line_height, group_id):
                                       **last_text_attributes)
             frame.add(text)
     return frame
-
-
-if __name__ == '__main__':
-    session = TerminalSession()
-    for data, time in session.record():
-        pass
-    # squashed_timings = group_by_time(timings, threshold=datetime.timedelta(milliseconds=40))
-    # render_animation(squashed_timings, '/tmp/test.svg')
