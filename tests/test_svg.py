@@ -68,7 +68,6 @@ class TestTerminalSession(unittest.TestCase):
         with self.subTest(case='Empty Xresource'):
             svg.TerminalSession._parse_xresources(xresources_empty)
 
-    # TODO: Worth testing?
     def test__get_xresources(self):
         svg.TerminalSession._get_xresources()
 
@@ -76,16 +75,13 @@ class TestTerminalSession(unittest.TestCase):
         session = svg.TerminalSession()
         session.get_configuration()
 
-
-class TestSVG(unittest.TestCase):
-    def test_group_by_time(self):
+    def test__group_by_time(self):
         timings = [(b' ', 0), (b'$', 0), (b' ', 0), (b'c', 60), (b'm', 120), (b'd', 180),
                    (b'\r', 260), (b'\n', 260), (b' ', 260), (b'$', 260), (b' ', 260)]
 
         now = datetime.datetime.now()
-        threshold = datetime.timedelta(milliseconds=50)
         real_timings = [(bs, now + datetime.timedelta(milliseconds=n)) for bs, n in timings]
-        result = svg.group_by_time(real_timings, threshold=threshold)
+        result = svg.TerminalSession._group_by_time(real_timings, threshold=50)
 
         expected_result = [(b' $ ', now),
                            (b'c', now + datetime.timedelta(milliseconds=60)),
@@ -94,23 +90,62 @@ class TestSVG(unittest.TestCase):
                            (b'\r\n $ ', now + datetime.timedelta(milliseconds=260))]
         self.assertEqual(expected_result, result)
 
+
+class TestSVG(unittest.TestCase):
     def test_render_animation(self):
         pass
 
-    def test_draw_bg(self):
+    def test__render_frame_bg(self):
         def mock_char(bg):
             return pyte.screens.Char(' ', bg=bg, reverse=False)
 
         buffer = defaultdict(dict)
         buffer_size = 4
 
+        animation = svg.AsciiAnimation()
         with self.subTest(case='Single color buffer'):
             for i in range(buffer_size):
                 for j in range(buffer_size):
                     buffer[i][j] = mock_char('black')
-            svg.draw_bg(buffer, 10, 'test_bg').tostring()
+            animation._render_frame_bg(buffer, 10, 'test_bg').tostring()
 
-    def test_serialize_css_dict(self):
+    def test__render_text_elems(self):
+        animation = svg.AsciiAnimation()
+
+        screen_buffer = [
+            ((0, 0), pyte.screens.Char('A', fg='red', reverse=False)),
+            ((0, 1), pyte.screens.Char('B', fg='blue', reverse=False)),
+            ((1, 4), pyte.screens.Char('C', fg='blue', reverse=False)),
+            ((1, 6), pyte.screens.Char('D', fg='green', reverse=False)),
+            ((2, 8), pyte.screens.Char('E', bg='green', reverse=True)),
+            ((2, 9), pyte.screens.Char('F', fg='green', reverse=False, bold=True)),
+            ((3, 10), pyte.screens.Char('G', bg='green', reverse=True, bold=True)),
+        ]
+        all_texts = animation._render_text_elems(screen_buffer, lambda x: x)
+        sorted_texts = sorted((text.text, text) for text in all_texts)
+        text_a, text_bc, text_de, text_fg = [text for _, text in sorted_texts]
+
+        self.assertEqual(text_a.text, 'A')
+        self.assertEqual(text_a.attribs['class'], 'red')
+        self.assertEqual(text_a.attribs['x'], '0ex')
+        self.assertEqual(text_a.attribs['y'], '0.00em')
+        self.assertEqual(text_bc.text, 'BC')
+        self.assertEqual(text_bc.attribs['class'], 'blue')
+        self.assertEqual(text_bc.attribs['x'], '1ex 4ex')
+        self.assertEqual(text_bc.attribs['y'], '0.00em 1.00em')
+        self.assertEqual(text_de.text, 'DE')
+        self.assertEqual(text_de.attribs['class'], 'green')
+        self.assertEqual(text_de.attribs['x'], '6ex 8ex')
+        self.assertEqual(text_de.attribs['y'], '1.00em 2.00em')
+        self.assertEqual(text_fg.text, 'FG')
+        self.assertEqual(text_fg.attribs['class'], 'green bold')
+        self.assertEqual(text_fg.attribs['x'], '9ex 10ex')
+        self.assertEqual(text_fg.attribs['y'], '2.00em 3.00em')
+
+    def test__render_frame_fg(self):
+        pass
+
+    def _test_serialize_css_dict(self):
         css = {
             'text': {
                 'font-family': 'Dejavu Sans Mono',
@@ -122,7 +157,4 @@ class TestSVG(unittest.TestCase):
                 'fill': '#dc322f'
             }
         }
-        print(svg.serialize_css_dict(css))
-
-    def test_draw_fg(self):
-        pass
+        svg.AsciiAnimation._serialize_css_dict(css)

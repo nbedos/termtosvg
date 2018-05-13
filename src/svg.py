@@ -1,4 +1,5 @@
 import datetime
+from itertools import groupby
 import logging
 import os
 import pty
@@ -12,7 +13,7 @@ import svgwrite.text
 import selectors
 import sys
 import tty
-from typing import Dict, Tuple, Generator
+from typing import Dict, Tuple, Generator, List, Callable
 from Xlib import display, rdb, Xatom
 from Xlib.error import DisplayError
 
@@ -74,13 +75,13 @@ class TerminalSession:
             # Child process
             os.execlp(shell, shell)
 
+        # Parent process
         try:
             mode = tty.tcgetattr(input_fileno)
             tty.setraw(input_fileno)
         except tty.error:
             mode = None
 
-        # Parent process
         sel = selectors.DefaultSelector()
         sel.register(master_fd, selectors.EVENT_READ)
         sel.register(input_fileno, selectors.EVENT_READ)
@@ -163,6 +164,31 @@ class TerminalSession:
 
         return mapping
 
+    @staticmethod
+    def _group_by_time(timings, threshold: int=50):
+        threshold = datetime.timedelta(milliseconds=threshold)
+        grouped_timings = []
+        current_string = []
+        current_time = None
+        for character, t in timings:
+            if current_time is not None:
+                assert t - current_time >= datetime.timedelta(seconds=0)
+                if t - current_time > threshold:
+                    # Flush current string
+                    s = b''.join(current_string)
+                    grouped_timings.append((s, current_time))
+                    current_string = []
+                    current_time = t
+            else:
+                current_time = t
+
+            current_string.append(character)
+
+        if current_string:
+            grouped_timings.append((b''.join(current_string), current_time))
+
+        return grouped_timings
+
 
 class AsciiAnimation:
     """
@@ -171,213 +197,190 @@ class AsciiAnimation:
     def __init__(self):
         pass
 
-    def _render_frame_bg(self):
-        pass
+    # TODO: Merge rectangles over multiple lines
+    def _render_frame_bg(self, screen_buffer, line_height, group_id):
+        frame = svgwrite.container.Group(id=group_id)
+        for row in screen_buffer.keys():
+            last_bg_color = None
+            start_col = 0
+            last_col = None
+            for col in sorted(screen_buffer[row]):
+                char = screen_buffer[row][col]
+                bg_color = char.fg if char.reverse else char.bg
+                if bg_color == 'default':
+                    if char.reverse:
+                        bg_color = 'foreground'
+                    else:
+                        bg_color = 'background'
 
-    def _render_frame_fg(self):
-        pass
+                if bg_color != last_bg_color or (last_col is not None and col != last_col + 1):
+                    if last_bg_color is not None and last_bg_color != 'background':
+                        args = {
+                            'insert': (f'{start_col}ex', f'{row * line_height + 0.25:.2f}em'),
+                            'size': (f'{col-start_col}ex', f'{line_height}em'),
+                            'class': last_bg_color
+                        }
+                        r = svgwrite.shapes.Rect(**args)
+                        frame.add(r)
+                    start_col = col
+                last_bg_color = bg_color
+                last_col = col
+
+            if screen_buffer[row] and last_bg_color is not None and last_bg_color != 'background':
+                col = max(screen_buffer[row]) + 1
+                args = {
+                    'insert': (f'{start_col}ex', f'{row * line_height + 0.25:.2f}em'),
+                    'size': (f'{col-start_col}ex', f'{line_height}em'),
+                    'class': last_bg_color
+                }
+                r = svgwrite.shapes.Rect(**args)
+                frame.add(r)
+
+        return frame
+
+    def _render_text_elems(self, screen_buffer, height_func) -> List[svgwrite.text.Text]:
+        """Render a screen of the terminal as a list of SVG text elements
+
+        Characters with the same attributes (color, boldness) are grouped together in a
+        single text element.
+
+        :param screen_buffer: Mapping between positions on the screen (tuple row, column) and
+        characters
+        :param height_func: Function returning the vertical position of the text element
+        from the row of the character in the buffer
+        :return: List of SVG text elements
+        """
+        def char_attributes(item):
+            _, char = item
+            if char.reverse:
+                if char.bg == 'default':
+                    color = 'background'
+                else:
+                    color = char.bg
+            else:
+                if char.fg == 'default':
+                    color = 'foreground'
+                else:
+                    color = char.fg
+            return color, char.bold
+
+        svg_items = []
+        sorted_chars = sorted(screen_buffer, key=char_attributes)
+        for attributes, group in groupby(sorted_chars, char_attributes):
+            color, bold = attributes
+            text_attributes = {}
+            if color != 'default':
+                text_attributes['class'] = color
+            if bold:
+                if 'class' in text_attributes:
+                    text_attributes['class'] += ' bold'
+                else:
+                    text_attributes['class'] = 'bold'
+
+            group_chars = [(index, char.data) if char.data != ' ' else u'\u00A0'
+                           for index, char in group]
+
+            text = ''.join(c for _, c in group_chars)
+            xs = [f'{col}ex' for (row, col), _ in group_chars]
+            ys = [f'{height_func(row):.2f}em' for (row, col), _ in group_chars]
+            text = svgwrite.text.Text(text=text, x=xs, y=ys, **text_attributes)
+
+            svg_items.append(text)
+
+        return svg_items
+
+    def _render_frame_fg(self, screen_buffer, line_height: float, group_id: str):
+        def height_func(row: int) -> float:
+            return (row + 1) * line_height
+
+        frame = svgwrite.container.Group(id=group_id)
+        all_chars = [(row, col) for row in sorted(screen_buffer)
+                     for col in sorted(screen_buffer[row])]
+        svg_items = self._render_text_elems(all_chars, height_func=height_func)
+        for item in svg_items:
+            frame.add(item)
+        return frame
 
     def _render_frame(self):
         pass
 
-    def render(self):
-        pass
+    def render_animation(self, timings, filename, end_pause=1):
+        if end_pause < 0:
+            raise ValueError(f'Invalid end_pause (must be >= 0): "{end_pause}"')
 
-
-def group_by_time(timings, threshold=datetime.timedelta(milliseconds=50)):
-    grouped_timings = []
-    current_string = []
-    current_time = None
-    for character, t in timings:
-        if current_time is not None:
-            assert t - current_time >= datetime.timedelta(seconds=0)
-            if t - current_time > threshold:
-                # Flush current string
-                s = b''.join(current_string)
-                grouped_timings.append((s, current_time))
-                current_string = []
-                current_time = t
-        else:
-            current_time = t
-
-        current_string.append(character)
-
-    if current_string:
-        grouped_timings.append((b''.join(current_string), current_time))
-
-    return grouped_timings
-
-
-def serialize_css_dict(css: Dict[str, Dict[str, str]]) -> str:
-    def serialize_css_item(item: Dict[str, str]) -> str:
-        return '; '.join(f'{prop}: {item[prop]}' for prop in item)
-
-    items = [f'{item} {{{serialize_css_item(css[item])}}}' for item in css]
-    return os.linesep.join(items)
-
-
-def render_animation(timings, filename, end_pause=1):
-    if end_pause < 0:
-        raise ValueError(f'Invalid end_pause (must be >= 0): "{end_pause}"')
-
-    font_size = 14
-    # color_conf = get_Xresources_colors()
-    color_conf = {}
-    css = {
-        # Apply this style to each and every element since we are using coordinates that depend on
-        # the size of the font
-        '*': {
-            'font-family': '"DejaVu Sans Mono", monospace',
-            'font-style': 'normal',
-            'font-size': f'{font_size}px',
-        },
-        'text': {
-            'fill': color_conf['foreground']
-        },
-        '.bold': {
-            'font-weight': 'bold'
-        }
-    }
-    css_ansi_colors = {f'.{color}': {'fill': color_conf[color]} for color in color_conf}
-    css.update(css_ansi_colors)
-
-    dwg = svgwrite.Drawing(filename, ('80ex', '28em'), debug=True)
-    dwg.defs.add(dwg.style(serialize_css_dict(css)))
-    args = {
-        'insert': (0, 0),
-        'size': ('100%', '100%'),
-        'class': 'background'
-    }
-    r = svgwrite.shapes.Rect(**args)
-    dwg.add(r)
-    input_data, times = zip(*timings)
-
-    screen = pyte.Screen(80, 24)
-    stream = pyte.ByteStream(screen)
-    first_animation_begin = f'0s; animation_{len(input_data)-1}.end'
-    # Lien_height in 'em' unit
-    line_height = 1.10
-    for index, bs in enumerate(input_data):
-        stream.feed(bs)
-        frame = svgwrite.container.Group(id=f'frame_{index}', display='none')
-
-        # Background
-        frame_bg = draw_bg(screen.buffer, line_height, f'frame_bg_{index}')
-        frame.add(frame_bg)
-
-        # Foreground
-        frame_fg = draw_fg(screen.buffer, line_height, f'frame_fg_{index}')
-        frame.add(frame_fg)
-
-        # Animation
-        try:
-            frame_duration = (times[index+1] - times[index]).total_seconds()
-        except IndexError:
-            frame_duration = end_pause
-
-        assert frame_duration > 0
-        extra = {
-            'id': f'animation_{index}',
-            'begin': f'animation_{index-1}.end' if index > 0 else first_animation_begin,
-            'dur': f'{frame_duration:.3f}s',
-            'values': 'inline;inline',
-            'keyTimes': '0.0;1.0',
-            'fill': 'remove'
-        }
-        frame.add(svgwrite.animate.Animate('display', **extra))
-        dwg.add(frame)
-
-    dwg.save()
-
-
-# TODO: Merge rectangles over multiple lines
-def draw_bg(screen_buffer, line_height, group_id):
-    frame = svgwrite.container.Group(id=group_id)
-    for row in screen_buffer.keys():
-        last_bg_color = None
-        start_col = 0
-        last_col = None
-        for col in sorted(screen_buffer[row]):
-            char = screen_buffer[row][col]
-            bg_color = char.fg if char.reverse else char.bg
-            if bg_color == 'default':
-                if char.reverse:
-                    bg_color = 'foreground'
-                else:
-                    bg_color = 'background'
-
-            if bg_color != last_bg_color or (last_col is not None and col != last_col + 1):
-                if last_bg_color is not None and last_bg_color != 'background':
-                    args = {
-                        'insert': (f'{start_col}ex', f'{row * line_height + 0.25:.2f}em'),
-                        'size': (f'{col-start_col}ex', f'{line_height}em'),
-                        'class': last_bg_color
-                    }
-                    r = svgwrite.shapes.Rect(**args)
-                    frame.add(r)
-                start_col = col
-            last_bg_color = bg_color
-            last_col = col
-        if screen_buffer[row] and last_bg_color is not None and last_bg_color != 'background':
-            col = max(screen_buffer[row]) + 1
-            args = {
-                'insert': (f'{start_col}ex', f'{row * line_height + 0.25:.2f}em'),
-                'size': (f'{col-start_col}ex', f'{line_height}em'),
-                'class': last_bg_color
+        font_size = 14
+        # color_conf = get_Xresources_colors()
+        color_conf = {}
+        css = {
+            # Apply this style to each and every element since we are using coordinates that
+            # depend on the size of the font
+            '*': {
+                'font-family': '"DejaVu Sans Mono", monospace',
+                'font-style': 'normal',
+                'font-size': f'{font_size}px',
+            },
+            'text': {
+                'fill': color_conf['foreground']
+            },
+            '.bold': {
+                'font-weight': 'bold'
             }
-            r = svgwrite.shapes.Rect(**args)
-            frame.add(r)
+        }
+        css_ansi_colors = {f'.{color}': {'fill': color_conf[color]} for color in color_conf}
+        css.update(css_ansi_colors)
 
-    return frame
+        dwg = svgwrite.Drawing(filename, ('80ex', '28em'), debug=True)
+        dwg.defs.add(dwg.style(AsciiAnimation._serialize_css_dict(css)))
+        args = {
+            'insert': (0, 0),
+            'size': ('100%', '100%'),
+            'class': 'background'
+        }
+        r = svgwrite.shapes.Rect(**args)
+        dwg.add(r)
+        input_data, times = zip(*timings)
 
+        screen = pyte.Screen(80, 24)
+        stream = pyte.ByteStream(screen)
+        first_animation_begin = f'0s; animation_{len(input_data)-1}.end'
+        # Lien_height in 'em' unit
+        line_height = 1.10
+        for index, bs in enumerate(input_data):
+            stream.feed(bs)
+            frame = svgwrite.container.Group(id=f'frame_{index}', display='none')
 
-def draw_fg(screen_buffer, line_height, group_id):
-    frame = svgwrite.container.Group(id=group_id)
-    for row in screen_buffer:
-        height = (row + 1) * line_height
-        content = ''
-        last_text_attributes = {}
-        current_text_position = 0
-        last_col = -1
+            # Background
+            frame_bg = self._render_frame_bg(screen.buffer, line_height, f'frame_bg_{index}')
+            frame.add(frame_bg)
 
-        for col in sorted(screen_buffer[row]):
-            char = screen_buffer[row][col]
-            # Replace spaces with non breaking spaces so that consecutive spaces
-            # are preserved
-            data = char.data if char.data != ' ' else u'\u00A0'
-            text_attributes = {}
+            # Foreground
+            frame_fg = self._render_frame_fg(screen.buffer, line_height, f'frame_fg_{index}')
+            frame.add(frame_fg)
 
-            fg_color = char.bg if char.reverse else char.fg
-            if fg_color == 'default' and char.reverse:
-                fg_color = 'background'
-            classes = []
-            if fg_color != 'default':
-                classes.append(fg_color)
-            if char.bold:
-                classes.append('bold')
-            if classes:
-                text_attributes['class'] = ' '.join(classes)
+            # Animation
+            try:
+                frame_duration = (times[index + 1] - times[index]).total_seconds()
+            except IndexError:
+                frame_duration = end_pause
 
-            if text_attributes != last_text_attributes or col != last_col + 1:
-                if content:
-                    text = svgwrite.text.Text(text=content,
-                                              x=[f'{current_text_position + i}ex' for i in
-                                                 range(len(content))],
-                                              y=[f'{height:.2f}em'],
-                                              **last_text_attributes)
-                    frame.add(text)
-                content = ''
-                current_text_position = col
+            assert frame_duration > 0
+            extra = {
+                'id': f'animation_{index}',
+                'begin': f'animation_{index-1}.end' if index > 0 else first_animation_begin,
+                'dur': f'{frame_duration:.3f}s',
+                'values': 'inline;inline',
+                'keyTimes': '0.0;1.0',
+                'fill': 'remove'
+            }
+            frame.add(svgwrite.animate.Animate('display', **extra))
+            dwg.add(frame)
 
-            content += data
-            last_text_attributes = text_attributes
-            last_col = col
+        dwg.save()
 
-        if content:
-            text = svgwrite.text.Text(text=content,
-                                      x=[f'{current_text_position + i}ex' for i in
-                                         range(len(content))],
-                                      y=[f'{height:.2f}em'],
-                                      **last_text_attributes)
-            frame.add(text)
-    return frame
+    @staticmethod
+    def _serialize_css_dict(css: Dict[str, Dict[str, str]]) -> str:
+        def serialize_css_item(item: Dict[str, str]) -> str:
+            return '; '.join(f'{prop}: {item[prop]}' for prop in item)
+
+        items = [f'{item} {{{serialize_css_item(css[item])}}}' for item in css]
+        return os.linesep.join(items)
