@@ -88,17 +88,43 @@ class TestTerminalSession(unittest.TestCase):
                            (b'm', now + datetime.timedelta(milliseconds=120)),
                            (b'd', now + datetime.timedelta(milliseconds=180)),
                            (b'\r\n $ ', now + datetime.timedelta(milliseconds=260))]
-        self.assertEqual(expected_result, result)
+        self.assertEqual(expected_result, list(result))
 
 
 class TestSVG(unittest.TestCase):
     def test_render_animation(self):
         pass
 
-    def test__render_frame_bg(self):
-        def mock_char(bg):
-            return pyte.screens.Char(' ', bg=bg, reverse=False)
+    def test__render_line_bg_colors(self):
+        screen_line = {
+            0: pyte.screens.Char('A', bg='red', reverse=False),
+            1: pyte.screens.Char('A', bg='red', reverse=False),
+            3: pyte.screens.Char('A', bg='red', reverse=False),
+            4: pyte.screens.Char('A', bg='blue', reverse=False),
+            6: pyte.screens.Char('A', bg='blue', reverse=False),
+            7: pyte.screens.Char('A', fg='blue', reverse=True),
+            8: pyte.screens.Char('A', bg='green', reverse=False),
+            9: pyte.screens.Char('A', bg='red', reverse=False),
+            10: pyte.screens.Char('A', bg='red', reverse=False)
+        }
 
+        animation = svg.AsciiAnimation()
+        rectangles = animation._render_line_bg_colors(screen_line, height=0, line_height=1)
+        rect_0, rect_3, rect_4, rect_6, rect_8, rect_9 = sorted(rectangles,
+                                                                key=lambda r: r.attribs['x'])
+
+        self.assertEqual(rect_0.attribs['x'], '0ex')
+        self.assertEqual(rect_0.attribs['width'], '2ex')
+        self.assertEqual(rect_0.attribs['class'], 'red')
+        self.assertEqual(rect_3.attribs['x'], '3ex')
+        self.assertEqual(rect_4.attribs['x'], '4ex')
+        self.assertEqual(rect_6.attribs['x'], '6ex')
+        self.assertEqual(rect_6.attribs['class'], 'blue')
+        self.assertEqual(rect_8.attribs['x'], '8ex')
+        self.assertEqual(rect_8.attribs['class'], 'green')
+        self.assertEqual(rect_9.attribs['x'], '9ex')
+
+    def test__render_frame_bg_colors(self):
         buffer = defaultdict(dict)
         buffer_size = 4
 
@@ -106,10 +132,10 @@ class TestSVG(unittest.TestCase):
         with self.subTest(case='Single color buffer'):
             for i in range(buffer_size):
                 for j in range(buffer_size):
-                    buffer[i][j] = mock_char('black')
-            animation._render_frame_bg(buffer, 10, 'test_bg').tostring()
+                    buffer[i][j] = pyte.screens.Char(' ', bg='black')
+            animation._render_frame_bg_colors(buffer, 1)
 
-    def test__render_text_elems(self):
+    def test__render_characters(self):
         animation = svg.AsciiAnimation()
 
         screen_buffer = [
@@ -120,10 +146,11 @@ class TestSVG(unittest.TestCase):
             ((2, 8), pyte.screens.Char('E', bg='green', reverse=True)),
             ((2, 9), pyte.screens.Char('F', fg='green', reverse=False, bold=True)),
             ((3, 10), pyte.screens.Char('G', bg='green', reverse=True, bold=True)),
+            ((4, 0), pyte.screens.Char(' ', bg='red', reverse=False))
         ]
-        all_texts = animation._render_text_elems(screen_buffer, lambda x: x)
+        all_texts = animation._render_characters(screen_buffer, lambda x: x)
         sorted_texts = sorted((text.text, text) for text in all_texts)
-        text_a, text_bc, text_de, text_fg = [text for _, text in sorted_texts]
+        text_a, text_bc, text_de, text_fg, text_space = [text for _, text in sorted_texts]
 
         self.assertEqual(text_a.text, 'A')
         self.assertEqual(text_a.attribs['class'], 'red')
