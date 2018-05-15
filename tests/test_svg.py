@@ -53,6 +53,20 @@ class TestTerminalSession(unittest.TestCase):
         for fd in [fd_in_read, fd_in_write, fd_out_read, fd_out_write]:
             os.close(fd)
 
+    def test_replay(self):
+        def delta_ms(n):
+            return datetime.timedelta(milliseconds=n)
+
+        now = datetime.datetime.now()
+        bytes = [b'line1\n', b'line2\n', b'line3\n', b'line4\n']
+        times = [now + delta_ms(n * 100) for n in range(len(bytes))]
+
+        timings = zip(bytes, times)
+
+        session = svg.TerminalSession()
+        for buffer in session.replay(timings):
+            print(buffer)
+
     def test__parse_xresources(self):
         with self.subTest(case='All valid colors'):
             color_mapping = svg.TerminalSession._parse_xresources(xresources_valid)
@@ -76,18 +90,21 @@ class TestTerminalSession(unittest.TestCase):
         session.get_configuration()
 
     def test__group_by_time(self):
+        def delta_ms(n):
+            return datetime.timedelta(milliseconds=n)
+        
         timings = [(b' ', 0), (b'$', 0), (b' ', 0), (b'c', 60), (b'm', 120), (b'd', 180),
                    (b'\r', 260), (b'\n', 260), (b' ', 260), (b'$', 260), (b' ', 260)]
 
         now = datetime.datetime.now()
-        real_timings = [(bs, now + datetime.timedelta(milliseconds=n)) for bs, n in timings]
+        real_timings = [(bs, now + delta_ms(n)) for bs, n in timings]
         result = svg.TerminalSession._group_by_time(real_timings, threshold=50)
 
         expected_result = [(b' $ ', now),
-                           (b'c', now + datetime.timedelta(milliseconds=60)),
-                           (b'm', now + datetime.timedelta(milliseconds=120)),
-                           (b'd', now + datetime.timedelta(milliseconds=180)),
-                           (b'\r\n $ ', now + datetime.timedelta(milliseconds=260))]
+                           (b'c', now + delta_ms(60)),
+                           (b'm', now + delta_ms(120)),
+                           (b'd', now + delta_ms(180)),
+                           (b'\r\n $ ', now + delta_ms(260))]
         self.assertEqual(expected_result, list(result))
 
 
@@ -97,15 +114,15 @@ class TestSVG(unittest.TestCase):
 
     def test__render_line_bg_colors(self):
         screen_line = {
-            0: pyte.screens.Char('A', bg='red', reverse=False),
-            1: pyte.screens.Char('A', bg='red', reverse=False),
-            3: pyte.screens.Char('A', bg='red', reverse=False),
-            4: pyte.screens.Char('A', bg='blue', reverse=False),
-            6: pyte.screens.Char('A', bg='blue', reverse=False),
-            7: pyte.screens.Char('A', fg='blue', reverse=True),
-            8: pyte.screens.Char('A', bg='green', reverse=False),
-            9: pyte.screens.Char('A', bg='red', reverse=False),
-            10: pyte.screens.Char('A', bg='red', reverse=False)
+            0: svg.AsciiChar('A', None, 'red'),
+            1: svg.AsciiChar('A', None, 'red'),
+            3: svg.AsciiChar('A', None, 'red'),
+            4: svg.AsciiChar('A', None, 'blue'),
+            6: svg.AsciiChar('A', None, 'blue'),
+            7: svg.AsciiChar('A', None, 'blue'),
+            8: svg.AsciiChar('A', None, 'green'),
+            9: svg.AsciiChar('A', None, 'red'),
+            10: svg.AsciiChar('A', None, 'red')
         }
 
         animation = svg.AsciiAnimation()
@@ -132,45 +149,58 @@ class TestSVG(unittest.TestCase):
         with self.subTest(case='Single color buffer'):
             for i in range(buffer_size):
                 for j in range(buffer_size):
-                    buffer[i][j] = pyte.screens.Char(' ', bg='black')
+                    buffer[i][j] = svg.AsciiChar(' ')
             animation._render_frame_bg_colors(buffer, 1)
 
     def test__render_characters(self):
+        screen_line = {
+            0: svg.AsciiChar('A', 'red', None),
+            1: svg.AsciiChar('B', 'blue', None),
+            4: svg.AsciiChar('C', 'blue', None),
+            6: svg.AsciiChar('D', 'green', None),
+            8: svg.AsciiChar('E', 'green', None),
+            9: svg.AsciiChar('F', 'green', None),
+            10: svg.AsciiChar('G', 'green', None),
+            11: svg.AsciiChar('H', 'red', None),
+            20: svg.AsciiChar(' ', 'ungrouped')
+        }
         animation = svg.AsciiAnimation()
-
-        screen_buffer = [
-            ((0, 0), pyte.screens.Char('A', fg='red', reverse=False)),
-            ((0, 1), pyte.screens.Char('B', fg='blue', reverse=False)),
-            ((1, 4), pyte.screens.Char('C', fg='blue', reverse=False)),
-            ((1, 6), pyte.screens.Char('D', fg='green', reverse=False)),
-            ((2, 8), pyte.screens.Char('E', bg='green', reverse=True)),
-            ((2, 9), pyte.screens.Char('F', fg='green', reverse=False, bold=True)),
-            ((3, 10), pyte.screens.Char('G', bg='green', reverse=True, bold=True)),
-            ((4, 0), pyte.screens.Char(' ', bg='red', reverse=False))
-        ]
-        all_texts = animation._render_characters(screen_buffer, lambda x: x)
+        all_texts = animation._render_characters(screen_line, 1.23)
         sorted_texts = sorted((text.text, text) for text in all_texts)
-        text_a, text_bc, text_de, text_fg, text_space = [text for _, text in sorted_texts]
+        text_ah, text_bc, text_defg, text_space = [text for _, text in sorted_texts]
 
-        self.assertEqual(text_a.text, 'A')
-        self.assertEqual(text_a.attribs['class'], 'red')
-        self.assertEqual(text_a.attribs['x'], '0ex')
-        self.assertEqual(text_a.attribs['y'], '0.00em')
+        self.assertEqual(text_ah.text, 'AH')
+        self.assertEqual(text_ah.attribs['class'], 'red')
+        self.assertEqual(text_ah.attribs['x'], '0ex 11ex')
+        self.assertEqual(text_ah.attribs['y'], '1.23em')
         self.assertEqual(text_bc.text, 'BC')
         self.assertEqual(text_bc.attribs['class'], 'blue')
         self.assertEqual(text_bc.attribs['x'], '1ex 4ex')
-        self.assertEqual(text_bc.attribs['y'], '0.00em 1.00em')
-        self.assertEqual(text_de.text, 'DE')
-        self.assertEqual(text_de.attribs['class'], 'green')
-        self.assertEqual(text_de.attribs['x'], '6ex 8ex')
-        self.assertEqual(text_de.attribs['y'], '1.00em 2.00em')
-        self.assertEqual(text_fg.text, 'FG')
-        self.assertEqual(text_fg.attribs['class'], 'green bold')
-        self.assertEqual(text_fg.attribs['x'], '9ex 10ex')
-        self.assertEqual(text_fg.attribs['y'], '2.00em 3.00em')
+        self.assertEqual(text_defg.text, 'DEFG')
+        self.assertEqual(text_defg.attribs['class'], 'green')
+        self.assertEqual(text_defg.attribs['x'], '6ex 8ex 9ex 10ex')
 
     def test__render_frame_fg(self):
-        pass
+        animation = svg.AsciiAnimation()
+
+        screen_buffer = {}
+        screen_buffer[0] = {
+            0: svg.AsciiChar('A', 'red'),
+            1: svg.AsciiChar('B', 'blue'),
+            4: svg.AsciiChar('C', 'blue'),
+            6: svg.AsciiChar('D', 'green'),
+            8: svg.AsciiChar('E', 'green'),
+        }
+        screen_buffer[1] = {
+            0: svg.AsciiChar('A', 'green'),
+            1: svg.AsciiChar('B', 'green'),
+            4: svg.AsciiChar('C', 'green'),
+            6: svg.AsciiChar('D', 'green'),
+            8: svg.AsciiChar('E', 'green'),
+        }
+
+        svg_frame = animation._render_frame_fg(screen_buffer, line_height=1, group_id='frame_test')
+
 
     def _test_serialize_css_dict(self):
         css = {

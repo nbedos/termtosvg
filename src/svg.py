@@ -13,7 +13,7 @@ import svgwrite.text
 import selectors
 import sys
 import tty
-from typing import Dict, Tuple, Generator, List, Callable
+from typing import Dict, Tuple, Generator, List, Iterable
 from Xlib import display, rdb, Xatom
 from Xlib.error import DisplayError
 
@@ -114,13 +114,65 @@ class TerminalSession:
         os.close(master_fd)
         return os.waitpid(pid, 0)[1]
 
-    def replay(self):
+    @staticmethod
+    def _group_by_time(timings, threshold=50):
+        # type: (Iterable[Tuple[bytes, datetime.datetime]], int) -> Generator[Tuple[bytes, datetime.datetime], None, None]
+        threshold = datetime.timedelta(milliseconds=threshold)
+        current_string = []
+        current_time = None
+        for character, time in timings:
+            if current_time is not None:
+                assert time - current_time >= datetime.timedelta(seconds=0)
+                if time - current_time > threshold:
+                    # Flush current string
+                    s = b''.join(current_string)
+                    yield s, current_time
+                    current_string = []
+                    current_time = time
+            else:
+                current_time = time
+
+            current_string.append(character)
+
+        if current_string:
+            yield b''.join(current_string), current_time
+
+    def replay(self, timings):
+        # type: (TerminalSession, Iterable[Tuple[bytes, datetime.datetime]]) -> Generator[Dict[int, Dict[int, AsciiChar]], None, None]
         """
-        From the data gathered during a terminal record session, render the screen at each
-        step of the session
-        :return:
+        Render screens of the terminal session after having grouped frames by time
         """
-        pass
+        screen = pyte.Screen(80, 24)
+        stream = pyte.ByteStream(screen)
+        for data, time in TerminalSession._group_by_time(timings):
+            stream.feed(data)
+            ascii_buffer = {}
+            for row in screen.buffer:
+                ascii_buffer[row] = {}
+                for column in screen.buffer[row]:
+                    char = screen.buffer[row][column]
+                    ascii_buffer[row][column] = TerminalSession.pyte_to_ascii(char)
+
+            yield ascii_buffer, time
+
+    @staticmethod
+    def pyte_to_ascii(char):
+        # type: (pyte.screens.Char) -> AsciiChar
+
+        if char.fg == 'default':
+            text_color = 'foreground'
+        else:
+            text_color = char.fg
+
+        if char.bg == 'default':
+            background_color = 'background'
+        else:
+            background_color = char.bg
+
+        if char.reverse:
+            text_color, background_color = background_color, text_color
+
+        return AsciiChar(char.data, text_color, background_color)
 
     def get_configuration(self):
         """Get configuration information related to terminal output rendering"""
@@ -166,52 +218,26 @@ class TerminalSession:
 
         return mapping
 
-    @staticmethod
-    def _group_by_time(timings, threshold: int=50):
-        threshold = datetime.timedelta(milliseconds=threshold)
-        current_string = []
-        current_time = None
-        for character, t in timings:
-            if current_time is not None:
-                assert t - current_time >= datetime.timedelta(seconds=0)
-                if t - current_time > threshold:
-                    # Flush current string
-                    s = b''.join(current_string)
-                    yield s, current_time
-                    current_string = []
-                    current_time = t
-            else:
-                current_time = t
 
-            current_string.append(character)
+class AsciiChar:
+    def __init__(self, value, text_color='foreground', background_color='background'):
+        if len(value) > 1:
+            raise ValueError(f'Invalid value: {value}')
 
-        if current_string:
-            yield b''.join(current_string), current_time
+        self.value = value
+        self.text_color = text_color
+        self.background_color = background_color
 
 
-
+# TODO: Fix color rendering
+# TODO: Change animation rendering function so that it can take advantage of timings as a generator
+# TODO: Render only differences between frames / Use viewbox to render a portion of the history
 class AsciiAnimation:
-    """
-    Feed on a set of ASCII screens and convert them to SVG frames
-    """
     def __init__(self):
         pass
 
     def _render_line_bg_colors(self, screen_line, height, line_height):
-        # type: (AsciiAnimation, Dict[int, pyte.screens.Char], float, float) -> List[svgwrite.shapes.Rect]
-        def bgcolor(char: pyte.screens.Char) -> str:
-            if char.reverse:
-                if char.fg == 'default':
-                    color = 'foreground'
-                else:
-                    color = char.fg
-            else:
-                if char.bg == 'default':
-                    color = 'background'
-                else:
-                    color = char.bg
-            return color
-
+        # type: (AsciiAnimation, Dict[int, AsciiChar], float, float) -> List[svgwrite.shapes.Rect]
         def make_rectangle(group: List[int]) -> svgwrite.shapes.Rect:
             x = f'{group[0]}ex'
             y = f'{height:.2f}em'
@@ -220,7 +246,7 @@ class AsciiAnimation:
             args = {
                 'insert': (x, y),
                 'size': (sx, sy),
-                'class': bgcolor(screen_line[group[0]])
+                'class': screen_line[group[0]].background_color
             }
             return svgwrite.shapes.Rect(**args)
 
@@ -228,8 +254,9 @@ class AsciiAnimation:
         groups = []
         for index in sorted(screen_line):
             group.append(index)
-            if index + 1 not in screen_line or bgcolor(screen_line[index]) != bgcolor(screen_line[index + 1]):
-                if bgcolor(screen_line[index]) != 'background':
+            if index + 1 not in screen_line or \
+                    screen_line[index].background_color != screen_line[index + 1].background_color:
+                if screen_line[index].background_color != 'background':
                     groups.append(group)
                 group = []
 
@@ -238,60 +265,46 @@ class AsciiAnimation:
 
     # TODO: Merge rectangles over multiple lines
     def _render_frame_bg_colors(self, screen_buffer, line_height):
-        # type: (AsciiAnimation, Dict[int, Dict[int, pyte.screens.Char]], float, str) -> List[svgwrite.shapes.Rect]
+        # type: (AsciiAnimation, Dict[int, Dict[int, AsciiChar]], float, str) -> List[svgwrite.shapes.Rect]
         rects = []
         for row in screen_buffer:
             height = row * line_height + 0.25
             rects += self._render_line_bg_colors(screen_buffer[row], height, line_height)
         return rects
 
-    def _render_characters(self, screen_buffer, height_func):
-        # type: (AsciiAnimation, List[Tuple[Tuple[int, int], pyte.screens.Char]], Callable[[int], float]) -> List[svgwrite.text.Text]
+    def _render_characters(self, screen_line, height):
+        # type: (AsciiAnimation, Dict[int, AsciiChar], float) -> List[svgwrite.text.Text]
         """Render a screen of the terminal as a list of SVG text elements
 
-        Characters with the same attributes (color, font weight) are grouped together in a
+        Characters with the same attributes (color) are grouped together in a
         single text element.
 
-        :param screen_buffer: Mapping between positions on the screen (tuple row, column) and
-        characters
-        :param height_func: Function returning the vertical position of the text element
-        from the row of the character in the buffer
+        :param screen_line: Mapping between positions on the row and characters
+        :param height: Vertical position of the line
         :return: List of SVG text elements
         """
         def char_attributes(item):
             _, char = item
-            if char.reverse:
-                if char.bg == 'default':
-                    color = 'background'
-                else:
-                    color = char.bg
-            else:
-                if char.fg == 'default':
-                    color = 'foreground'
-                else:
-                    color = char.fg
-            return color, char.bold
+            return char.text_color
 
         svg_items = []
-        sorted_chars = sorted(screen_buffer, key=char_attributes)
+        sorted_chars = sorted(screen_line.items(), key=char_attributes)
         for attributes, group in groupby(sorted_chars, char_attributes):
-            color, bold = attributes
+            color = attributes
             text_attributes = {}
             classes = []
             if color != 'foreground':
                 classes.append(color)
-            if bold:
-                classes.append('bold')
 
             if classes:
                 text_attributes['class'] = ' '.join(classes)
 
-            group_chars = [(index, (char.data if char.data != ' ' else u'\u00A0'))
+            group_chars = [(index, (char.value if char.value != ' ' else u'\u00A0'))
                            for index, char in group]
 
             text = ''.join(c for _, c in group_chars)
-            xs = [f'{col}ex' for (row, col), _ in group_chars]
-            ys = [f'{height_func(row):.2f}em' for (row, col), _ in group_chars]
+            xs = [f'{col}ex' for col, _ in group_chars]
+            ys = [f'{height:.2f}em']
             text = svgwrite.text.Text(text=text, x=xs, y=ys, **text_attributes)
 
             svg_items.append(text)
@@ -299,17 +312,13 @@ class AsciiAnimation:
         return svg_items
 
     def _render_frame_fg(self, screen_buffer, line_height, group_id):
-        # type: (AsciiAnimation, Dict[int, Dict[int, pyte.screens.Char]], float, str) -> svgwrite.container.Group
-        def height_func(row: int) -> float:
-            return (row + 1) * line_height
+        # type: (AsciiAnimation, Dict[int, Dict[int, AsciiChar]], float, str) -> svgwrite.container.Group
 
         frame = svgwrite.container.Group(id=group_id)
-        all_chars = [((row, col), screen_buffer[row][col])
-                     for row in sorted(screen_buffer)
-                     for col in sorted(screen_buffer[row])]
-        svg_items = self._render_characters(all_chars, height_func=height_func)
-        for item in svg_items:
-            frame.add(item)
+        for row in screen_buffer:
+            svg_items = self._render_characters(screen_buffer[row], height=(row + 1) * line_height)
+            for item in svg_items:
+                frame.add(item)
         return frame
 
     def _render_frame(self):
@@ -347,34 +356,32 @@ class AsciiAnimation:
         }
         r = svgwrite.shapes.Rect(**args)
         dwg.add(r)
-        input_data, times = zip(*timings)
 
-        screen = pyte.Screen(80, 24)
-        stream = pyte.ByteStream(screen)
-        first_animation_begin = f'0s; animation_{len(input_data)-1}.end'
-        # Lien_height in 'em' unit
+        first_animation_begin = '0s'
+        # Line_height in 'em' unit
         line_height = 1.10
-        for index, bs in enumerate(input_data):
-            stream.feed(bs)
+        last_time = None
+        for index, (screen_buffer, time) in enumerate(timings):
             frame = svgwrite.container.Group(id=f'frame_{index}', display='none')
 
             # Background
-            rects = self._render_frame_bg_colors(screen.buffer, line_height)
+            rects = self._render_frame_bg_colors(screen_buffer, line_height)
             for rect in rects:
                 frame.add(rect)
 
             # Foreground
-            frame_fg = self._render_frame_fg(screen.buffer, line_height, f'frame_fg_{index}')
+            frame_fg = self._render_frame_fg(screen_buffer, line_height, f'frame_fg_{index}')
             frame.add(frame_fg)
 
             # Animation
-            try:
-                frame_duration = (times[index + 1] - times[index]).total_seconds()
-            except IndexError:
+            if last_time is None:
                 frame_duration = end_pause
+            else:
+                frame_duration = (time - last_time).total_seconds()
+            last_time = time
 
             frame_duration_str = f'{frame_duration:.3f}s'
-            assert frame_duration != '0.000s'
+            assert frame_duration >= 0.001
             extra = {
                 'id': f'animation_{index}',
                 'begin': f'animation_{index-1}.end' if index > 0 else first_animation_begin,
@@ -397,11 +404,12 @@ class AsciiAnimation:
         items = [f'{item} {{{serialize_css_item(css[item])}}}' for item in css]
         return os.linesep.join(items)
 
+
 if __name__ == '__main__':
     t = TerminalSession()
     t.get_configuration()
     timings = t.record()
-    squashed_timings = t._group_by_time(timings)
+    squashed_timings = t.replay(timings)
 
     a = AsciiAnimation()
     a.render_animation(squashed_timings, '/tmp/test.svg', t.colors)
