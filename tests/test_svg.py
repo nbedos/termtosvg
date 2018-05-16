@@ -1,7 +1,6 @@
 from collections import defaultdict
 import datetime
 import os
-import pyte.screens
 import unittest
 
 from src import svg
@@ -50,7 +49,7 @@ class TestTerminalSession(unittest.TestCase):
         for item in session.record(input_fileno=fd_in_read, output_fileno=fd_out_write):
             pass
 
-        for fd in [fd_in_read, fd_in_write, fd_out_read, fd_out_write]:
+        for fd in fd_in_read, fd_in_write, fd_out_read, fd_out_write:
             os.close(fd)
 
     def test_replay(self):
@@ -200,7 +199,6 @@ class TestSVG(unittest.TestCase):
         }
 
         svg_frame = animation._render_frame_fg(screen_buffer, line_height=1, group_id='frame_test')
-
 
     def _test_serialize_css_dict(self):
         css = {

@@ -86,33 +86,36 @@ class TerminalSession:
         sel.register(master_fd, selectors.EVENT_READ)
         sel.register(input_fileno, selectors.EVENT_READ)
 
-        while {master_fd, input_fileno} <= set(sel.get_map().keys()):
+        while {master_fd, input_fileno} <= set(sel.get_map()):
             events = sel.select()
             for key, _ in events:
                 try:
                     data = os.read(key.fileobj, self.buffer_size)
                 except OSError:
                     sel.unregister(key.fileobj)
-                    break
+                    continue
 
                 if not data:
                     sel.unregister(key.fileobj)
                     continue
 
                 if key.fileobj == input_fileno:
-                    while data:
-                        n = os.write(master_fd, data)
-                        data = data[n:]
-
-                elif key.fileobj == master_fd:
-                    os.write(output_fileno, data)
+                    write_fileno = master_fd
+                else:
+                    write_fileno = output_fileno
                     yield data, datetime.datetime.now()
+
+                while data:
+                    n = os.write(write_fileno, data)
+                    data = data[n:]
 
         if mode is not None:
             tty.tcsetattr(input_fileno, tty.TCSAFLUSH, mode)
 
         os.close(master_fd)
-        return os.waitpid(pid, 0)[1]
+
+        _, child_exit_status = os.waitpid(pid, 0)
+        return child_exit_status
 
     @staticmethod
     def _group_by_time(timings, threshold=50):
@@ -158,14 +161,28 @@ class TerminalSession:
     @staticmethod
     def pyte_to_ascii(char):
         # type: (pyte.screens.Char) -> AsciiChar
+        colors = {
+            'black': 'color0',
+            'red': 'color1',
+            'green': 'color2',
+            'brown': 'color3',
+            'blue': 'color4',
+            'magenta': 'color5',
+            'cyan': 'color6',
+            'white': 'color7',
+        }
 
         if char.fg == 'default':
             text_color = 'foreground'
+        elif char.fg in colors:
+            text_color = colors[char.fg]
         else:
             text_color = char.fg
 
         if char.bg == 'default':
             background_color = 'background'
+        elif char.bg in colors:
+            background_color = colors[char.bg]
         else:
             background_color = char.bg
 
@@ -229,9 +246,10 @@ class AsciiChar:
         self.background_color = background_color
 
 
-# TODO: Fix color rendering
+# TODO: AsciiBuffer type (based on mappings)
 # TODO: Change animation rendering function so that it can take advantage of timings as a generator
 # TODO: Render only differences between frames / Use viewbox to render a portion of the history
+# TODO: Save session in asciinema v2 format
 class AsciiAnimation:
     def __init__(self):
         pass
@@ -313,7 +331,6 @@ class AsciiAnimation:
 
     def _render_frame_fg(self, screen_buffer, line_height, group_id):
         # type: (AsciiAnimation, Dict[int, Dict[int, AsciiChar]], float, str) -> svgwrite.container.Group
-
         frame = svgwrite.container.Group(id=group_id)
         for row in screen_buffer:
             svg_items = self._render_characters(screen_buffer[row], height=(row + 1) * line_height)
