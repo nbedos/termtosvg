@@ -1,4 +1,5 @@
 from collections import defaultdict
+import copy
 import datetime
 import os
 import unittest
@@ -64,7 +65,7 @@ class TestTerminalSession(unittest.TestCase):
 
         session = svg.TerminalSession()
         for buffer in session.replay(timings):
-            print(buffer)
+            pass
 
     def test__parse_xresources(self):
         with self.subTest(case='All valid colors'):
@@ -97,13 +98,15 @@ class TestTerminalSession(unittest.TestCase):
 
         now = datetime.datetime.now()
         real_timings = [(bs, now + delta_ms(n)) for bs, n in timings]
-        result = svg.TerminalSession._group_by_time(real_timings, threshold=50)
+        result = svg.TerminalSession._group_by_time(timings=real_timings,
+                                                    min_frame_duration=50,
+                                                    last_frame_duration=1234)
 
-        expected_result = [(b' $ ', now),
-                           (b'c', now + delta_ms(60)),
-                           (b'm', now + delta_ms(120)),
-                           (b'd', now + delta_ms(180)),
-                           (b'\r\n $ ', now + delta_ms(260))]
+        expected_result = [(b' $ ', delta_ms(60)),
+                           (b'c', delta_ms(60)),
+                           (b'm', delta_ms(60)),
+                           (b'd', delta_ms(80)),
+                           (b'\r\n $ ', delta_ms(1234))]
         self.assertEqual(expected_result, list(result))
 
 
@@ -140,16 +143,16 @@ class TestSVG(unittest.TestCase):
         self.assertEqual(rect_8.attribs['class'], 'green')
         self.assertEqual(rect_9.attribs['x'], '9ex')
 
-    def test__render_frame_bg_colors(self):
-        buffer = defaultdict(dict)
-        buffer_size = 4
-
-        animation = svg.AsciiAnimation()
-        with self.subTest(case='Single color buffer'):
-            for i in range(buffer_size):
-                for j in range(buffer_size):
-                    buffer[i][j] = svg.AsciiChar(' ')
-            animation._render_frame_bg_colors(buffer, 1)
+    # def test__render_frame_bg_colors(self):
+    #     buffer = defaultdict(dict)
+    #     buffer_size = 4
+    #
+    #     animation = svg.AsciiAnimation()
+    #     with self.subTest(case='Single color buffer'):
+    #         for i in range(buffer_size):
+    #             for j in range(buffer_size):
+    #                 buffer[i][j] = svg.AsciiChar(' ')
+    #         animation._render_frame_bg_colors(buffer, 1)
 
     def test__render_characters(self):
         screen_line = {
@@ -179,26 +182,28 @@ class TestSVG(unittest.TestCase):
         self.assertEqual(text_defg.attribs['class'], 'green')
         self.assertEqual(text_defg.attribs['x'], '6ex 8ex 9ex 10ex')
 
-    def test__render_frame_fg(self):
-        animation = svg.AsciiAnimation()
-
-        screen_buffer = {}
-        screen_buffer[0] = {
-            0: svg.AsciiChar('A', 'red'),
-            1: svg.AsciiChar('B', 'blue'),
-            4: svg.AsciiChar('C', 'blue'),
-            6: svg.AsciiChar('D', 'green'),
-            8: svg.AsciiChar('E', 'green'),
-        }
-        screen_buffer[1] = {
-            0: svg.AsciiChar('A', 'green'),
-            1: svg.AsciiChar('B', 'green'),
-            4: svg.AsciiChar('C', 'green'),
-            6: svg.AsciiChar('D', 'green'),
-            8: svg.AsciiChar('E', 'green'),
-        }
-
-        svg_frame = animation._render_frame_fg(screen_buffer, line_height=1, group_id='frame_test')
+    # def test__render_frame_fg(self):
+    #     animation = svg.AsciiAnimation()
+    #
+    #     screen_buffer = {
+    #         0: {
+    #             0: svg.AsciiChar('A', 'red'),
+    #             1: svg.AsciiChar('B', 'blue'),
+    #             4: svg.AsciiChar('C', 'blue'),
+    #             6: svg.AsciiChar('D', 'green'),
+    #             8: svg.AsciiChar('E', 'green')
+    #         },
+    #         1: {
+    #             0: svg.AsciiChar('A', 'green'),
+    #             1: svg.AsciiChar('B', 'green'),
+    #             4: svg.AsciiChar('C', 'green'),
+    #             6: svg.AsciiChar('D', 'green'),
+    #             8: svg.AsciiChar('E', 'green')
+    #         }
+    #     }
+    #
+    #     svg_frame = animation._render_frame_fg(screen_buffer, line_height=1, group_id='frame_test')
+    #     pass
 
     def _test_serialize_css_dict(self):
         css = {
@@ -213,3 +218,65 @@ class TestSVG(unittest.TestCase):
             }
         }
         svg.AsciiAnimation._serialize_css_dict(css)
+
+    def test__buffer_difference(self):
+        before_buffer = {
+            0: {
+                0: svg.AsciiChar('A'),
+                1: svg.AsciiChar('B'),
+                2: svg.AsciiChar('C')
+            },
+            1: {
+                0: svg.AsciiChar('D')
+            }
+        }
+        a = svg.AsciiAnimation()
+        with self.subTest(case='Self comparison'):
+            diff_buffer = a._buffer_difference({}, {})
+            self.assertEqual(diff_buffer, {})
+
+            diff_buffer = a._buffer_difference(before_buffer, before_buffer)
+            self.assertEqual(diff_buffer, {})
+
+        with self.subTest(case='Change in text'):
+            after_buffer = copy.deepcopy(before_buffer)
+            after_buffer[0][2] = svg.AsciiChar('E')
+
+            diff_buffer = a._buffer_difference(before_buffer, after_buffer)
+            self.assertEqual(diff_buffer, {0: after_buffer[0]})
+
+        with self.subTest(case='Change in color'):
+            after_buffer = copy.deepcopy(before_buffer)
+            after_buffer[0][0] = svg.AsciiChar('A', 'red')
+
+            diff_buffer = a._buffer_difference(before_buffer, after_buffer)
+            self.assertEqual(diff_buffer, {0: after_buffer[0]})
+
+        with self.subTest(case='New character'):
+            after_buffer = copy.deepcopy(before_buffer)
+            after_buffer[1][1] = svg.AsciiChar('A', 'red')
+
+            diff_buffer = a._buffer_difference(before_buffer, after_buffer)
+            self.assertEqual(diff_buffer, {1: after_buffer[1]})
+
+        with self.subTest(case='New line'):
+            after_buffer = copy.deepcopy(before_buffer)
+            after_buffer[2] = {}
+            after_buffer[2][0] = svg.AsciiChar('A', 'red')
+
+            diff_buffer = a._buffer_difference(before_buffer, after_buffer)
+            self.assertEqual(diff_buffer, {2: after_buffer[2]})
+
+        with self.subTest(case='Missing character'):
+            after_buffer = copy.deepcopy(before_buffer)
+            del after_buffer[0][0]
+
+            diff_buffer = a._buffer_difference(before_buffer, after_buffer)
+            self.assertEqual(diff_buffer, {0: after_buffer[0]})
+
+        with self.subTest(case='Missing Line'):
+            after_buffer = copy.deepcopy(before_buffer)
+            del after_buffer[1]
+
+            diff_buffer = a._buffer_difference(before_buffer, after_buffer)
+            self.assertEqual(diff_buffer, {1: {0: svg.AsciiChar()}})

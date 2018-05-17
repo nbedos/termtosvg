@@ -13,7 +13,7 @@ import svgwrite.text
 import selectors
 import sys
 import tty
-from typing import Dict, Tuple, Generator, List, Iterable
+from typing import Dict, Tuple, Generator, List, Iterable, Any, Union
 from Xlib import display, rdb, Xatom
 from Xlib.error import DisplayError
 
@@ -37,6 +37,15 @@ The terminal session should be SAVED so that it can be replayed and rendered wit
 options at any time.
 
 """
+
+# TODO: CSS default attribute for <text> all x positions
+# TODO: Since we're not using textLength after all, go back to one line = one <text> (+ <tspan>s)
+# TODO: Group lines with the same timings in a single group with a unique animation
+# TODO: Remove frame rendering code
+# TODO: AsciiBuffer type (based on mappings)
+# TODO: Use viewbox to render a portion of the history
+# TODO: Save session in asciinema v2 format
+# TODO: Use screen buffer difference for cell targeted updating, or just use screen.dirty from pyte
 
 
 class TerminalSession:
@@ -118,18 +127,28 @@ class TerminalSession:
         return child_exit_status
 
     @staticmethod
-    def _group_by_time(timings, threshold=50):
-        # type: (Iterable[Tuple[bytes, datetime.datetime]], int) -> Generator[Tuple[bytes, datetime.datetime], None, None]
-        threshold = datetime.timedelta(milliseconds=threshold)
+    def _group_by_time(timings, min_frame_duration=50, last_frame_duration=1000):
+        # type: (Iterable[Tuple[bytes, datetime.datetime]], int, int) -> Generator[Tuple[bytes, datetime.timedelta], None, None]
+        """Group frames together so that any frame duration is greater than min_frame_duration
+
+        :param timings: Sequence of bytestrings associated with the time they were received
+        :param min_frame_duration: Minimum frame duration in milliseconds
+        :param last_frame_duration: Last frame duration in milliseconds
+        :return: Sequence of bytestrings associated with the time before the next bytes were
+        received
+        """
+        min_frame_duration = datetime.timedelta(milliseconds=min_frame_duration)
         current_string = []
         current_time = None
         for character, time in timings:
             if current_time is not None:
-                assert time - current_time >= datetime.timedelta(seconds=0)
-                if time - current_time > threshold:
+                duration = time - current_time
+                if duration < datetime.timedelta(seconds=0):
+                    raise ValueError('Data must be chronologically sorted')
+                elif duration >= min_frame_duration:
                     # Flush current string
                     s = b''.join(current_string)
-                    yield s, current_time
+                    yield s, duration
                     current_string = []
                     current_time = time
             else:
@@ -138,10 +157,11 @@ class TerminalSession:
             current_string.append(character)
 
         if current_string:
-            yield b''.join(current_string), current_time
+            last_frame_duration = datetime.timedelta(milliseconds=last_frame_duration)
+            yield b''.join(current_string), last_frame_duration
 
     def replay(self, timings):
-        # type: (TerminalSession, Iterable[Tuple[bytes, datetime.datetime]]) -> Generator[Dict[int, Dict[int, AsciiChar]], None, None]
+        # type: (TerminalSession, Iterable[Tuple[bytes, datetime.datetime]]) -> Generator[Tuple[Dict[int, Dict[int, AsciiChar]], datetime.timedelta], None, None]
         """
         Render screens of the terminal session after having grouped frames by time
         """
@@ -237,19 +257,33 @@ class TerminalSession:
 
 
 class AsciiChar:
-    def __init__(self, value, text_color='foreground', background_color='background'):
-        if len(value) > 1:
+    def __init__(self, value=None, text_color='foreground', background_color='background'):
+        # type: (AsciiChar, Union[str, None], Union[str, None], Union[str, None]) -> None
+        if value is not None and len(value) > 1:
             raise ValueError(f'Invalid value: {value}')
 
         self.value = value
         self.text_color = text_color
         self.background_color = background_color
 
+    def __str__(self):
+        return repr(self)
 
-# TODO: AsciiBuffer type (based on mappings)
-# TODO: Change animation rendering function so that it can take advantage of timings as a generator
-# TODO: Render only differences between frames / Use viewbox to render a portion of the history
-# TODO: Save session in asciinema v2 format
+    def __repr__(self):
+        return f'{self.value} ({self.text_color}, {self.background_color})'
+
+    def __eq__(self, other):
+        # type: (AsciiChar, AsciiChar) -> bool
+        if isinstance(other, self.__class__):
+            return all(self.__getattribute__(attr) == other.__getattribute__(attr)
+                       for attr in ('value', 'text_color', 'background_color'))
+        else:
+            return False
+
+    def __hash__(self):
+        return hash(repr(self))
+
+
 class AsciiAnimation:
     def __init__(self):
         pass
@@ -270,7 +304,8 @@ class AsciiAnimation:
 
         group = []
         groups = []
-        for index in sorted(screen_line):
+        cols = {col for col in screen_line if screen_line[col].background_color is not None}
+        for index in sorted(cols):
             group.append(index)
             if index + 1 not in screen_line or \
                     screen_line[index].background_color != screen_line[index + 1].background_color:
@@ -282,13 +317,13 @@ class AsciiAnimation:
         return rectangles
 
     # TODO: Merge rectangles over multiple lines
-    def _render_frame_bg_colors(self, screen_buffer, line_height):
-        # type: (AsciiAnimation, Dict[int, Dict[int, AsciiChar]], float, str) -> List[svgwrite.shapes.Rect]
-        rects = []
-        for row in screen_buffer:
-            height = row * line_height + 0.25
-            rects += self._render_line_bg_colors(screen_buffer[row], height, line_height)
-        return rects
+    # def _render_frame_bg_colors(self, screen_buffer, line_height):
+    #     # type: (AsciiAnimation, Dict[int, Dict[int, AsciiChar]], float, str) -> List[svgwrite.shapes.Rect]
+    #     rects = []
+    #     for row in screen_buffer:
+    #         height = row * line_height + 0.25
+    #         rects += self._render_line_bg_colors(screen_buffer[row], height, line_height)
+    #     return rects
 
     def _render_characters(self, screen_line, height):
         # type: (AsciiAnimation, Dict[int, AsciiChar], float) -> List[svgwrite.text.Text]
@@ -301,13 +336,18 @@ class AsciiAnimation:
         :param height: Vertical position of the line
         :return: List of SVG text elements
         """
-        def char_attributes(item):
+        def group_key(item):
             _, char = item
             return char.text_color
 
+        def sort_key(item):
+            col, char = item
+            return char.text_color, col
+
         svg_items = []
-        sorted_chars = sorted(screen_line.items(), key=char_attributes)
-        for attributes, group in groupby(sorted_chars, char_attributes):
+        chars = {(col, char) for (col, char) in screen_line.items() if char.value is not None}
+        sorted_chars = sorted(chars, key=sort_key)
+        for attributes, group in groupby(sorted_chars, key=group_key):
             color = attributes
             text_attributes = {}
             classes = []
@@ -329,17 +369,59 @@ class AsciiAnimation:
 
         return svg_items
 
-    def _render_frame_fg(self, screen_buffer, line_height, group_id):
-        # type: (AsciiAnimation, Dict[int, Dict[int, AsciiChar]], float, str) -> svgwrite.container.Group
-        frame = svgwrite.container.Group(id=group_id)
-        for row in screen_buffer:
-            svg_items = self._render_characters(screen_buffer[row], height=(row + 1) * line_height)
-            for item in svg_items:
-                frame.add(item)
-        return frame
+    # def _render_frame_fg(self, screen_buffer, line_height, group_id):
+    #     # type: (AsciiAnimation, Dict[int, Dict[int, AsciiChar]], float, str) -> svgwrite.container.Group
+    #     frame = svgwrite.container.Group(id=group_id)
+    #     for row in screen_buffer:
+    #         svg_items = self._render_characters(screen_buffer[row], height=(row + 1) * line_height)
+    #         for item in svg_items:
+    #             frame.add(item)
+    #     return frame
+    #
+    # def _render_frame(self):
+    #     pass
 
-    def _render_frame(self):
-        pass
+    def _buffer_difference(self, last_buffer, next_buffer):
+        # type: (AsciiAnimation, Dict[int, Dict[int, Any]], Dict[int, Dict[int, Any]]) -> Dict[int, Dict[int, AsciiChar]]
+        diff_buffer = {}
+        for row in set(last_buffer) | set(next_buffer):
+            if row in next_buffer:
+                if row not in last_buffer or last_buffer[row] != next_buffer[row]:
+                    diff_buffer[row] = next_buffer[row]
+            else:
+                # Paint empty cells with the default background color on removed lines
+                empty_char = AsciiChar()
+                diff_buffer[row] = {col: empty_char for col in last_buffer[row]}
+
+        return diff_buffer
+
+    def _line_timings(self, timings):
+        # type: (AsciiAnimation, Iterable[Tuple[Dict[int, Dict[int, AsciiChar]], datetime.timedelta]]) -> Generator[int, Tuple[int, Dict[int, AsciiChar], Union[datetime.timedelta, None], datetime.timedelta], None, None]
+        last_buffer = None
+        pending_lines = {}
+        current_time = datetime.timedelta(seconds=0)
+        for screen_buffer, duration in timings:
+            if last_buffer is None:
+                diff_buffer = screen_buffer
+            else:
+                diff_buffer = self._buffer_difference(last_buffer, screen_buffer)
+            last_buffer = screen_buffer
+
+            for row in pending_lines:
+                line, line_time, line_duration = pending_lines[row]
+                if row in diff_buffer:
+                    yield row, line, line_time, line_duration
+                else:
+                    pending_lines[row] = line, line_time, line_duration + duration
+
+            for row in diff_buffer:
+                pending_lines[row] = diff_buffer[row], current_time, duration
+
+            current_time += duration
+
+        for row in pending_lines:
+            line, line_time, line_duration = pending_lines[row]
+            yield row, line, line_time, line_duration
 
     def render_animation(self, timings, filename, color_conf, end_pause=1):
         if end_pause < 0:
@@ -374,41 +456,43 @@ class AsciiAnimation:
         r = svgwrite.shapes.Rect(**args)
         dwg.add(r)
 
-        first_animation_begin = '0s'
         # Line_height in 'em' unit
         line_height = 1.10
-        last_time = None
-        for index, (screen_buffer, time) in enumerate(timings):
-            frame = svgwrite.container.Group(id=f'frame_{index}', display='none')
 
-            # Background
-            rects = self._render_frame_bg_colors(screen_buffer, line_height)
-            for rect in rects:
-                frame.add(rect)
+        row_animations = {}
+        for row, line, current_time, line_duration in timings:
+            group = svgwrite.container.Group(display='none')
 
-            # Foreground
-            frame_fg = self._render_frame_fg(screen_buffer, line_height, f'frame_fg_{index}')
-            frame.add(frame_fg)
+            height = row * line_height + 0.25
+            svg_items = self._render_line_bg_colors(line, height, line_height)
+            for item in svg_items:
+                group.add(item)
 
-            # Animation
-            if last_time is None:
-                frame_duration = end_pause
+            height = (row + 1) * line_height
+            svg_items = self._render_characters(line, height)
+            for item in svg_items:
+                group.add(item)
+
+            if row in row_animations:
+                begin = f'animation_{row}_{row_animations[row]}.end'
+                id = f'animation_{row}_{row_animations[row]+1}'
+                row_animations[row] += 1
             else:
-                frame_duration = (time - last_time).total_seconds()
-            last_time = time
+                begin = f'{current_time.total_seconds():.3f}s'
+                id = f'animation_{row}_0'
+                row_animations[row] = 0
 
-            frame_duration_str = f'{frame_duration:.3f}s'
-            assert frame_duration >= 0.001
             extra = {
-                'id': f'animation_{index}',
-                'begin': f'animation_{index-1}.end' if index > 0 else first_animation_begin,
-                'dur': frame_duration_str,
+                'id': id,
+                'begin': begin,
+                'dur': f'{line_duration.total_seconds():.3f}s',
                 'values': 'inline;inline',
                 'keyTimes': '0.0;1.0',
                 'fill': 'remove'
             }
-            frame.add(svgwrite.animate.Animate('display', **extra))
-            dwg.add(frame)
+
+            group.add(svgwrite.animate.Animate('display', **extra))
+            dwg.add(group)
 
         dwg.save()
 
@@ -429,4 +513,5 @@ if __name__ == '__main__':
     squashed_timings = t.replay(timings)
 
     a = AsciiAnimation()
-    a.render_animation(squashed_timings, '/tmp/test.svg', t.colors)
+    line_timings = a._line_timings(squashed_timings)
+    a.render_animation(line_timings, '/tmp/test.svg', t.colors)
