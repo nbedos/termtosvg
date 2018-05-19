@@ -1,13 +1,18 @@
 #!/usr/bin/env python
 
-from distutils.core import setup
+from setuptools import setup
 
 setup(
     name='vectty',
     version='0.1',
     description='Record terminal sessions as SVG animations',
-    package_dir = {'': 'src'},
-    py_modules=['vectty'],
+    packages=['vectty'],
+    py_modules=['vectty.anim', 'vectty.term'],
+    entry_points={
+        'console_scripts': [
+            'vectty=vectty.main:main'
+        ]
+    },
     install_requires=[
         'pyte',
         'python-xlib',
