@@ -38,7 +38,7 @@ options at any time.
 
 """
 
-# TODO: CSS default attribute for <text> all x positions
+# TODO: Factorize x attribute of texts elements (note: it seems it can't be done with CSS)
 # TODO: Since we're not using textLength after all, go back to one line = one <text> (+ <tspan>s)
 # TODO: Group lines with the same timings in a single group with a unique animation
 # TODO: Remove frame rendering code
@@ -120,6 +120,7 @@ class TerminalSession:
 
         if mode is not None:
             tty.tcsetattr(input_fileno, tty.TCSAFLUSH, mode)
+            print("terminal restored")
 
         os.close(master_fd)
 
