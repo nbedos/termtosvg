@@ -4,7 +4,7 @@ import datetime
 import os
 import unittest
 
-from src import svg
+from src import vectty
 
 xresources_valid = """*background:	#002b36
 *foreground:	#839496
@@ -44,7 +44,7 @@ class TestTerminalSession(unittest.TestCase):
         fd_in_read, fd_in_write = os.pipe()
         fd_out_read, fd_out_write = os.pipe()
 
-        session = svg.TerminalSession()
+        session = vectty.TerminalSession()
 
         os.write(fd_in_write, '\r\n'.join(commands).encode('utf-8'))
         for item in session.record(input_fileno=fd_in_read, output_fileno=fd_out_write):
@@ -63,13 +63,13 @@ class TestTerminalSession(unittest.TestCase):
 
         timings = zip(bytes, times)
 
-        session = svg.TerminalSession()
+        session = vectty.TerminalSession()
         for buffer in session.replay(timings):
             pass
 
     def test__parse_xresources(self):
         with self.subTest(case='All valid colors'):
-            color_mapping = svg.TerminalSession._parse_xresources(xresources_valid)
+            color_mapping = vectty.TerminalSession._parse_xresources(xresources_valid)
             for i in range(16):
                 self.assertIn(f'color{i}', color_mapping)
             self.assertEqual(color_mapping['background'], '#002b36')
@@ -77,16 +77,16 @@ class TestTerminalSession(unittest.TestCase):
 
         # Should succeed even though colors are missing
         with self.subTest(case='Not all colors defined'):
-            svg.TerminalSession._parse_xresources(xresources_incomplete)
+            vectty.TerminalSession._parse_xresources(xresources_incomplete)
 
         with self.subTest(case='Empty Xresource'):
-            svg.TerminalSession._parse_xresources(xresources_empty)
+            vectty.TerminalSession._parse_xresources(xresources_empty)
 
     def test__get_xresources(self):
-        svg.TerminalSession._get_xresources()
+        vectty.TerminalSession._get_xresources()
 
     def test_get_configuration(self):
-        session = svg.TerminalSession()
+        session = vectty.TerminalSession()
         session.get_configuration()
 
     def test__group_by_time(self):
@@ -98,7 +98,7 @@ class TestTerminalSession(unittest.TestCase):
 
         now = datetime.datetime.now()
         real_timings = [(bs, now + delta_ms(n)) for bs, n in timings]
-        result = svg.TerminalSession._group_by_time(timings=real_timings,
+        result = vectty.TerminalSession._group_by_time(timings=real_timings,
                                                     min_frame_duration=50,
                                                     last_frame_duration=1234)
 
@@ -116,18 +116,18 @@ class TestSVG(unittest.TestCase):
 
     def test__render_line_bg_colors(self):
         screen_line = {
-            0: svg.AsciiChar('A', None, 'red'),
-            1: svg.AsciiChar('A', None, 'red'),
-            3: svg.AsciiChar('A', None, 'red'),
-            4: svg.AsciiChar('A', None, 'blue'),
-            6: svg.AsciiChar('A', None, 'blue'),
-            7: svg.AsciiChar('A', None, 'blue'),
-            8: svg.AsciiChar('A', None, 'green'),
-            9: svg.AsciiChar('A', None, 'red'),
-            10: svg.AsciiChar('A', None, 'red')
+            0: vectty.AsciiChar('A', None, 'red'),
+            1: vectty.AsciiChar('A', None, 'red'),
+            3: vectty.AsciiChar('A', None, 'red'),
+            4: vectty.AsciiChar('A', None, 'blue'),
+            6: vectty.AsciiChar('A', None, 'blue'),
+            7: vectty.AsciiChar('A', None, 'blue'),
+            8: vectty.AsciiChar('A', None, 'green'),
+            9: vectty.AsciiChar('A', None, 'red'),
+            10: vectty.AsciiChar('A', None, 'red')
         }
 
-        animation = svg.AsciiAnimation()
+        animation = vectty.AsciiAnimation()
         rectangles = animation._render_line_bg_colors(screen_line, height=0, line_height=1)
         rect_0, rect_3, rect_4, rect_6, rect_8, rect_9 = sorted(rectangles,
                                                                 key=lambda r: r.attribs['x'])
@@ -147,26 +147,26 @@ class TestSVG(unittest.TestCase):
     #     buffer = defaultdict(dict)
     #     buffer_size = 4
     #
-    #     animation = svg.AsciiAnimation()
+    #     animation = vectty.AsciiAnimation()
     #     with self.subTest(case='Single color buffer'):
     #         for i in range(buffer_size):
     #             for j in range(buffer_size):
-    #                 buffer[i][j] = svg.AsciiChar(' ')
+    #                 buffer[i][j] = vectty.AsciiChar(' ')
     #         animation._render_frame_bg_colors(buffer, 1)
 
     def test__render_characters(self):
         screen_line = {
-            0: svg.AsciiChar('A', 'red', None),
-            1: svg.AsciiChar('B', 'blue', None),
-            4: svg.AsciiChar('C', 'blue', None),
-            6: svg.AsciiChar('D', 'green', None),
-            8: svg.AsciiChar('E', 'green', None),
-            9: svg.AsciiChar('F', 'green', None),
-            10: svg.AsciiChar('G', 'green', None),
-            11: svg.AsciiChar('H', 'red', None),
-            20: svg.AsciiChar(' ', 'ungrouped')
+            0: vectty.AsciiChar('A', 'red', None),
+            1: vectty.AsciiChar('B', 'blue', None),
+            4: vectty.AsciiChar('C', 'blue', None),
+            6: vectty.AsciiChar('D', 'green', None),
+            8: vectty.AsciiChar('E', 'green', None),
+            9: vectty.AsciiChar('F', 'green', None),
+            10: vectty.AsciiChar('G', 'green', None),
+            11: vectty.AsciiChar('H', 'red', None),
+            20: vectty.AsciiChar(' ', 'ungrouped')
         }
-        animation = svg.AsciiAnimation()
+        animation = vectty.AsciiAnimation()
         all_texts = animation._render_characters(screen_line, 1.23)
         sorted_texts = sorted((text.text, text) for text in all_texts)
         text_ah, text_bc, text_defg, text_space = [text for _, text in sorted_texts]
@@ -183,22 +183,22 @@ class TestSVG(unittest.TestCase):
         self.assertEqual(text_defg.attribs['x'], '6ex 8ex 9ex 10ex')
 
     # def test__render_frame_fg(self):
-    #     animation = svg.AsciiAnimation()
+    #     animation = vectty.AsciiAnimation()
     #
     #     screen_buffer = {
     #         0: {
-    #             0: svg.AsciiChar('A', 'red'),
-    #             1: svg.AsciiChar('B', 'blue'),
-    #             4: svg.AsciiChar('C', 'blue'),
-    #             6: svg.AsciiChar('D', 'green'),
-    #             8: svg.AsciiChar('E', 'green')
+    #             0: vectty.AsciiChar('A', 'red'),
+    #             1: vectty.AsciiChar('B', 'blue'),
+    #             4: vectty.AsciiChar('C', 'blue'),
+    #             6: vectty.AsciiChar('D', 'green'),
+    #             8: vectty.AsciiChar('E', 'green')
     #         },
     #         1: {
-    #             0: svg.AsciiChar('A', 'green'),
-    #             1: svg.AsciiChar('B', 'green'),
-    #             4: svg.AsciiChar('C', 'green'),
-    #             6: svg.AsciiChar('D', 'green'),
-    #             8: svg.AsciiChar('E', 'green')
+    #             0: vectty.AsciiChar('A', 'green'),
+    #             1: vectty.AsciiChar('B', 'green'),
+    #             4: vectty.AsciiChar('C', 'green'),
+    #             6: vectty.AsciiChar('D', 'green'),
+    #             8: vectty.AsciiChar('E', 'green')
     #         }
     #     }
     #
@@ -217,20 +217,20 @@ class TestSVG(unittest.TestCase):
                 'fill': '#dc322f'
             }
         }
-        svg.AsciiAnimation._serialize_css_dict(css)
+        vectty.AsciiAnimation._serialize_css_dict(css)
 
     def test__buffer_difference(self):
         before_buffer = {
             0: {
-                0: svg.AsciiChar('A'),
-                1: svg.AsciiChar('B'),
-                2: svg.AsciiChar('C')
+                0: vectty.AsciiChar('A'),
+                1: vectty.AsciiChar('B'),
+                2: vectty.AsciiChar('C')
             },
             1: {
-                0: svg.AsciiChar('D')
+                0: vectty.AsciiChar('D')
             }
         }
-        a = svg.AsciiAnimation()
+        a = vectty.AsciiAnimation()
         with self.subTest(case='Self comparison'):
             diff_buffer = a._buffer_difference({}, {})
             self.assertEqual(diff_buffer, {})
@@ -240,21 +240,21 @@ class TestSVG(unittest.TestCase):
 
         with self.subTest(case='Change in text'):
             after_buffer = copy.deepcopy(before_buffer)
-            after_buffer[0][2] = svg.AsciiChar('E')
+            after_buffer[0][2] = vectty.AsciiChar('E')
 
             diff_buffer = a._buffer_difference(before_buffer, after_buffer)
             self.assertEqual(diff_buffer, {0: after_buffer[0]})
 
         with self.subTest(case='Change in color'):
             after_buffer = copy.deepcopy(before_buffer)
-            after_buffer[0][0] = svg.AsciiChar('A', 'red')
+            after_buffer[0][0] = vectty.AsciiChar('A', 'red')
 
             diff_buffer = a._buffer_difference(before_buffer, after_buffer)
             self.assertEqual(diff_buffer, {0: after_buffer[0]})
 
         with self.subTest(case='New character'):
             after_buffer = copy.deepcopy(before_buffer)
-            after_buffer[1][1] = svg.AsciiChar('A', 'red')
+            after_buffer[1][1] = vectty.AsciiChar('A', 'red')
 
             diff_buffer = a._buffer_difference(before_buffer, after_buffer)
             self.assertEqual(diff_buffer, {1: after_buffer[1]})
@@ -262,7 +262,7 @@ class TestSVG(unittest.TestCase):
         with self.subTest(case='New line'):
             after_buffer = copy.deepcopy(before_buffer)
             after_buffer[2] = {}
-            after_buffer[2][0] = svg.AsciiChar('A', 'red')
+            after_buffer[2][0] = vectty.AsciiChar('A', 'red')
 
             diff_buffer = a._buffer_difference(before_buffer, after_buffer)
             self.assertEqual(diff_buffer, {2: after_buffer[2]})
@@ -279,4 +279,4 @@ class TestSVG(unittest.TestCase):
             del after_buffer[1]
 
             diff_buffer = a._buffer_difference(before_buffer, after_buffer)
-            self.assertEqual(diff_buffer, {1: {0: svg.AsciiChar()}})
+            self.assertEqual(diff_buffer, {1: {0: vectty.AsciiChar()}})

@@ -3,9 +3,12 @@
 from distutils.core import setup
 
 setup(
-    name='svg',
+    name='vectty',
     version='0.1',
-    packages=['src'],
+    description='Record terminal sessions as SVG animations',
+    packages=['vectty'],
+    package_dir = {'': 'src'},
+    py_modules=['vectty'],
     install_requires=[
         'pyte',
         'python-xlib',
