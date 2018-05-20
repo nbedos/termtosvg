@@ -33,14 +33,12 @@ options at any time.
 
 def main():
     t = TerminalSession()
-    t.get_configuration()
-    timings = t.record()
-    squashed_timings = t.replay(timings)
+    records = t.record()
+    replayed_records = t.replay(records)
 
+    # TODO: move colors to __init__
     a = AsciiAnimation(t.lines, t.columns)
-    line_timings = a._line_timings(squashed_timings)
-    a.render_animation(line_timings, '/tmp/test.svg', t.colors)
-
+    a.render_animation(replayed_records, '/tmp/test.svg', t.colors)
 
 if __name__ == '__main__':
     main()

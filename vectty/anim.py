@@ -1,14 +1,13 @@
-import datetime
-from itertools import groupby
 import logging
 import os
+from itertools import groupby
+from typing import Dict, Tuple, List, Union
+
 import svgwrite.animate
 import svgwrite.container
 import svgwrite.path
 import svgwrite.shapes
 import svgwrite.text
-from typing import Dict, Tuple, Generator, List, Iterable, Any, Union
-
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -148,49 +147,7 @@ class AsciiAnimation:
     # def _render_frame(self):
     #     pass
 
-    def _buffer_difference(self, last_buffer, next_buffer):
-        # type: (AsciiAnimation, Dict[int, Dict[int, Any]], Dict[int, Dict[int, Any]]) -> Dict[int, Dict[int, AsciiChar]]
-        diff_buffer = {}
-        for row in set(last_buffer) | set(next_buffer):
-            if row in next_buffer:
-                if row not in last_buffer or last_buffer[row] != next_buffer[row]:
-                    diff_buffer[row] = next_buffer[row]
-            else:
-                # Paint empty cells with the default background color on removed lines
-                empty_char = AsciiChar()
-                diff_buffer[row] = {col: empty_char for col in last_buffer[row]}
-
-        return diff_buffer
-
-    def _line_timings(self, timings):
-        # type: (AsciiAnimation, Iterable[Tuple[Dict[int, Dict[int, AsciiChar]], datetime.timedelta]]) -> Generator[int, Tuple[int, Dict[int, AsciiChar], Union[datetime.timedelta, None], datetime.timedelta], None, None]
-        last_buffer = None
-        pending_lines = {}
-        current_time = datetime.timedelta(seconds=0)
-        for screen_buffer, duration in timings:
-            if last_buffer is None:
-                diff_buffer = screen_buffer
-            else:
-                diff_buffer = self._buffer_difference(last_buffer, screen_buffer)
-            last_buffer = screen_buffer
-
-            for row in pending_lines:
-                line, line_time, line_duration = pending_lines[row]
-                if row in diff_buffer:
-                    yield row, line, line_time, line_duration
-                else:
-                    pending_lines[row] = line, line_time, line_duration + duration
-
-            for row in diff_buffer:
-                pending_lines[row] = diff_buffer[row], current_time, duration
-
-            current_time += duration
-
-        for row in pending_lines:
-            line, line_time, line_duration = pending_lines[row]
-            yield row, line, line_time, line_duration
-
-    def render_animation(self, timings, filename, color_conf, end_pause=1):
+    def render_animation(self, records, filename, color_conf, end_pause=1):
         if end_pause < 0:
             raise ValueError(f'Invalid end_pause (must be >= 0): "{end_pause}"')
 
@@ -213,7 +170,12 @@ class AsciiAnimation:
         css_ansi_colors = {f'.{color}': {'fill': color_conf[color]} for color in color_conf}
         css.update(css_ansi_colors)
 
-        dwg = svgwrite.Drawing(filename, (f'{self.columns}ex', f'{self.lines}em'), debug=True)
+        # Line_height in 'em' unit
+        line_height = 1.10
+        width = self.columns
+        height = (self.lines + 1) * line_height
+
+        dwg = svgwrite.Drawing(filename, (f'{width}ex', f'{height}em'), debug=True)
         dwg.defs.add(dwg.style(AsciiAnimation._serialize_css_dict(css)))
         args = {
             'insert': (0, 0),
@@ -223,42 +185,34 @@ class AsciiAnimation:
         r = svgwrite.shapes.Rect(**args)
         dwg.add(r)
 
-        # Line_height in 'em' unit
-        line_height = 1.10
+        def by_time(record):
+            row, line, current_time, line_duration = record
+            return current_time, line_duration
 
-        row_animations = {}
-        for row, line, current_time, line_duration in timings:
+        for animation_id, (group_key, line_group) in enumerate(groupby(records, key=by_time)):
             group = svgwrite.container.Group(display='none')
 
-            height = row * line_height + 0.25
-            svg_items = self._render_line_bg_colors(line, height, line_height)
-            for item in svg_items:
-                group.add(item)
+            for row, line, _, _ in line_group:
+                height = row * line_height + 0.25
+                svg_items = self._render_line_bg_colors(line, height, line_height)
+                for item in svg_items:
+                    group.add(item)
 
-            height = (row + 1) * line_height
-            line_def, line_use = self._render_characters(line, height)
-            if line_def is not None:
-                dwg.defs.add(line_def)
-            group.add(line_use)
+                height = (row + 1) * line_height
+                line_def, line_use = self._render_characters(line, height)
+                if line_def is not None:
+                    dwg.defs.add(line_def)
+                group.add(line_use)
 
-            if row in row_animations:
-                begin = f'animation_{row}_{row_animations[row]}.end'
-                animation_id = f'animation_{row}_{row_animations[row]+1}'
-                row_animations[row] += 1
-            else:
-                begin = f'{current_time.total_seconds():.3f}s'
-                animation_id = f'animation_{row}_0'
-                row_animations[row] = 0
-
+            current_time, line_duration = group_key
             extra = {
                 'id': animation_id,
-                'begin': begin,
-                'dur': f'{line_duration.total_seconds():.3f}s',
+                'begin': f'{current_time:.3f}s',
+                'dur': f'{line_duration:.3f}s',
                 'values': 'inline;inline',
                 'keyTimes': '0.0;1.0',
                 'fill': 'remove'
             }
-
             group.add(svgwrite.animate.Animate('display', **extra))
             dwg.add(group)
 

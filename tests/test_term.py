@@ -1,4 +1,3 @@
-import datetime
 import os
 import unittest
 
@@ -30,7 +29,7 @@ xresources_empty = ''
 
 
 class TestTerminalSession(unittest.TestCase):
-    def test_record(self):
+    def test__record(self):
         commands = ['echo $SHELL && sleep 0.1;',
                     'tree && 0.1;',
                     'ls && sleep 0.1;',
@@ -43,27 +42,28 @@ class TestTerminalSession(unittest.TestCase):
         fd_out_read, fd_out_write = os.pipe()
 
         session = term.TerminalSession()
+        session.lines = 24
+        session.columns = 80
 
         os.write(fd_in_write, '\r\n'.join(commands).encode('utf-8'))
-        for item in session.record(input_fileno=fd_in_read, output_fileno=fd_out_write):
+        for item in session._record(input_fileno=fd_in_read, output_fileno=fd_out_write):
             pass
 
         for fd in fd_in_read, fd_in_write, fd_out_read, fd_out_write:
             os.close(fd)
 
     def test_replay(self):
-        def delta_ms(n):
-            return datetime.timedelta(milliseconds=n)
-
-        now = datetime.datetime.now()
-        bytes = [b'line1\n', b'line2\n', b'line3\n', b'line4\n']
-        times = [now + delta_ms(n * 100) for n in range(len(bytes))]
-
-        timings = zip(bytes, times)
+        nbr_records = 5
+        timings = [{'time': i, 'event-type': 'o', 'event-data': f'{i}\r\n'.encode('utf-8')}
+                   for i in range(nbr_records)]
 
         session = term.TerminalSession()
-        for buffer in session.replay(timings):
-            pass
+        session.lines = 24
+        session.columns = 80
+
+        lines = (line for line in session.replay(timings, 0.05) if line[1])
+        for i, line in enumerate(lines):
+            self.assertEqual(line[1][0].value, str(i))
 
     def test__parse_xresources(self):
         with self.subTest(case='All valid colors'):
@@ -88,21 +88,35 @@ class TestTerminalSession(unittest.TestCase):
         session.get_configuration()
 
     def test__group_by_time(self):
-        def delta_ms(n):
-            return datetime.timedelta(milliseconds=n)
-        
-        timings = [(b' ', 0), (b'$', 0), (b' ', 0), (b'c', 60), (b'm', 120), (b'd', 180),
-                   (b'\r', 260), (b'\n', 260), (b' ', 260), (b'$', 260), (b' ', 260)]
+        timings = [
+            {'version': 2, 'width': 80, 'height': 24},
+            {'time': 0.00, 'event-type': 'o', 'event-data': b'1'},
+            {'time': 0.50, 'event-type': 'o', 'event-data': b'2'},
+            {'time': 0.80, 'event-type': 'o', 'event-data': b'3'},
+            {'time': 2.00, 'event-type': 'o', 'event-data': b'4'},
+            {'time': 2.10, 'event-type': 'o', 'event-data': b'5'},
+            {'time': 3.00, 'event-type': 'o', 'event-data': b'6'},
+            {'time': 3.10, 'event-type': 'o', 'event-data': b'7'},
+            {'time': 3.20, 'event-type': 'o', 'event-data': b'8'},
+            {'time': 3.30, 'event-type': 'o', 'event-data': b'9'}
+        ]
 
-        now = datetime.datetime.now()
-        real_timings = [(bs, now + delta_ms(n)) for bs, n in timings]
-        result = term.TerminalSession._group_by_time(timings=real_timings,
-                                                     min_frame_duration=50,
-                                                     last_frame_duration=1234)
+        expected_timings = [
+            {'version': 2, 'width': 80, 'height': 24},
+            {'time': 0.00, 'event-type': 'o', 'event-data': b'1', 'duration': 0.50},
+            {'time': 0.50, 'event-type': 'o', 'event-data': b'23', 'duration': 1.50},
+            {'time': 2.00, 'event-type': 'o', 'event-data': b'45', 'duration': 1.00},
+            {'time': 3.00, 'event-type': 'o', 'event-data': b'6789', 'duration': 1.234}
+        ]
 
-        expected_result = [(b' $ ', delta_ms(60)),
-                           (b'c', delta_ms(60)),
-                           (b'm', delta_ms(60)),
-                           (b'd', delta_ms(80)),
-                           (b'\r\n $ ', delta_ms(1234))]
-        self.assertEqual(expected_result, list(result))
+        result = list(term.TerminalSession._group_by_time(timings, 0.5, 1.234))
+        self.assertEqual(len(expected_timings), len(result))
+
+        for expected_record, record in zip(expected_timings, result):
+            self.assertEqual(expected_record.keys(), record.keys())
+            for key in expected_record:
+                if type(expected_record[key]) == float:
+                    self.assertAlmostEqual(expected_record[key], record[key], 0.001)
+                else:
+                    self.assertEqual(expected_record[key], record[key])
+

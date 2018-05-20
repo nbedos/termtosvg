@@ -3,14 +3,15 @@ import fcntl
 import logging
 import os
 import pty
-import pyte
-import pyte.screens
 import selectors
 import struct
 import sys
 import termios
 import tty
-from typing import Dict, Tuple, Generator, Iterable
+from typing import Dict, Tuple, Generator, Iterable, Any
+
+import pyte
+import pyte.screens
 from Xlib import display, rdb, Xatom
 from Xlib.error import DisplayError
 
@@ -46,19 +47,55 @@ class TerminalSession:
     def __init__(self):
         self.buffer_size = 1024
         self.colors = None
+        self.lines = None
+        self.columns = None
 
-        # TODO: Move this inside record() once we use asciicast v2 format for recording
+        self.get_configuration()
+
+    def record(self):
+        # type: (...) -> Generator[Dict[str, Any], None, None]
+        """
+        Record a terminal session in asciicast v2 format
+
+        The records returned are of two types:
+            - a single header with configuration information
+            - multiple event records with data captured from the terminal with timing information
+
+        Format specification: https://github.com/asciinema/asciinema/blob/develop/doc/asciicast-v2.md
+        """
+
+        header = {
+            'version': 2,
+            'width': self.columns,
+            'height': self.lines
+        }
+
         try:
-            self.columns, self.lines = os.get_terminal_size()
-        except OSError as e:
-            self.lines = 24
-            self.columns = 80
-            logger.debug(f'Failed to get terminal size ({e}), '
-                         f'using default values instead ({self.columns}x{self.lines})')
+            header['theme'] = {
+                'fg': self.colors['foreground'],
+                'bg': self.colors['background'],
+                'palette': ':'.join(self.colors[f'color{i}'] for i in range(16))
+            }
+        except KeyError:
+            pass
 
+        yield header
 
-    def record(self, input_fileno=sys.stdin.fileno(), output_fileno=sys.stdout.fileno()):
-        # type: (TerminalSession, int, int) -> Generator[Tuple[bytes, datetime.datetime], None, int]
+        start = None
+        for data, time in self._record(output_fileno=sys.stdout.fileno()):
+            if start is None:
+                start = time
+
+            record = {
+                'time': (time - start).total_seconds(),
+                'event-type': 'o',
+                'event-data': data
+            }
+
+            yield record
+
+    def _record(self, input_fileno=sys.stdin.fileno(), output_fileno=sys.stdout.fileno()):
+        # type: (int, int) -> Generator[Tuple[bytes, datetime.datetime], None, int]
         """Record raw input and output of a shell session
 
         This function forks the current process. The child process is a shell which is a session
@@ -74,6 +111,7 @@ class TerminalSession:
         The implementation of this method is mostly copied from the pty.spawn function of the
         CPython standard library. It has been modified in order to make the record function a
         generator.
+        See https://github.com/python/cpython/blob/master/Lib/pty.py
 
         :param input_fileno: File descriptor of the input data stream
         :param output_fileno: File descriptor of the output data stream
@@ -100,10 +138,15 @@ class TerminalSession:
         return child_exit_status
 
     def _capture_data(self, input_fileno, output_fileno, master_fd):
-        # type: (TerminalSession, int, int, int) -> Generator[bytes, datetime.datetime]
+        # type: (int, int, int) -> Generator[bytes, datetime.datetime]
         """
         Data from input_fileno is sent to master_fd
-        Data from master_fd is sent to output_fileno and also returned
+        Data from master_fd is both sent to output_fileno and returned to the caller
+
+        The implementation of this method is mostly copied from the pty.spawn function of the
+        CPython standard library. It has been modified in order to make the record function a
+        generator.
+        See https://github.com/python/cpython/blob/master/Lib/pty.py
         """
         sel = selectors.DefaultSelector()
         sel.register(master_fd, selectors.EVENT_READ)
@@ -133,56 +176,112 @@ class TerminalSession:
                     data = data[n:]
 
     @staticmethod
-    def _group_by_time(timings, min_frame_duration=50, last_frame_duration=1000):
-        # type: (Iterable[Tuple[bytes, datetime.datetime]], int, int) -> Generator[Tuple[bytes, datetime.timedelta], None, None]
-        """Group frames together so that any frame duration is greater than min_frame_duration
+    def _group_by_time(records, min_frame_duration=0.050, last_frame_duration=1.000):
+        # type: (Iterable[Dict[str, Any]], float, float) -> Generator[Dict[str, Any], None, None]
+        """Compute frame duration and group frames together so that the minimum duration of
+        any frame is at most min_frame_duration
 
-        :param timings: Sequence of bytestrings associated with the time they were received
-        :param min_frame_duration: Minimum frame duration in milliseconds
-        :param last_frame_duration: Last frame duration in milliseconds
-        :return: Sequence of bytestrings associated with the time before the next bytes were
-        received
+        :param records: Sequence of records (asciicast v2 format)
+        :param min_frame_duration: Minimum frame duration in seconds
+        :param last_frame_duration: Last frame duration in seconds
+        :return: Sequence of records with the added attribute 'duration'
         """
-        min_frame_duration = datetime.timedelta(milliseconds=min_frame_duration)
-        current_string = []
+        current_string = b''
         current_time = None
-        for character, time in timings:
-            if current_time is not None:
-                duration = time - current_time
-                if duration < datetime.timedelta(seconds=0):
-                    raise ValueError('Data must be chronologically sorted')
-                elif duration >= min_frame_duration:
-                    # Flush current string
-                    s = b''.join(current_string)
-                    yield s, duration
-                    current_string = []
-                    current_time = time
-            else:
-                current_time = time
 
-            current_string.append(character)
+        for record in records:
+            # Skip header
+            if 'version' in record:
+                yield record
+                continue
+
+            if current_time is not None:
+                time_between_events = record['time'] - current_time
+                if time_between_events >= min_frame_duration:
+                    # Flush current string
+                    yield {
+                        'time': current_time,
+                        'event-type': 'o',
+                        'event-data': current_string,
+                        'duration': time_between_events
+                    }
+                    current_string = b''
+                    current_time = record['time']
+            else:
+                current_time = record['time']
+
+            current_string += record['event-data']
 
         if current_string:
-            last_frame_duration = datetime.timedelta(milliseconds=last_frame_duration)
-            yield b''.join(current_string), last_frame_duration
+            yield {
+                'time': current_time,
+                'event-type': 'o',
+                'event-data': current_string,
+                'duration': last_frame_duration
+            }
 
-    def replay(self, timings):
-        # type: (TerminalSession, Iterable[Tuple[bytes, datetime.datetime]]) -> Generator[Tuple[Dict[int, Dict[int, AsciiChar]], datetime.timedelta], None, None]
+    def replay(self, asciicast_records, min_frame_duration=0.05):
+        # type: (Iterable[Dict[str, Any]], float) -> Generator[Tuple[int, Dict[int, AsciiChar], float, float], None, None]
         """
-        Render screens of the terminal session after having grouped frames by time
+        Return lines of the screen that need updating. Frames are merged together so that there is
+        at least a 'min_frame_duration' seconds pause between two frames.
+
+        Lines returned are sorted by time of appearance on the screen and duration of the appearance
+        so that they can be grouped together in the same frame or animation
+
+        :param asciicast_records: Event record in asciicast v2 format
+        :param min_frame_duration: Minimum frame duration in seconds
+        :return: Tuples consisting of:
+            - Row number of the line on the screen
+            - Line
+            - Time when this line appears on the screen in seconds this the beginning of ther terminal
+            session
+            - Duration of this lines on the screen in seconds
         """
+        def sort_by_time(d, row):
+            line, line_time, line_duration = d[row]
+            return line_time, line_duration, row
+
         screen = pyte.Screen(self.columns, self.lines)
         stream = pyte.ByteStream(screen)
-        for data, time in TerminalSession._group_by_time(timings):
-            stream.feed(data)
-            ascii_buffer = {}
-            for row in screen.buffer:
-                ascii_buffer[row] = {}
-                for column in screen.buffer[row]:
-                    char = screen.buffer[row][column]
-                    ascii_buffer[row][column] = TerminalSession.pyte_to_ascii(char)
+        pending_lines = {}
+        current_time = 0
+        for record in TerminalSession._group_by_time(asciicast_records, min_frame_duration):
+            if 'version' in record or record['event-type'] != 'o':
+                continue
 
-            yield ascii_buffer, time
+            stream.feed(record['event-data'])
+            ascii_buffer = {
+                row: {
+                    column: TerminalSession.pyte_to_ascii(screen.buffer[row][column])
+                    for column in screen.buffer[row]
+                } for row in screen.dirty
+            }
+
+            screen.dirty.clear()
+
+            duration = record['duration']
+            done_lines = {}
+            for row in pending_lines:
+                line, line_time, line_duration = pending_lines[row]
+                if row in ascii_buffer:
+                    done_lines[row] = line, line_time, line_duration
+                else:
+                    pending_lines[row] = line, line_time, line_duration + duration
+
+            for row in ascii_buffer:
+                if ascii_buffer[row]:
+                    pending_lines[row] = ascii_buffer[row], current_time, duration
+                elif row in pending_lines:
+                    del pending_lines[row]
+
+            for row in sorted(done_lines, key=lambda row: sort_by_time(done_lines, row)):
+                yield row, done_lines[row][0], done_lines[row][1], done_lines[row][2]
+
+            current_time += duration
+
+        for row in sorted(pending_lines, key=lambda row: sort_by_time(pending_lines, row)):
+            yield row, pending_lines[row][0], pending_lines[row][1], pending_lines[row][2]
 
     @staticmethod
     def pyte_to_ascii(char):
@@ -219,6 +318,14 @@ class TerminalSession:
 
     def get_configuration(self):
         """Get configuration information related to terminal output rendering"""
+        try:
+            self.columns, self.lines = os.get_terminal_size(sys.stdout.fileno())
+        except OSError as e:
+            self.lines = 24
+            self.columns = 80
+            logger.debug(f'Failed to get terminal size ({e}), '
+                         f'using default values instead ({self.columns}x{self.lines})')
+
         xresources_str = self._get_xresources()
         self.colors = self._parse_xresources(xresources_str)
 
