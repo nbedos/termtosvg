@@ -60,21 +60,34 @@ class TestAnim(unittest.TestCase):
             11: anim.AsciiChar('H', 'red', None),
             20: anim.AsciiChar(' ', 'ungrouped')
         }
-        animation = anim.AsciiAnimation()
-        all_texts = animation._render_characters(screen_line, 1.23)
-        sorted_texts = sorted((text.text, text) for text in all_texts)
-        text_ah, text_bc, text_defg, text_space = [text for _, text in sorted_texts]
 
-        self.assertEqual(text_ah.text, 'AH')
-        self.assertEqual(text_ah.attribs['class'], 'red')
-        self.assertEqual(text_ah.attribs['x'], '0ex 11ex')
-        self.assertEqual(text_ah.attribs['y'], '1.23em')
-        self.assertEqual(text_bc.text, 'BC')
-        self.assertEqual(text_bc.attribs['class'], 'blue')
-        self.assertEqual(text_bc.attribs['x'], '1ex 4ex')
-        self.assertEqual(text_defg.text, 'DEFG')
-        self.assertEqual(text_defg.attribs['class'], 'green')
-        self.assertEqual(text_defg.attribs['x'], '6ex 8ex 9ex 10ex')
+        with self.subTest(case='Content'):
+            animation = anim.AsciiAnimation()
+            line_def, line_use = animation._render_characters(screen_line, 1.23)
+
+            sorted_tspans = sorted(line_def.elements, key=lambda x: x.text)
+            [tspan_ah, tspan_bc, tspan_defg, tspan_space] = sorted_tspans
+            self.assertEqual(tspan_ah.text, 'AH')
+            self.assertEqual(tspan_ah.attribs['class'], 'red')
+            self.assertEqual(tspan_ah.attribs['x'], '0ex 11ex')
+            self.assertEqual(tspan_bc.text, 'BC')
+            self.assertEqual(tspan_bc.attribs['class'], 'blue')
+            self.assertEqual(tspan_bc.attribs['x'], '1ex 4ex')
+            self.assertEqual(tspan_defg.text, 'DEFG')
+            self.assertEqual(tspan_defg.attribs['class'], 'green')
+            self.assertEqual(tspan_defg.attribs['x'], '6ex 8ex 9ex 10ex')
+
+            self.assertEqual(line_use.attribs['y'], '1.23em')
+
+        with self.subTest(case='Definition reuse'):
+            animation = anim.AsciiAnimation()
+            line_def_1, line_use_1 = animation._render_characters(screen_line, 1.23)
+            line_def_2, line_use_2 = animation._render_characters(screen_line, 1.23)
+
+            self.assertIsNone(line_def_2)
+            self.assertEqual(line_use_1.tostring(), line_use_2.tostring())
+
+
 
     # def test__render_frame_fg(self):
     #     animation = vectty.AsciiAnimation()

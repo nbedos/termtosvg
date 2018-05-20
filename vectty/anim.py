@@ -46,6 +46,7 @@ class AsciiAnimation:
     def __init__(self, lines=24, columns=80):
         self.lines = lines
         self.columns = columns
+        self.defs = {}
 
     def _render_line_bg_colors(self, screen_line, height, line_height):
         # type: (AsciiAnimation, Dict[int, AsciiChar], float, float) -> List[svgwrite.shapes.Rect]
@@ -85,7 +86,7 @@ class AsciiAnimation:
     #     return rects
 
     def _render_characters(self, screen_line, height):
-        # type: (AsciiAnimation, Dict[int, AsciiChar], float) -> List[svgwrite.text.Text]
+        # type: (AsciiAnimation, Dict[int, AsciiChar], float) -> Tuple[Union[svgwrite.text.Text, None], svgwrite.text.Use]
         """Render a screen of the terminal as a list of SVG text elements
 
         Characters with the same attributes (color) are grouped together in a
@@ -103,30 +104,37 @@ class AsciiAnimation:
             col, char = item
             return char.text_color, col
 
-        svg_items = []
         chars = {(col, char) for (col, char) in screen_line.items() if char.value is not None}
         sorted_chars = sorted(chars, key=sort_key)
+
+        text = svgwrite.text.Text(text='')
         for attributes, group in groupby(sorted_chars, key=group_key):
             color = attributes
-            text_attributes = {}
+            tspan_attributes = {}
             classes = []
             if color != 'foreground':
                 classes.append(color)
 
             if classes:
-                text_attributes['class'] = ' '.join(classes)
+                tspan_attributes['class'] = ' '.join(classes)
 
             group_chars = [(index, (char.value if char.value != ' ' else u'\u00A0'))
                            for index, char in group]
 
-            text = ''.join(c for _, c in group_chars)
+            content = ''.join(c for _, c in group_chars)
             xs = [f'{col}ex' for col, _ in group_chars]
-            ys = [f'{height:.2f}em']
-            text = svgwrite.text.Text(text=text, x=xs, y=ys, **text_attributes)
+            tspan = svgwrite.text.TSpan(text=content, x=xs, **tspan_attributes)
+            text.add(tspan)
 
-            svg_items.append(text)
+        text_str = text.tostring()
+        if text_str not in self.defs:
+            self.defs[text_str] = len(self.defs) + 1
+            text.attribs['id'] = self.defs[text_str]
+        else:
+            text = None
 
-        return svg_items
+        use = svgwrite.container.Use(href=f'#{self.defs[text_str]}', y=f'{height:.2f}em')
+        return text, use
 
     # def _render_frame_fg(self, screen_buffer, line_height, group_id):
     #     # type: (AsciiAnimation, Dict[int, Dict[int, AsciiChar]], float, str) -> svgwrite.container.Group
@@ -228,9 +236,10 @@ class AsciiAnimation:
                 group.add(item)
 
             height = (row + 1) * line_height
-            svg_items = self._render_characters(line, height)
-            for item in svg_items:
-                group.add(item)
+            line_def, line_use = self._render_characters(line, height)
+            if line_def is not None:
+                dwg.defs.add(line_def)
+            group.add(line_use)
 
             if row in row_animations:
                 begin = f'animation_{row}_{row_animations[row]}.end'
