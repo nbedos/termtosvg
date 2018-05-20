@@ -1,11 +1,14 @@
 import datetime
+import fcntl
 import logging
 import os
 import pty
 import pyte
 import pyte.screens
 import selectors
+import struct
 import sys
+import termios
 import tty
 from typing import Dict, Tuple, Generator, Iterable
 from Xlib import display, rdb, Xatom
@@ -17,6 +20,25 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
+class _TerminalMode:
+    """Save and restore terminal state"""
+    def __init__(self, fileno: int):
+        self.fileno = fileno
+        self.mode = None
+
+    def __enter__(self):
+        try:
+            self.mode = tty.tcgetattr(self.fileno)
+            tty.setraw(self.fileno)
+        except tty.error:
+            pass
+        return self.mode
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.mode is not None:
+            tty.tcsetattr(self.fileno, tty.TCSAFLUSH, self.mode)
+
+
 class TerminalSession:
     """
     Record, save and replay a terminal session
@@ -24,6 +46,16 @@ class TerminalSession:
     def __init__(self):
         self.buffer_size = 1024
         self.colors = None
+
+        # TODO: Move this inside record() once we use asciicast v2 format for recording
+        try:
+            self.columns, self.lines = os.get_terminal_size()
+        except OSError as e:
+            self.lines = 24
+            self.columns = 80
+            logger.debug(f'Failed to get terminal size ({e}), '
+                         f'using default values instead ({self.columns}x{self.lines})')
+
 
     def record(self, input_fileno=sys.stdin.fileno(), output_fileno=sys.stdout.fileno()):
         # type: (TerminalSession, int, int) -> Generator[Tuple[bytes, datetime.datetime], None, int]
@@ -53,13 +85,26 @@ class TerminalSession:
             # Child process
             os.execlp(shell, shell)
 
-        # Parent process
-        try:
-            mode = tty.tcgetattr(input_fileno)
-            tty.setraw(input_fileno)
-        except tty.error:
-            mode = None
+        # Set the terminal size for master_fd
+        ttysize = struct.pack("HHHH", self.lines, self.columns, 0, 0)
+        fcntl.ioctl(master_fd, termios.TIOCSWINSZ, ttysize)
 
+        # Parent process
+        with _TerminalMode(input_fileno):
+            for data, time in self._capture_data(input_fileno, output_fileno, master_fd):
+                yield data, time
+
+        os.close(master_fd)
+
+        _, child_exit_status = os.waitpid(pid, 0)
+        return child_exit_status
+
+    def _capture_data(self, input_fileno, output_fileno, master_fd):
+        # type: (TerminalSession, int, int, int) -> Generator[bytes, datetime.datetime]
+        """
+        Data from input_fileno is sent to master_fd
+        Data from master_fd is sent to output_fileno and also returned
+        """
         sel = selectors.DefaultSelector()
         sel.register(master_fd, selectors.EVENT_READ)
         sel.register(input_fileno, selectors.EVENT_READ)
@@ -86,15 +131,6 @@ class TerminalSession:
                 while data:
                     n = os.write(write_fileno, data)
                     data = data[n:]
-
-        if mode is not None:
-            tty.tcsetattr(input_fileno, tty.TCSAFLUSH, mode)
-            print("terminal restored")
-
-        os.close(master_fd)
-
-        _, child_exit_status = os.waitpid(pid, 0)
-        return child_exit_status
 
     @staticmethod
     def _group_by_time(timings, min_frame_duration=50, last_frame_duration=1000):
@@ -135,7 +171,7 @@ class TerminalSession:
         """
         Render screens of the terminal session after having grouped frames by time
         """
-        screen = pyte.Screen(80, 24)
+        screen = pyte.Screen(self.columns, self.lines)
         stream = pyte.ByteStream(screen)
         for data, time in TerminalSession._group_by_time(timings):
             stream.feed(data)

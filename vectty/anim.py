@@ -43,8 +43,9 @@ class AsciiChar:
 
 
 class AsciiAnimation:
-    def __init__(self):
-        pass
+    def __init__(self, lines=24, columns=80):
+        self.lines = lines
+        self.columns = columns
 
     def _render_line_bg_colors(self, screen_line, height, line_height):
         # type: (AsciiAnimation, Dict[int, AsciiChar], float, float) -> List[svgwrite.shapes.Rect]
@@ -204,7 +205,7 @@ class AsciiAnimation:
         css_ansi_colors = {f'.{color}': {'fill': color_conf[color]} for color in color_conf}
         css.update(css_ansi_colors)
 
-        dwg = svgwrite.Drawing(filename, ('80ex', '28em'), debug=True)
+        dwg = svgwrite.Drawing(filename, (f'{self.columns}ex', f'{self.lines}em'), debug=True)
         dwg.defs.add(dwg.style(AsciiAnimation._serialize_css_dict(css)))
         args = {
             'insert': (0, 0),

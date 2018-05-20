@@ -37,7 +37,7 @@ def main():
     timings = t.record()
     squashed_timings = t.replay(timings)
 
-    a = AsciiAnimation()
+    a = AsciiAnimation(t.lines, t.columns)
     line_timings = a._line_timings(squashed_timings)
     a.render_animation(line_timings, '/tmp/test.svg', t.colors)
 
