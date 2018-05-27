@@ -50,10 +50,10 @@ class AsciiAnimation:
     def _render_line_bg_colors(self, screen_line, height, line_height):
         # type: (AsciiAnimation, Dict[int, AsciiChar], float, float) -> List[svgwrite.shapes.Rect]
         def make_rectangle(group: List[int]) -> svgwrite.shapes.Rect:
-            x = f'{group[0]}ex'
-            y = f'{height:.2f}em'
-            sx = f'{len(group)}ex'
-            sy = f'{line_height:.2f}em'
+            x = f'{group[0] * 8}'
+            y = f'{height}'
+            sx = f'{len(group) * 8}'
+            sy = f'{line_height}'
             args = {
                 'insert': (x, y),
                 'size': (sx, sy),
@@ -85,7 +85,7 @@ class AsciiAnimation:
     #     return rects
 
     def _render_characters(self, screen_line, height):
-        # type: (AsciiAnimation, Dict[int, AsciiChar], float) -> Tuple[Union[svgwrite.text.Text, None], svgwrite.text.Use]
+        # type: (AsciiAnimation, Dict[int, AsciiChar], float) -> List[svgwrite.text.Tspan]
         """Render a screen of the terminal as a list of SVG text elements
 
         Characters with the same attributes (color) are grouped together in a
@@ -95,45 +95,32 @@ class AsciiAnimation:
         :param height: Vertical position of the line
         :return: List of SVG text elements
         """
-        def group_key(item):
-            _, char = item
-            return char.text_color
 
-        def sort_key(item):
-            col, char = item
-            return char.text_color, col
+        def make_text(group: List[int]) -> svgwrite.text.Text:
+            text = ''.join(screen_line[c].value for c in group)
+            attributes = {
+                'text': text.replace(' ', u'\u00A0'),
+                'x': [str(group[0] * 8)],
+                'textLength': f'{len(group) * 8}',
+                'lengthAdjust': 'spacingAndGlyphs',
+            }
+            if screen_line[group[0]].text_color != 'foreground':
+                attributes['class'] = screen_line[group[0]].text_color
 
-        chars = {(col, char) for (col, char) in screen_line.items() if char.value is not None}
-        sorted_chars = sorted(chars, key=sort_key)
+            return svgwrite.text.Text(**attributes)
 
-        text = svgwrite.text.Text(text='')
-        for attributes, group in groupby(sorted_chars, key=group_key):
-            color = attributes
-            tspan_attributes = {}
-            classes = []
-            if color != 'foreground':
-                classes.append(color)
+        group = []
+        groups = []
+        cols = {col for col in screen_line if screen_line[col].background_color is not None}
+        for col in sorted(cols):
+            group.append(col)
+            if col + 1 not in screen_line or \
+                    screen_line[col].text_color != screen_line[col+1].text_color:
+                groups.append(group)
+                group = []
 
-            if classes:
-                tspan_attributes['class'] = ' '.join(classes)
-
-            group_chars = [(index, (char.value if char.value != ' ' else u'\u00A0'))
-                           for index, char in group]
-
-            content = ''.join(c for _, c in group_chars)
-            xs = [f'{col}ex' for col, _ in group_chars]
-            tspan = svgwrite.text.TSpan(text=content, x=xs, **tspan_attributes)
-            text.add(tspan)
-
-        text_str = text.tostring()
-        if text_str not in self.defs:
-            self.defs[text_str] = len(self.defs) + 1
-            text.attribs['id'] = self.defs[text_str]
-        else:
-            text = None
-
-        use = svgwrite.container.Use(href=f'#{self.defs[text_str]}', y=f'{height:.2f}em')
-        return text, use
+        texts = [make_text(group) for group in groups]
+        return texts
 
     # def _render_frame_fg(self, screen_buffer, line_height, group_id):
     #     # type: (AsciiAnimation, Dict[int, Dict[int, AsciiChar]], float, str) -> svgwrite.container.Group
@@ -161,7 +148,8 @@ class AsciiAnimation:
                 'font-size': f'{font_size}px',
             },
             'text': {
-                'fill': color_conf['foreground']
+                'fill': color_conf['foreground'],
+                'dominant-baseline': 'text-before-edge'
             },
             '.bold': {
                 'font-weight': 'bold'
@@ -170,12 +158,12 @@ class AsciiAnimation:
         css_ansi_colors = {f'.{color}': {'fill': color_conf[color]} for color in color_conf}
         css.update(css_ansi_colors)
 
-        # Line_height in 'em' unit
-        line_height = 1.10
-        width = self.columns
-        height = (self.lines + 1) * line_height
+        cell_width = 8
+        cell_height = 17
+        width = self.columns * cell_width
+        height = self.lines * cell_height
 
-        dwg = svgwrite.Drawing(filename, (f'{width}ex', f'{height}em'), debug=True)
+        dwg = svgwrite.Drawing(filename, (f'{width}', f'{height}'), debug=True)
         dwg.defs.add(dwg.style(AsciiAnimation._serialize_css_dict(css)))
         args = {
             'insert': (0, 0),
@@ -186,35 +174,44 @@ class AsciiAnimation:
         dwg.add(r)
 
         def by_time(record):
-            row, line, current_time, line_duration = record
-            return current_time, line_duration
+            _, _, line_time, line_duration = record
+            return line_time, line_duration
 
-        for animation_id, (group_key, line_group) in enumerate(groupby(records, key=by_time)):
-            group = svgwrite.container.Group(display='none')
-
+        for animation_id, (key, line_group) in enumerate(groupby(records, key=by_time)):
+            frame = svgwrite.container.Group(display='none')
             for row, line, _, _ in line_group:
-                height = row * line_height + 0.25
-                svg_items = self._render_line_bg_colors(line, height, line_height)
-                for item in svg_items:
-                    group.add(item)
+                height = row * cell_height
+                rects = self._render_line_bg_colors(line, height, cell_height)
+                for rect in rects:
+                    frame.add(rect)
 
-                height = (row + 1) * line_height
-                line_def, line_use = self._render_characters(line, height)
-                if line_def is not None:
-                    dwg.defs.add(line_def)
-                group.add(line_use)
+                g = svgwrite.container.Group()
+                for text in self._render_characters(line, height):
+                    g.add(text)
 
-            current_time, line_duration = group_key
+                # Define this line or reuse the existing definition
+                g_str = g.tostring()
+                if g_str in self.defs:
+                    group_id = self.defs[g_str]
+                else:
+                    group_id = len(self.defs) + 1
+                    assert group_id not in self.defs
+                    self.defs[g_str] = group_id
+                    g.attribs['id'] = group_id
+                    dwg.defs.add(g)
+
+                frame.add(svgwrite.container.Use(f'#{group_id}', y=height))
+
+            line_time, line_duration = key
             extra = {
-                'id': animation_id,
-                'begin': f'{current_time:.3f}s',
+                'begin': f'{line_time:.3f}s',
                 'dur': f'{line_duration:.3f}s',
                 'values': 'inline;inline',
                 'keyTimes': '0.0;1.0',
                 'fill': 'remove'
             }
-            group.add(svgwrite.animate.Animate('display', **extra))
-            dwg.add(group)
+            frame.add(svgwrite.animate.Animate('display', **extra))
+            dwg.add(frame)
 
         dwg.save()
 

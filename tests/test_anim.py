@@ -1,4 +1,3 @@
-import copy
 import unittest
 
 from vectty import anim

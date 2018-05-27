@@ -13,7 +13,6 @@ RECORD a TERMINAL SESSION: CAPTURE input from the terminal session and save it t
 TIMINGS (when key are pressed or output is written to screen) and CONFIGURATION (how are 
 colors rendered by the terminal, bold... etc). All this data will be used to replay the 
 terminal session (since we captured the input of the session, not the output).
-
 Once the terminal session has been replayed, it can be CONVERTED FRAME by frame to an 
 SVG ANIMATION that mimicks the terminal session.
 
