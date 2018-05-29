@@ -182,7 +182,7 @@ class TerminalSession:
         any frame is at most min_frame_duration
 
         :param records: Sequence of records (asciicast v2 format)
-        :param min_frame_duration: Minimum frame duration in seconds
+        :param min_frame_duration: Minimum frame duration in milliseconds
         :param last_frame_duration: Last frame duration in seconds
         :return: Sequence of records with the added attribute 'duration'
         """
@@ -196,11 +196,11 @@ class TerminalSession:
                 continue
 
             if current_time is not None:
-                time_between_events = record['time'] - current_time
+                time_between_events = int(1000 * round(record['time'] - current_time, 3))
                 if time_between_events >= min_frame_duration:
                     # Flush current string
                     yield {
-                        'time': current_time,
+                        'time': int(1000 * round(current_time, 3)),
                         'event-type': 'o',
                         'event-data': current_string,
                         'duration': time_between_events
@@ -214,13 +214,13 @@ class TerminalSession:
 
         if current_string:
             yield {
-                'time': current_time,
+                'time': int(1000 * round(current_time, 3)),
                 'event-type': 'o',
                 'event-data': current_string,
-                'duration': last_frame_duration
+                'duration': int(1000 * round(last_frame_duration, 3))
             }
 
-    def replay(self, asciicast_records, min_frame_duration=0.05):
+    def replay(self, asciicast_records, min_frame_duration=50):
         # type: (Iterable[Dict[str, Any]], float) -> Generator[Tuple[int, Dict[int, AsciiChar], float, float], None, None]
         """
         Return lines of the screen that need updating. Frames are merged together so that there is
@@ -230,17 +230,17 @@ class TerminalSession:
         so that they can be grouped together in the same frame or animation
 
         :param asciicast_records: Event record in asciicast v2 format
-        :param min_frame_duration: Minimum frame duration in seconds
+        :param min_frame_duration: Minimum frame duration in milliseconds
         :return: Tuples consisting of:
             - Row number of the line on the screen
             - Line
-            - Time when this line appears on the screen in seconds this the beginning of ther terminal
+            - Time when this line appears on the screen in milliseconds this the beginning of ther terminal
             session
-            - Duration of this lines on the screen in seconds
+            - Duration of this line on the screen in milliseconds
         """
         def sort_by_time(d, row):
             line, line_time, line_duration = d[row]
-            return line_time, line_duration, row
+            return line_time + line_duration, row
 
         screen = pyte.Screen(self.columns, self.lines)
         stream = pyte.ByteStream(screen)
@@ -294,13 +294,27 @@ class TerminalSession:
             'blue': 'color4',
             'magenta': 'color5',
             'cyan': 'color6',
-            'white': 'color7',
+            'white': 'color7'
+        }
+
+        colors_bold = {
+            'black': 'color8',
+            'red': 'color9',
+            'green': 'color10',
+            'brown': 'color11',
+            'blue': 'color12',
+            'magenta': 'color13',
+            'cyan': 'color14',
+            'white': 'color15'
         }
 
         if char.fg == 'default':
             text_color = 'foreground'
         elif char.fg in colors:
-            text_color = colors[char.fg]
+            if char.bold:
+                text_color = colors_bold[char.fg]
+            else:
+                text_color = colors[char.fg]
         else:
             text_color = char.fg
 

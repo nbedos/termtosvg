@@ -20,15 +20,7 @@ The terminal session should be SAVED so that it can be replayed and rendered wit
 options at any time.
 """
 
-# TODO: Factorize x attribute of texts elements (note: it seems it can't be done with CSS)
-# TODO: Since we're not using textLength after all, go back to one line = one <text> (+ <tspan>s)
-# TODO: Group lines with the same timings in a single group with a unique animation
-# TODO: Remove frame rendering code
-# TODO: AsciiBuffer type (based on mappings)
-# TODO: Use viewbox to render a portion of the history
 # TODO: Save session in asciinema v2 format
-# TODO: Use screen buffer difference for cell targeted updating, or just use screen.dirty from pyte
-
 
 def main():
     t = TerminalSession()

@@ -177,8 +177,15 @@ class AsciiAnimation:
             _, _, line_time, line_duration = record
             return line_time, line_duration
 
+        row_animations = {}
+        last_animation_id_str = 'anim_last'
+        animation = None
         for animation_id, (key, line_group) in enumerate(groupby(records, key=by_time)):
+            line_time, line_duration = key
             frame = svgwrite.container.Group(display='none')
+
+            animation_begin = None
+            animation_id_str = f'anim_{animation_id}'
             for row, line, _, _ in line_group:
                 height = row * cell_height
                 rects = self._render_line_bg_colors(line, height, cell_height)
@@ -202,17 +209,31 @@ class AsciiAnimation:
 
                 frame.add(svgwrite.container.Use(f'#{group_id}', y=height))
 
-            line_time, line_duration = key
+                if animation_begin is None and row in row_animations:
+                    row_anim_id, row_anim_end = row_animations[row]
+                    offset = line_time - row_anim_end
+                    animation_begin = f'{row_anim_id}.end+{offset}ms'
+
+                row_animations[row] = (animation_id_str, line_time + line_duration)
+
+            if animation_begin is None:
+                animation_begin = f'{line_time}ms;{last_animation_id_str}.end+{line_time}ms'
+
             extra = {
-                'begin': f'{line_time:.3f}s',
-                'dur': f'{line_duration:.3f}s',
-                'values': 'inline;inline',
-                'keyTimes': '0.0;1.0',
-                'fill': 'remove'
+                'begin': animation_begin,
+                'dur': f'{line_duration}ms',
+                'from': 'inline',
+                'to': 'inline',
+                'fill': 'remove',
+                'id': animation_id_str
             }
-            frame.add(svgwrite.animate.Animate('display', **extra))
+
+            animation = svgwrite.animate.Animate('display', **extra)
+            frame.add(animation)
+
             dwg.add(frame)
 
+        animation.attribs['id'] = last_animation_id_str
         dwg.save()
 
     @staticmethod
