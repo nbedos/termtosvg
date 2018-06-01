@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from vectty.anim import AsciiAnimation
-from vectty.term import TerminalSession
+import vectty.term as term
 
 
 """
@@ -23,9 +23,9 @@ options at any time.
 # TODO: Save session in asciinema v2 format
 
 def main():
-    t = TerminalSession()
-    records = t.record()
-    replayed_records = t.replay(records)
+    columns, lines, theme = term.get_configuration()
+    records = term.record(columns, lines, theme)
+    replayed_records = term.replay(records, TODO)
 
     # TODO: move colors to __init__
     a = AsciiAnimation(t.lines, t.columns)

@@ -1,4 +1,5 @@
 import os
+import time
 import unittest
 
 from vectty import term
@@ -22,101 +23,167 @@ Svg.color13:	#6c71c4
 *color14:	#93a1a1
 Svg.color15:	#fdf6e3"""
 
+xresources_minimal = """*background:	#002b36
+*foreground:	#839496
+*color0:	#073642
+*color1:	#dc322f
+*color2:	#859900
+*color3:	#b58900
+*color4:	#268bd2
+*color5:	#d33682
+*color6:	#2aa198
+Svg.color7:	#eee8d5
+"""
+
 xresources_incomplete = """*background:	#002b36
 *color1:	#dc322f"""
 
 xresources_empty = ''
 
+commands = [
+    'echo $SHELL && sleep 0.1;\r\n',
+    'tree && 0.1;\r\n',
+    'ls && sleep 0.1;\r\n',
+    'w',
+    'h',
+    'o',
+    'a',
+    'm',
+    'i\r\n',
+    'exit;\r\n'
+]
 
-class TestTerminalSession(unittest.TestCase):
+
+class TestTerm(unittest.TestCase):
     def test__record(self):
-        commands = ['echo $SHELL && sleep 0.1;',
-                    'tree && 0.1;',
-                    'ls && sleep 0.1;',
-                    'whoami && sleep 0.1;',
-                    'exit;',
-                    '']
-
         # Use pipes in lieu of stdin and stdout
         fd_in_read, fd_in_write = os.pipe()
         fd_out_read, fd_out_write = os.pipe()
 
-        session = term.TerminalSession()
-        session.lines = 24
-        session.columns = 80
+        lines = 24
+        columns = 80
 
-        os.write(fd_in_write, '\r\n'.join(commands).encode('utf-8'))
-        for item in session._record(input_fileno=fd_in_read, output_fileno=fd_out_write):
+        pid = os.fork()
+        if pid == 0:
+            # Child process
+            for line in commands:
+                os.write(fd_in_write, line.encode('utf-8'))
+                time.sleep(0.060)
+
+        # Parent process
+        for _ in term._record(columns, lines, fd_in_read, fd_out_write):
+            pass
+
+        for fd in fd_in_read, fd_in_write, fd_out_read, fd_out_write:
+            os.close(fd)
+
+    def test_record(self):
+        # Use pipes in lieu of stdin and stdout
+        fd_in_read, fd_in_write = os.pipe()
+        fd_out_read, fd_out_write = os.pipe()
+
+        lines = 24
+        columns = 80
+        theme = term.AsciiCastTheme('#000000', '#111111', ':'.join(['#123456']*8))
+
+        pid = os.fork()
+        if pid == 0:
+            # Child process
+            for line in commands:
+                os.write(fd_in_write, line.encode('utf-8'))
+                time.sleep(0.060)
+
+        # Parent process
+        for _ in term.record(columns, lines, theme, fd_in_read, fd_out_write):
             pass
 
         for fd in fd_in_read, fd_in_write, fd_out_read, fd_out_write:
             os.close(fd)
 
     def test_replay(self):
-        nbr_records = 5
-        timings = [{'time': i, 'event-type': 'o', 'event-data': f'{i}\r\n'.encode('utf-8')}
-                   for i in range(nbr_records)]
+        def pyte_to_str(x):
+            return x.data
 
-        session = term.TerminalSession()
-        session.lines = 24
-        session.columns = 80
+        with self.subTest(case='One shell command per event'):
+            nbr_records = 5
+            records = [term.AsciiCastHeader(version=2, width=80, height=24, theme=None)] + \
+                      [term.AsciiCastEvent(time=i,
+                                           event_type='o',
+                                           event_data=f'{i}\r\n'.encode('utf-8'),
+                                           duration=None)
+                       for i in range(nbr_records)]
 
-        lines = (line for line in session.replay(timings, 0.05) if line[1])
-        for i, line in enumerate(lines):
-            self.assertEqual(line[1][0].value, str(i))
+            lines = (line for line in term.replay(records, pyte_to_str, 50, 1000) if line[1])
+            for i, line in enumerate(lines):
+                self.assertEqual(line[1][0], str(i))
+
+        with self.subTest(case='Shell command spread over multiple lines'):
+            records = [term.AsciiCastHeader(version=2, width=80, height=24, theme=None)] + \
+                      [term.AsciiCastEvent(time=i*60,
+                                           event_type='o',
+                                           event_data=data.encode('utf-8'),
+                                           duration=None)
+                       for i, data in enumerate(commands)]
+
+            screen = {}
+            for row, line, _, _ in term.replay(records, pyte_to_str, 50, 1000):
+                screen[row] = ''.join(line[i] for i in sorted(line))
+
+            expected_screen = dict(enumerate(cmd for cmd in ''.join(commands).split('\r\n') if cmd))
+            self.assertEqual(expected_screen, screen)
 
     def test__parse_xresources(self):
         with self.subTest(case='All valid colors'):
-            color_mapping = term.TerminalSession._parse_xresources(xresources_valid)
-            for i in range(16):
-                self.assertIn(f'color{i}', color_mapping)
-            self.assertEqual(color_mapping['background'], '#002b36')
-            self.assertEqual(color_mapping['foreground'], '#839496')
+            theme = term._parse_xresources(xresources_valid)
+            colors = theme.palette.split(':')
+            self.assertTrue(len(colors), 16)
+            self.assertEqual(colors[0], '#073642')
+            self.assertEqual(colors[15], '#fdf6e3')
+            self.assertEqual(theme.bg, '#002b36')
+            self.assertEqual(theme.fg, '#839496')
 
-        # Should succeed even though colors are missing
+        with self.subTest(case='Minimal Xresources'):
+            theme = term._parse_xresources(xresources_minimal)
+            colors = theme.palette.split(':')
+            self.assertTrue(len(colors), 8)
+            self.assertEqual(colors[0], '#073642')
+            self.assertEqual(colors[7], '#eee8d5')
+            self.assertEqual(theme.bg, '#002b36')
+            self.assertEqual(theme.fg, '#839496')
+
         with self.subTest(case='Not all colors defined'):
-            term.TerminalSession._parse_xresources(xresources_incomplete)
+            with self.assertRaises(KeyError):
+                term._parse_xresources(xresources_incomplete)
 
         with self.subTest(case='Empty Xresource'):
-            term.TerminalSession._parse_xresources(xresources_empty)
+            with self.assertRaises(KeyError):
+                term._parse_xresources(xresources_empty)
 
     def test__get_xresources(self):
-        term.TerminalSession._get_xresources()
+        term._get_xresources()
 
     def test_get_configuration(self):
-        session = term.TerminalSession()
-        session.get_configuration()
+        term.get_configuration()
 
     def test__group_by_time(self):
-        timings = [
-            {'version': 2, 'width': 80, 'height': 24},
-            {'time': 0.00, 'event-type': 'o', 'event-data': b'1'},
-            {'time': 0.50, 'event-type': 'o', 'event-data': b'2'},
-            {'time': 0.80, 'event-type': 'o', 'event-data': b'3'},
-            {'time': 2.00, 'event-type': 'o', 'event-data': b'4'},
-            {'time': 2.10, 'event-type': 'o', 'event-data': b'5'},
-            {'time': 3.00, 'event-type': 'o', 'event-data': b'6'},
-            {'time': 3.10, 'event-type': 'o', 'event-data': b'7'},
-            {'time': 3.20, 'event-type': 'o', 'event-data': b'8'},
-            {'time': 3.30, 'event-type': 'o', 'event-data': b'9'}
+        event_records = [
+            term.AsciiCastEvent(0, 'o', b'1', None),
+            term.AsciiCastEvent(50, 'o', b'2', None),
+            term.AsciiCastEvent(80, 'o', b'3', None),
+            term.AsciiCastEvent(200, 'o', b'4', None),
+            term.AsciiCastEvent(210, 'o', b'5', None),
+            term.AsciiCastEvent(300, 'o', b'6', None),
+            term.AsciiCastEvent(310, 'o', b'7', None),
+            term.AsciiCastEvent(320, 'o', b'8', None),
+            term.AsciiCastEvent(330, 'o', b'9', None)
         ]
 
-        expected_timings = [
-            {'version': 2, 'width': 80, 'height': 24},
-            {'time': 0.00, 'event-type': 'o', 'event-data': b'1', 'duration': 0.50},
-            {'time': 0.50, 'event-type': 'o', 'event-data': b'23', 'duration': 1.50},
-            {'time': 2.00, 'event-type': 'o', 'event-data': b'45', 'duration': 1.00},
-            {'time': 3.00, 'event-type': 'o', 'event-data': b'6789', 'duration': 1.234}
+        grouped_event_records = [
+            term.AsciiCastEvent(0, 'o', b'1', 50),
+            term.AsciiCastEvent(50, 'o', b'23', 150),
+            term.AsciiCastEvent(200, 'o', b'45', 100),
+            term.AsciiCastEvent(300, 'o', b'6789', 1234)
         ]
 
-        result = list(term.TerminalSession._group_by_time(timings, 0.5, 1.234))
-        self.assertEqual(len(expected_timings), len(result))
-
-        for expected_record, record in zip(expected_timings, result):
-            self.assertEqual(expected_record.keys(), record.keys())
-            for key in expected_record:
-                if type(expected_record[key]) == float:
-                    self.assertAlmostEqual(expected_record[key], record[key], 0.001)
-                else:
-                    self.assertEqual(expected_record[key], record[key])
-
+        result = list(term._group_by_time(event_records, 50, 1234))
+        self.assertEqual(grouped_event_records, result)

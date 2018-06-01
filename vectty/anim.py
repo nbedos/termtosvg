@@ -40,6 +40,53 @@ class AsciiChar:
     def __hash__(self):
         return hash(repr(self))
 
+    @classmethod
+    def from_pyte(cls, char):
+        """Create an AsciiChar from a pyte character"""
+        colors = {
+            'black': 'color0',
+            'red': 'color1',
+            'green': 'color2',
+            'brown': 'color3',
+            'blue': 'color4',
+            'magenta': 'color5',
+            'cyan': 'color6',
+            'white': 'color7',
+        }
+
+        colors_bold = {
+            'black': 'color8',
+            'red': 'color9',
+            'green': 'color10',
+            'brown': 'color11',
+            'blue': 'color12',
+            'magenta': 'color13',
+            'cyan': 'color14',
+            'white': 'color15',
+        }
+
+        if char.fg == 'default':
+            text_color = 'foreground'
+        elif char.fg in colors:
+            if char.bold:
+                text_color = colors_bold[char.fg]
+            else:
+                text_color = colors[char.fg]
+        else:
+            text_color = char.fg
+
+        if char.bg == 'default':
+            background_color = 'background'
+        elif char.bg in colors:
+            background_color = colors[char.bg]
+        else:
+            background_color = char.bg
+
+        if char.reverse:
+            text_color, background_color = background_color, text_color
+
+        return AsciiChar(char.data, text_color, background_color)
+
 
 class AsciiAnimation:
     def __init__(self, lines=24, columns=80):
