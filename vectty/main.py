@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from vectty.anim import AsciiAnimation
+import vectty.anim as anim
 import vectty.term as term
 
 

@@ -6,5 +6,4 @@ pipelines:
         caches:
           - pip
         script:
-          - pip install .
-          - python -m unittest
+          - make integration

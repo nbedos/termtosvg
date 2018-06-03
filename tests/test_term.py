@@ -1,6 +1,7 @@
 import os
 import time
 import unittest
+from unittest.mock import MagicMock, patch
 
 from vectty import term
 
@@ -111,11 +112,14 @@ class TestTerm(unittest.TestCase):
                                            event_type='o',
                                            event_data=f'{i}\r\n'.encode('utf-8'),
                                            duration=None)
-                       for i in range(nbr_records)]
+                       for i in range(1, nbr_records)]
 
-            lines = (line for line in term.replay(records, pyte_to_str, 50, 1000) if line[1])
-            for i, line in enumerate(lines):
-                self.assertEqual(line[1][0], str(i))
+            records = term.replay(records, pyte_to_str, 50, 1000)
+            for i, record in enumerate(records):
+                if i == 0:
+                    pass
+                else:
+                    self.assertEqual(record.line[0], str(i))
 
         with self.subTest(case='Shell command spread over multiple lines'):
             records = [term.AsciiCastHeader(version=2, width=80, height=24, theme=None)] + \
@@ -126,8 +130,9 @@ class TestTerm(unittest.TestCase):
                        for i, data in enumerate(commands)]
 
             screen = {}
-            for row, line, _, _ in term.replay(records, pyte_to_str, 50, 1000):
-                screen[row] = ''.join(line[i] for i in sorted(line))
+            for record in term.replay(records, pyte_to_str, 50, 1000):
+                if hasattr(record, 'line'):
+                    screen[record.row] = ''.join(record.line[i] for i in sorted(record.line))
 
             expected_screen = dict(enumerate(cmd for cmd in ''.join(commands).split('\r\n') if cmd))
             self.assertEqual(expected_screen, screen)
@@ -159,11 +164,18 @@ class TestTerm(unittest.TestCase):
             with self.assertRaises(KeyError):
                 term._parse_xresources(xresources_empty)
 
-    def test__get_xresources(self):
-        term._get_xresources()
-
     def test_get_configuration(self):
-        term.get_configuration()
+        m = MagicMock()
+        m.screen().root.get_full_property.return_value.value = xresources_valid.encode('utf-8')
+        Display_mock = MagicMock(return_value=m)
+        with patch('Xlib.display.Display', Display_mock):
+            with self.subTest(case='Failing get_terminal_size call'):
+                term.get_configuration(-1)
+
+            with self.subTest(case='Successful get_terminal_size call'):
+                term_size_mock = MagicMock(return_value=(42, 84))
+                with patch('os.get_terminal_size', term_size_mock):
+                    term.get_configuration(-1)
 
     def test__group_by_time(self):
         event_records = [

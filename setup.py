@@ -17,5 +17,10 @@ setup(
         'pyte',
         'python-xlib',
         'svgwrite'
-    ]
+    ],
+    extras_require={
+        'dev': [
+            'coverage',
+        ]
+    }
 )

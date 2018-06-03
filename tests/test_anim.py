@@ -1,117 +1,101 @@
+import os
+import tempfile
 import unittest
 
+import pyte.screens
+
 from vectty import anim
+from vectty import term
 
 
 class TestAnim(unittest.TestCase):
-    def test_render_animation(self):
-        pass
+    def test_from_pyte(self):
+        pyte_chars = [
+            pyte.screens.Char('A', 'red', 'blue'),
+            pyte.screens.Char('B', 'red', 'blue', reverse=True),
+            pyte.screens.Char('C', 'red', 'blue', bold=True),
+            pyte.screens.Char('D', 'red', 'blue', bold=True, reverse=True),
+            pyte.screens.Char('E', 'default', 'default'),
+            pyte.screens.Char('F', '#123456', '#ABCDEF'),
+        ]
+
+        char_cells = [
+            anim.CharacterCell('A', 'color1', 'color4'),
+            anim.CharacterCell('B', 'color4', 'color1'),
+            anim.CharacterCell('C', 'color9', 'color4'),
+            anim.CharacterCell('D', 'color4', 'color9'),
+            anim.CharacterCell('E', 'foreground', 'background'),
+            anim.CharacterCell('F', '#123456', '#ABCDEF'),
+        ]
+
+        for pyte_char, cell_char in zip(pyte_chars, char_cells):
+            self.assertEqual(anim.CharacterCell.from_pyte(pyte_char), cell_char)
 
     def test__render_line_bg_colors(self):
+        cell_width = 8
         screen_line = {
-            0: anim.AsciiChar('A', None, 'red'),
-            1: anim.AsciiChar('A', None, 'red'),
-            3: anim.AsciiChar('A', None, 'red'),
-            4: anim.AsciiChar('A', None, 'blue'),
-            6: anim.AsciiChar('A', None, 'blue'),
-            7: anim.AsciiChar('A', None, 'blue'),
-            8: anim.AsciiChar('A', None, 'green'),
-            9: anim.AsciiChar('A', None, 'red'),
-            10: anim.AsciiChar('A', None, 'red')
+            0: anim.CharacterCell('A', None, 'red'),
+            1: anim.CharacterCell('A', None, 'red'),
+            3: anim.CharacterCell('A', None, 'red'),
+            4: anim.CharacterCell('A', None, 'blue'),
+            6: anim.CharacterCell('A', None, 'blue'),
+            7: anim.CharacterCell('A', None, 'blue'),
+            8: anim.CharacterCell('A', None, 'green'),
+            9: anim.CharacterCell('A', None, 'red'),
+            10: anim.CharacterCell('A', None, 'red'),
+            99: anim.CharacterCell('A', None, 'background'),
         }
 
-        animation = anim.AsciiAnimation()
-        rectangles = animation._render_line_bg_colors(screen_line, height=0, line_height=1)
+        rectangles = anim._render_line_bg_colors(screen_line=screen_line,
+                                                 height=0,
+                                                 line_height=1,
+                                                 cell_width=cell_width)
         rect_0, rect_3, rect_4, rect_6, rect_8, rect_9 = sorted(rectangles,
                                                                 key=lambda r: r.attribs['x'])
 
-        self.assertEqual(rect_0.attribs['x'], '0ex')
-        self.assertEqual(rect_0.attribs['width'], '2ex')
+        self.assertEqual(rect_0.attribs['x'], '0')
+        self.assertEqual(rect_0.attribs['width'], '16')
         self.assertEqual(rect_0.attribs['class'], 'red')
-        self.assertEqual(rect_3.attribs['x'], '3ex')
-        self.assertEqual(rect_4.attribs['x'], '4ex')
-        self.assertEqual(rect_6.attribs['x'], '6ex')
+        self.assertEqual(rect_3.attribs['x'], '24')
+        self.assertEqual(rect_3.attribs['width'], '8')
+        self.assertEqual(rect_4.attribs['x'], '32')
+        self.assertEqual(rect_6.attribs['x'], '48')
+        self.assertEqual(rect_6.attribs['width'], '16')
         self.assertEqual(rect_6.attribs['class'], 'blue')
-        self.assertEqual(rect_8.attribs['x'], '8ex')
+        self.assertEqual(rect_8.attribs['x'], '64')
         self.assertEqual(rect_8.attribs['class'], 'green')
-        self.assertEqual(rect_9.attribs['x'], '9ex')
-
-    # def test__render_frame_bg_colors(self):
-    #     buffer = defaultdict(dict)
-    #     buffer_size = 4
-    #
-    #     animation = vectty.AsciiAnimation()
-    #     with self.subTest(case='Single color buffer'):
-    #         for i in range(buffer_size):
-    #             for j in range(buffer_size):
-    #                 buffer[i][j] = vectty.AsciiChar(' ')
-    #         animation._render_frame_bg_colors(buffer, 1)
+        self.assertEqual(rect_9.attribs['x'], '72')
 
     def test__render_characters(self):
         screen_line = {
-            0: anim.AsciiChar('A', 'red', None),
-            1: anim.AsciiChar('B', 'blue', None),
-            4: anim.AsciiChar('C', 'blue', None),
-            6: anim.AsciiChar('D', 'green', None),
-            8: anim.AsciiChar('E', 'green', None),
-            9: anim.AsciiChar('F', 'green', None),
-            10: anim.AsciiChar('G', 'green', None),
-            11: anim.AsciiChar('H', 'red', None),
-            20: anim.AsciiChar(' ', 'ungrouped')
+            0: anim.CharacterCell('A', 'red', 'white'),
+            1: anim.CharacterCell('B', 'blue', 'white'),
+            2: anim.CharacterCell('C', 'blue', 'white'),
+            7: anim.CharacterCell('D', 'green', 'white'),
+            8: anim.CharacterCell('E', 'green', 'white'),
+            9: anim.CharacterCell('F', 'green', 'white'),
+            10: anim.CharacterCell('G', 'green', 'white'),
+            11: anim.CharacterCell('H', 'red', 'white'),
+            20: anim.CharacterCell(' ', 'foreground', 'background')
         }
 
         with self.subTest(case='Content'):
-            animation = anim.AsciiAnimation()
-            line_def, line_use = animation._render_characters(screen_line, 1.23)
+            cell_width = 8
+            texts = anim._render_characters(screen_line, 1.23, cell_width)
 
-            sorted_tspans = sorted(line_def.elements, key=lambda x: x.text)
-            [tspan_ah, tspan_bc, tspan_defg, tspan_space] = sorted_tspans
-            self.assertEqual(tspan_ah.text, 'AH')
-            self.assertEqual(tspan_ah.attribs['class'], 'red')
-            self.assertEqual(tspan_ah.attribs['x'], '0ex 11ex')
-            self.assertEqual(tspan_bc.text, 'BC')
-            self.assertEqual(tspan_bc.attribs['class'], 'blue')
-            self.assertEqual(tspan_bc.attribs['x'], '1ex 4ex')
-            self.assertEqual(tspan_defg.text, 'DEFG')
-            self.assertEqual(tspan_defg.attribs['class'], 'green')
-            self.assertEqual(tspan_defg.attribs['x'], '6ex 8ex 9ex 10ex')
+            sorted_texts = sorted(texts, key=lambda x: x.text)
+            [text_a, text_bc, text_defg, text_h, text_space] = sorted_texts
+            self.assertEqual(text_a.text, 'A')
+            self.assertEqual(text_a.attribs['class'], 'red')
+            self.assertEqual(text_a.attribs['x'], '0')
+            self.assertEqual(text_bc.text, 'BC')
+            self.assertEqual(text_bc.attribs['class'], 'blue')
+            self.assertEqual(text_bc.attribs['x'], '8')
+            self.assertEqual(text_defg.text, 'DEFG')
+            self.assertEqual(text_defg.attribs['class'], 'green')
+            self.assertEqual(text_defg.attribs['x'], '56')
 
-            self.assertEqual(line_use.attribs['y'], '1.23em')
-
-        with self.subTest(case='Definition reuse'):
-            animation = anim.AsciiAnimation()
-            line_def_1, line_use_1 = animation._render_characters(screen_line, 1.23)
-            line_def_2, line_use_2 = animation._render_characters(screen_line, 1.23)
-
-            self.assertIsNone(line_def_2)
-            self.assertEqual(line_use_1.tostring(), line_use_2.tostring())
-
-
-
-    # def test__render_frame_fg(self):
-    #     animation = vectty.AsciiAnimation()
-    #
-    #     screen_buffer = {
-    #         0: {
-    #             0: vectty.AsciiChar('A', 'red'),
-    #             1: vectty.AsciiChar('B', 'blue'),
-    #             4: vectty.AsciiChar('C', 'blue'),
-    #             6: vectty.AsciiChar('D', 'green'),
-    #             8: vectty.AsciiChar('E', 'green')
-    #         },
-    #         1: {
-    #             0: vectty.AsciiChar('A', 'green'),
-    #             1: vectty.AsciiChar('B', 'green'),
-    #             4: vectty.AsciiChar('C', 'green'),
-    #             6: vectty.AsciiChar('D', 'green'),
-    #             8: vectty.AsciiChar('E', 'green')
-    #         }
-    #     }
-    #
-    #     svg_frame = animation._render_frame_fg(screen_buffer, line_height=1, group_id='frame_test')
-    #     pass
-
-    def _test_serialize_css_dict(self):
+    def test_serialize_css_dict(self):
         css = {
             'text': {
                 'font-family': 'Dejavu Sans Mono',
@@ -123,5 +107,28 @@ class TestAnim(unittest.TestCase):
                 'fill': '#dc322f'
             }
         }
-        anim.AsciiAnimation._serialize_css_dict(css)
+        anim._serialize_css_dict(css)
 
+    def test_render_animation(self):
+        def line(i):
+            chars = [anim.CharacterCell(c, '#123456', '#789012') for c in f'line{i}']
+            return dict(enumerate(chars))
+
+        theme = term.AsciiCastTheme('#123456', '#789012', ':'.join(['#000000'] * 16))
+        records = [
+            anim.CharacterCellConfig(width=80, height=24, theme=theme),
+            anim.CharacterCellLineEvent(1, line(1), 0, 60),
+            anim.CharacterCellLineEvent(2, line(2), 60, 60),
+            anim.CharacterCellLineEvent(3, line(3), 120, 60),
+            anim.CharacterCellLineEvent(4, line(4), 180, 60),
+            # Definition reuse
+            anim.CharacterCellLineEvent(5, line(4), 240, 60),
+            # Override line for animation chaining
+            anim.CharacterCellLineEvent(5, line(6), 300, 60),
+        ]
+
+        _, filename = tempfile.mkstemp(prefix='vectty_')
+
+        anim.render_animation(records, filename)
+
+        os.remove(filename)

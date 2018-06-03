@@ -10,12 +10,14 @@ import termios
 import tty
 from collections import namedtuple
 from functools import partial
-from typing import Dict, Tuple, Generator, Iterable, Union, Iterator, Callable, Any
+from typing import Any, Callable, Generator, Iterable, Iterator, Tuple, Union
 
 import pyte
 import pyte.screens
 from Xlib import display, rdb, Xatom
 from Xlib.error import DisplayError
+
+from vectty.anim import CharacterCellConfig, CharacterCellLineEvent, CharacterCellRecord
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -174,7 +176,7 @@ def _capture_data(input_fileno, output_fileno, master_fd, buffer_size=1024):
 
 def _group_by_time(event_records, min_rec_duration, last_rec_duration):
     # type: (Iterable[AsciiCastEvent], int, int) -> Generator[AsciiCastEvent, None, None]
-    """Group event records together if they are close enough and compute the duration between
+    """Merge event records together if they are close enough and compute the duration between
     consecutive events. The duration between two event records returned by the function is
     guaranteed to be at least min_rec_duration.
 
@@ -214,25 +216,25 @@ def _group_by_time(event_records, min_rec_duration, last_rec_duration):
 
 
 def replay(records, from_pyte_char, min_frame_duration=50, last_frame_duration=1000):
-    # type: (Iterable[AsciiCastRecord], Callable[[pyte.screen.Char], Any], int, int) -> Generator[Tuple[int, Dict[int, Any], int, int], None, None]
+    # type: (Iterable[AsciiCastRecord], Callable[[pyte.screen.Char], Any], int, int) -> Generator[CharacterCellRecord, None, None]
     """Read the records of a terminal sessions, render the corresponding screens and return lines
     of the screen that need updating.
-    Frames are merged together so that there is at least a 'min_frame_duration' milliseconds pause
-    between two frames.
+    Records are merged together so that there is at least a 'min_frame_duration' milliseconds pause
+    between two rendered screens.
     Lines returned are sorted by time and duration of their appearance on the screen so that lines
     in need of updating at the same time can easily be grouped together.
     Characters on the screen are rendered as pyte.screen.Char and then converted to the caller's
     format of choice using from_pyte_char
 
     :param records: Records of the terminal session in asciicast v2 format. The first record must
-    be a header record followed by event records.
+    be a header followed by event records.
     :param from_pyte_char: Conversion function from pyte.screen.Char to any other format
     :param min_frame_duration: Minimum frame duration in milliseconds
     :param last_frame_duration: Duration of the last frame in milliseconds
     :return: Tuples consisting of:
         - Row number of the line on the screen
-        - Line
-        - Time when this line appears on the screen in milliseconds
+        - Line: mapping between column numbers and character
+        - Time of this line in milliseconds
         - Duration of this line on the screen in milliseconds
     """
     def sort_by_time(d, row):
@@ -245,6 +247,9 @@ def replay(records, from_pyte_char, min_frame_duration=50, last_frame_duration=1
     header = next(records)
     screen = pyte.Screen(header.width, header.height)
     stream = pyte.ByteStream(screen)
+
+    config = CharacterCellConfig(width=header.width, height=header.height, theme=None)
+    yield config
 
     pending_lines = {}
     current_time = 0
@@ -276,19 +281,23 @@ def replay(records, from_pyte_char, min_frame_duration=50, last_frame_duration=1
                 del pending_lines[row]
 
         for row in sorted(done_lines, key=partial(sort_by_time, done_lines)):
-            yield (row, *done_lines[row])
+            args = (row, *done_lines[row])
+            yield CharacterCellLineEvent(*args)
 
         current_time += duration
 
     for row in sorted(pending_lines, key=partial(sort_by_time, pending_lines)):
-        yield (row, *pending_lines[row])
+        args = (row, *pending_lines[row])
+        yield CharacterCellLineEvent(*args)
 
 
-def get_configuration():
+def get_configuration(fileno):
     # type: () -> (int, int, AsciiCastTheme)
     """Get configuration information related to terminal output rendering"""
+    if fileno is None:
+        fileno = sys.stdout.fileno()
     try:
-        columns, lines = os.get_terminal_size(sys.stdout.fileno())
+        columns, lines = os.get_terminal_size(fileno)
     except OSError as e:
         lines = 24
         columns = 80
