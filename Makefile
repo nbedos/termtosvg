@@ -1,23 +1,23 @@
-.PHONY: help tests coverage venv venv_dev
+.PHONY: usage tests coverage venv venv_dev
 
 VENV_PATH=.venv
 VENV_ACTIVATE=. $(VENV_PATH)/bin/activate
 
-.DEFAULT: help
+.DEFAULT: usage
 
-help:
+usage:
 	@echo "Usage:"
 	@echo "    make tests           # Run unit tests"
 	@echo "    make coverage        # Run unit tests with code coverage measurement"
 	@echo "    make integration     # Run integration tests"
 
 venv: setup.py
-	(test -d $(VENV_PATH)|| python -m venv $(VENV_PATH))
+	(test -d $(VENV_PATH) || python -m venv $(VENV_PATH))
 	$(VENV_ACTIVATE) && \
 	    pip install -U .
 
 venv_dev: setup.py
-	(test -d $(VENV_PATH)|| python -m venv $(VENV_PATH))
+	(test -d $(VENV_PATH) || python -m venv $(VENV_PATH))
 	$(VENV_ACTIVATE) && \
 	    pip install -U -e .[dev]
 

@@ -2,10 +2,21 @@ import os
 import tempfile
 import unittest
 
+from contextlib import contextmanager
+
 import pyte.screens
 
 from vectty import anim
 from vectty import term
+
+
+@contextmanager
+def temp_named_file(prefix):
+    try:
+        _, filename = tempfile.mkstemp(prefix=prefix)
+        yield filename
+    finally:
+        os.remove(filename)
 
 
 class TestAnim(unittest.TestCase):
@@ -25,45 +36,53 @@ class TestAnim(unittest.TestCase):
             anim.CharacterCell('C', 'color9', 'color4'),
             anim.CharacterCell('D', 'color4', 'color9'),
             anim.CharacterCell('E', 'foreground', 'background'),
-            anim.CharacterCell('F', '#123456', '#ABCDEF'),
+            #anim.CharacterCell('F', '#123456', '#ABCDEF'),
         ]
 
+        palette = {
+            'foreground': 'foreground',
+            'background': 'background',
+            1: 'color1',
+            4: 'color4',
+            9: 'color9',
+        }
         for pyte_char, cell_char in zip(pyte_chars, char_cells):
-            self.assertEqual(anim.CharacterCell.from_pyte(pyte_char), cell_char)
+            self.assertEqual(anim.CharacterCell.from_pyte(pyte_char, palette), cell_char)
 
     def test__render_line_bg_colors(self):
         cell_width = 8
         screen_line = {
-            0: anim.CharacterCell('A', None, 'red'),
-            1: anim.CharacterCell('A', None, 'red'),
-            3: anim.CharacterCell('A', None, 'red'),
-            4: anim.CharacterCell('A', None, 'blue'),
-            6: anim.CharacterCell('A', None, 'blue'),
-            7: anim.CharacterCell('A', None, 'blue'),
-            8: anim.CharacterCell('A', None, 'green'),
-            9: anim.CharacterCell('A', None, 'red'),
-            10: anim.CharacterCell('A', None, 'red'),
-            99: anim.CharacterCell('A', None, 'background'),
+            0: anim.CharacterCell('A', 'black', 'red'),
+            1: anim.CharacterCell('A', 'black', 'red'),
+            3: anim.CharacterCell('A', 'black', 'red'),
+            4: anim.CharacterCell('A', 'black', 'blue'),
+            6: anim.CharacterCell('A', 'black', 'blue'),
+            7: anim.CharacterCell('A', 'black', 'blue'),
+            8: anim.CharacterCell('A', 'black', 'green'),
+            9: anim.CharacterCell('A', 'black', 'red'),
+            10: anim.CharacterCell('A', 'black', 'red'),
+            99: anim.CharacterCell('A', 'black', 'black'),
         }
 
         rectangles = anim._render_line_bg_colors(screen_line=screen_line,
                                                  height=0,
                                                  line_height=1,
-                                                 cell_width=cell_width)
+                                                 cell_width=cell_width,
+                                                 background_color='black')
         rect_0, rect_3, rect_4, rect_6, rect_8, rect_9 = sorted(rectangles,
                                                                 key=lambda r: r.attribs['x'])
 
         self.assertEqual(rect_0.attribs['x'], '0')
         self.assertEqual(rect_0.attribs['width'], '16')
-        self.assertEqual(rect_0.attribs['class'], 'red')
+        self.assertEqual(rect_0.attribs['fill'], 'red')
         self.assertEqual(rect_3.attribs['x'], '24')
         self.assertEqual(rect_3.attribs['width'], '8')
         self.assertEqual(rect_4.attribs['x'], '32')
         self.assertEqual(rect_6.attribs['x'], '48')
         self.assertEqual(rect_6.attribs['width'], '16')
-        self.assertEqual(rect_6.attribs['class'], 'blue')
+        self.assertEqual(rect_6.attribs['fill'], 'blue')
         self.assertEqual(rect_8.attribs['x'], '64')
-        self.assertEqual(rect_8.attribs['class'], 'green')
+        self.assertEqual(rect_8.attribs['fill'], 'green')
         self.assertEqual(rect_9.attribs['x'], '72')
 
     def test__render_characters(self):
@@ -76,7 +95,7 @@ class TestAnim(unittest.TestCase):
             9: anim.CharacterCell('F', 'green', 'white'),
             10: anim.CharacterCell('G', 'green', 'white'),
             11: anim.CharacterCell('H', 'red', 'white'),
-            20: anim.CharacterCell(' ', 'foreground', 'background')
+            20: anim.CharacterCell(' ', 'black', 'black')
         }
 
         with self.subTest(case='Content'):
@@ -86,13 +105,13 @@ class TestAnim(unittest.TestCase):
             sorted_texts = sorted(texts, key=lambda x: x.text)
             [text_a, text_bc, text_defg, text_h, text_space] = sorted_texts
             self.assertEqual(text_a.text, 'A')
-            self.assertEqual(text_a.attribs['class'], 'red')
+            self.assertEqual(text_a.attribs['fill'], 'red')
             self.assertEqual(text_a.attribs['x'], '0')
             self.assertEqual(text_bc.text, 'BC')
-            self.assertEqual(text_bc.attribs['class'], 'blue')
+            self.assertEqual(text_bc.attribs['fill'], 'blue')
             self.assertEqual(text_bc.attribs['x'], '8')
             self.assertEqual(text_defg.text, 'DEFG')
-            self.assertEqual(text_defg.attribs['class'], 'green')
+            self.assertEqual(text_defg.attribs['fill'], 'green')
             self.assertEqual(text_defg.attribs['x'], '56')
 
     def test_serialize_css_dict(self):
@@ -116,7 +135,7 @@ class TestAnim(unittest.TestCase):
 
         theme = term.AsciiCastTheme('#123456', '#789012', ':'.join(['#000000'] * 16))
         records = [
-            anim.CharacterCellConfig(width=80, height=24, theme=theme),
+            anim.CharacterCellConfig(80, 24, 'black', 'black'),
             anim.CharacterCellLineEvent(1, line(1), 0, 60),
             anim.CharacterCellLineEvent(2, line(2), 60, 60),
             anim.CharacterCellLineEvent(3, line(3), 120, 60),
@@ -127,8 +146,5 @@ class TestAnim(unittest.TestCase):
             anim.CharacterCellLineEvent(5, line(6), 300, 60),
         ]
 
-        _, filename = tempfile.mkstemp(prefix='vectty_')
-
-        anim.render_animation(records, filename)
-
-        os.remove(filename)
+        with temp_named_file('vectyy_') as filename:
+            anim.render_animation(records, filename)

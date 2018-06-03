@@ -70,11 +70,13 @@ class TestTerm(unittest.TestCase):
             for line in commands:
                 os.write(fd_in_write, line.encode('utf-8'))
                 time.sleep(0.060)
+            os._exit(0)
 
         # Parent process
         for _ in term._record(columns, lines, fd_in_read, fd_out_write):
             pass
 
+        os.waitpid(pid, 0)
         for fd in fd_in_read, fd_in_write, fd_out_read, fd_out_write:
             os.close(fd)
 
@@ -93,21 +95,26 @@ class TestTerm(unittest.TestCase):
             for line in commands:
                 os.write(fd_in_write, line.encode('utf-8'))
                 time.sleep(0.060)
+            os._exit(0)
 
         # Parent process
         for _ in term.record(columns, lines, theme, fd_in_read, fd_out_write):
             pass
 
+        os.waitpid(pid, 0)
         for fd in fd_in_read, fd_in_write, fd_out_read, fd_out_write:
             os.close(fd)
 
     def test_replay(self):
-        def pyte_to_str(x):
+        def pyte_to_str(x, _):
             return x.data
+
+        theme = term.AsciiCastTheme('blue', 'blue', ':'.join(['blue'] * 16))
 
         with self.subTest(case='One shell command per event'):
             nbr_records = 5
-            records = [term.AsciiCastHeader(version=2, width=80, height=24, theme=None)] + \
+
+            records = [term.AsciiCastHeader(version=2, width=80, height=24, theme=theme)] + \
                       [term.AsciiCastEvent(time=i,
                                            event_type='o',
                                            event_data=f'{i}\r\n'.encode('utf-8'),
@@ -122,7 +129,7 @@ class TestTerm(unittest.TestCase):
                     self.assertEqual(record.line[0], str(i))
 
         with self.subTest(case='Shell command spread over multiple lines'):
-            records = [term.AsciiCastHeader(version=2, width=80, height=24, theme=None)] + \
+            records = [term.AsciiCastHeader(version=2, width=80, height=24, theme=theme)] + \
                       [term.AsciiCastEvent(time=i*60,
                                            event_type='o',
                                            event_data=data.encode('utf-8'),

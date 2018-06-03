@@ -2,7 +2,7 @@ import logging
 import os
 from collections import namedtuple
 from itertools import groupby
-from typing import Dict, List, Iterable, Iterator, Union, Tuple
+from typing import Dict, List, Iterable, Iterator, Union, Tuple, Any
 
 import pyte.screens
 import svgwrite.animate
@@ -23,47 +23,48 @@ _CharacterCell.background_color.__doc__ = 'Background color of the cell'
 
 class CharacterCell(_CharacterCell):
     @classmethod
-    def from_pyte(cls, char):
-        # type: (pyte.screens.Char) -> CharacterCell
+    def from_pyte(cls, char, palette):
+        # type: (pyte.screens.Char, Dict[Any, str]) -> CharacterCell
         """Create a CharacterCell from a pyte character"""
+        # Mappings between colors from Pyte and colors in the palette
         colors = {
-            'black': 'color0',
-            'red': 'color1',
-            'green': 'color2',
-            'brown': 'color3',
-            'blue': 'color4',
-            'magenta': 'color5',
-            'cyan': 'color6',
-            'white': 'color7',
+            'black': 0,
+            'red': 1,
+            'green': 2,
+            'brown': 3,
+            'blue': 4,
+            'magenta': 5,
+            'cyan': 6,
+            'white': 7,
         }
 
         colors_bold = {
-            'black': 'color8',
-            'red': 'color9',
-            'green': 'color10',
-            'brown': 'color11',
-            'blue': 'color12',
-            'magenta': 'color13',
-            'cyan': 'color14',
-            'white': 'color15',
+            'black': 8,
+            'red': 9,
+            'green': 10,
+            'brown': 11,
+            'blue': 12,
+            'magenta': 13,
+            'cyan': 14,
+            'white': 15,
         }
 
         if char.fg == 'default':
-            text_color = 'foreground'
+            text_color = palette['foreground']
         elif char.fg in colors:
             if char.bold:
-                text_color = colors_bold[char.fg]
+                text_color = palette[colors_bold[char.fg]]
             else:
-                text_color = colors[char.fg]
+                text_color = palette[colors[char.fg]]
         else:
             text_color = char.fg
 
         if char.bg == 'default':
-            background_color = 'background'
+            background_color = palette['background']
         elif char.bg in colors:
-            background_color = colors[char.bg]
+            background_color = palette[colors[char.bg]]
         else:
-            background_color = char.bg
+            background_color = palette[char.bg]
 
         if char.reverse:
             text_color, background_color = background_color, text_color
@@ -71,12 +72,13 @@ class CharacterCell(_CharacterCell):
         return CharacterCell(char.data, text_color, background_color)
 
 
-CharacterCellConfig = namedtuple('CharacterCellConfig', ['width', 'height', 'theme'])
+CharacterCellConfig = namedtuple('CharacterCellConfig', ['width', 'height', 'text_color',
+                                                         'background_color'])
 CharacterCellLineEvent = namedtuple('CharacterCellLineEvent', ['row', 'line', 'time', 'duration'])
-
 CharacterCellRecord = Union[CharacterCellConfig, CharacterCellLineEvent]
 
-def _render_line_bg_colors(screen_line, height, line_height, cell_width):
+
+def _render_line_bg_colors(screen_line, height, line_height, cell_width, background_color):
     # type: (Dict[int, CharacterCell], float, float) -> List[svgwrite.shapes.Rect]
     def make_rectangle(group: List[int]) -> svgwrite.shapes.Rect:
         x = f'{group[0] * cell_width}'
@@ -86,7 +88,7 @@ def _render_line_bg_colors(screen_line, height, line_height, cell_width):
         args = {
             'insert': (x, y),
             'size': (sx, sy),
-            'class': screen_line[group[0]].background_color
+            'fill': screen_line[group[0]].background_color
         }
         return svgwrite.shapes.Rect(**args)
 
@@ -97,7 +99,7 @@ def _render_line_bg_colors(screen_line, height, line_height, cell_width):
         group.append(index)
         if index + 1 not in screen_line or \
                 screen_line[index].background_color != screen_line[index + 1].background_color:
-            if screen_line[index].background_color != 'background':
+            if screen_line[index].background_color != background_color:
                 groups.append(group)
             group = []
 
@@ -124,10 +126,8 @@ def _render_characters(screen_line, height, cell_width):
             'x': [str(group[0] * cell_width)],
             'textLength': f'{len(group) * cell_width}',
             'lengthAdjust': 'spacingAndGlyphs',
+            'fill': screen_line[group[0]].color
         }
-        if screen_line[group[0]].color != 'foreground':
-            attributes['class'] = screen_line[group[0]].color
-
         return svgwrite.text.Text(**attributes)
 
     group = []
@@ -164,16 +164,15 @@ def render_animation(records, filename, end_pause=1, cell_width=8, cell_height=1
             'font-size': f'{font_size}px',
         },
         'text': {
-            'fill': header.theme.fg,
-            'dominant-baseline': 'text-before-edge'
+            'dominant-baseline': 'text-before-edge',
         },
         '.bold': {
-            'font-weight': 'bold'
-        }
+            'font-weight': 'bold',
+        },
+        '.background': {
+            'fill': header.background_color,
+        },
     }
-    colors = header.theme.palette.split(':')
-    css_ansi_colors = {f'.color{i}': {'fill': color} for i, color in enumerate(colors)}
-    css.update(css_ansi_colors)
 
     width = header.width * cell_width
     height = header.height * cell_height
@@ -203,7 +202,11 @@ def render_animation(records, filename, end_pause=1, cell_width=8, cell_height=1
         animation_id_str = f'anim_{animation_id}'
         for event_record in record_group:
             height = event_record.row * cell_height
-            rects = _render_line_bg_colors(event_record.line, height, cell_height, cell_width)
+            rects = _render_line_bg_colors(event_record.line,
+                                           height,
+                                           cell_height,
+                                           cell_width,
+                                           header.background_color)
             for rect in rects:
                 frame.add(rect)
 

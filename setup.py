@@ -10,7 +10,7 @@ setup(
     py_modules=['vectty.anim', 'vectty.term'],
     entry_points={
         'console_scripts': [
-            'vectty=vectty.main:main'
+            'vectty=vectty.__main__:main'
         ]
     },
     install_requires=[

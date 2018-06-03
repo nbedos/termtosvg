@@ -10,7 +10,7 @@ import termios
 import tty
 from collections import namedtuple
 from functools import partial
-from typing import Any, Callable, Generator, Iterable, Iterator, Tuple, Union
+from typing import Any, Callable, Dict, Generator, Iterable, Iterator, Tuple, Union
 
 import pyte
 import pyte.screens
@@ -175,7 +175,7 @@ def _capture_data(input_fileno, output_fileno, master_fd, buffer_size=1024):
 
 
 def _group_by_time(event_records, min_rec_duration, last_rec_duration):
-    # type: (Iterable[AsciiCastEvent], int, int) -> Generator[AsciiCastEvent, None, None]
+    # type: (Iterable[AsciiCastEvent], float, float) -> Generator[AsciiCastEvent, None, None]
     """Merge event records together if they are close enough and compute the duration between
     consecutive events. The duration between two event records returned by the function is
     guaranteed to be at least min_rec_duration.
@@ -215,8 +215,8 @@ def _group_by_time(event_records, min_rec_duration, last_rec_duration):
         yield accumulator_event
 
 
-def replay(records, from_pyte_char, min_frame_duration=50, last_frame_duration=1000):
-    # type: (Iterable[AsciiCastRecord], Callable[[pyte.screen.Char], Any], int, int) -> Generator[CharacterCellRecord, None, None]
+def replay(records, from_pyte_char, min_frame_duration=0.050, last_frame_duration=1):
+    # type: (Iterable[AsciiCastRecord], Callable[[pyte.screen.Char, Dict[Any, str]], Any], float, float) -> Generator[CharacterCellRecord, None, None]
     """Read the records of a terminal sessions, render the corresponding screens and return lines
     of the screen that need updating.
     Records are merged together so that there is at least a 'min_frame_duration' milliseconds pause
@@ -229,8 +229,8 @@ def replay(records, from_pyte_char, min_frame_duration=50, last_frame_duration=1
     :param records: Records of the terminal session in asciicast v2 format. The first record must
     be a header followed by event records.
     :param from_pyte_char: Conversion function from pyte.screen.Char to any other format
-    :param min_frame_duration: Minimum frame duration in milliseconds
-    :param last_frame_duration: Duration of the last frame in milliseconds
+    :param min_frame_duration: Minimum frame duration in seconds
+    :param last_frame_duration: Duration of the last frame in seconds
     :return: Tuples consisting of:
         - Row number of the line on the screen
         - Line: mapping between column numbers and character
@@ -248,25 +248,34 @@ def replay(records, from_pyte_char, min_frame_duration=50, last_frame_duration=1
     screen = pyte.Screen(header.width, header.height)
     stream = pyte.ByteStream(screen)
 
-    config = CharacterCellConfig(width=header.width, height=header.height, theme=None)
+    config = CharacterCellConfig(width=header.width,
+                                 height=header.height,
+                                 text_color=header.theme.fg,
+                                 background_color=header.theme.bg)
     yield config
+
+    palette = {
+        'foreground': header.theme.fg,
+        'background': header.theme.bg
+    }
+    palette.update(enumerate(header.theme.palette.split(':')))
 
     pending_lines = {}
     current_time = 0
     for event_record in _group_by_time(records, min_frame_duration, last_frame_duration):
         stream.feed(event_record.event_data)
-        ascii_buffer = {
-            row: {
-                column: from_pyte_char(screen.buffer[row][column])
-                for column in screen.buffer[row]
-            } for row in screen.dirty
-        }
 
+        ascii_buffer = {}
+        for row in screen.dirty:
+            ascii_buffer[row] = {}
+            for column in screen.buffer[row]:
+                ascii_buffer[row][column] = from_pyte_char(screen.buffer[row][column],
+                                                           palette)
         screen.dirty.clear()
 
         done_lines = {}
         # Conversion from seconds to milliseconds
-        duration = 1000 * round(event_record.duration, 3)
+        duration = int(1000 * round(event_record.duration, 3))
         for row in pending_lines:
             line, line_time, line_duration = pending_lines[row]
             if row in ascii_buffer:
@@ -291,7 +300,7 @@ def replay(records, from_pyte_char, min_frame_duration=50, last_frame_duration=1
         yield CharacterCellLineEvent(*args)
 
 
-def get_configuration(fileno):
+def get_configuration(fileno=None):
     # type: () -> (int, int, AsciiCastTheme)
     """Get configuration information related to terminal output rendering"""
     if fileno is None:
