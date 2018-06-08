@@ -1,0 +1,21 @@
+! Base16 Grayscale Dark
+! Scheme: Alexandre Gavioli (https:
+*foreground: #b9b9b9
+*background: #101010
+*cursorColor: #b9b9b9
+*color0: #101010
+*color1: #7c7c7c
+*color2: #8e8e8e
+*color3: #a0a0a0
+*color4: #686868
+*color5: #747474
+*color6: #868686
+*color7: #b9b9b9
+*color8: #525252
+*color9: #999999
+*color10: #252525
+*color11: #464646
+*color12: #ababab
+*color13: #e3e3e3
+*color14: #5e5e5e
+*color15: #f7f7f7

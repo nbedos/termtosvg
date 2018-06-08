@@ -1,0 +1,21 @@
+! Base16 Railscasts
+! Scheme: Ryan Bates (http:
+*foreground: #e6e1dc
+*background: #2b2b2b
+*cursorColor: #e6e1dc
+*color0: #2b2b2b
+*color1: #da4939
+*color2: #a5c261
+*color3: #ffc66d
+*color4: #6d9cbe
+*color5: #b6b3eb
+*color6: #519f50
+*color7: #e6e1dc
+*color8: #5a647e
+*color9: #cc7833
+*color10: #272935
+*color11: #3a4055
+*color12: #d4cfc9
+*color13: #f4f1ed
+*color14: #bc9458
+*color15: #f9f7f3

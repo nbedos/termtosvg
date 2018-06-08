@@ -1,0 +1,21 @@
+! Base16 Solarized Dark
+! Scheme: Ethan Schoonover (http:
+*foreground: #93a1a1
+*background: #002b36
+*cursorColor: #93a1a1
+*color0: #002b36
+*color1: #dc322f
+*color2: #859900
+*color3: #b58900
+*color4: #268bd2
+*color5: #6c71c4
+*color6: #2aa198
+*color7: #93a1a1
+*color8: #657b83
+*color9: #cb4b16
+*color10: #073642
+*color11: #586e75
+*color12: #839496
+*color13: #eee8d5
+*color14: #d33682
+*color15: #fdf6e3

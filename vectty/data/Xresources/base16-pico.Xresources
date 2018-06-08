@@ -1,0 +1,21 @@
+! Base16 Pico
+! Scheme: PICO-8 (http:
+*foreground: #5f574f
+*background: #000000
+*cursorColor: #5f574f
+*color0: #000000
+*color1: #ff004d
+*color2: #00e756
+*color3: #fff024
+*color4: #83769c
+*color5: #ff77a8
+*color6: #29adff
+*color7: #5f574f
+*color8: #008751
+*color9: #ffa300
+*color10: #1d2b53
+*color11: #7e2553
+*color12: #ab5236
+*color13: #c2c3c7
+*color14: #ffccaa
+*color15: #fff1e8

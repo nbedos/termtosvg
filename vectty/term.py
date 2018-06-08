@@ -2,7 +2,9 @@ import datetime
 import fcntl
 import logging
 import os
+import pkg_resources
 import pty
+import re
 import selectors
 import struct
 import sys
@@ -21,6 +23,8 @@ from vectty.anim import CharacterCellConfig, CharacterCellLineEvent, CharacterCe
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+
+XRESOURCES_DIR = os.path.join('data', 'Xresources')
 
 # asciicast v2 record formats
 # Full specification: https://github.com/asciinema/asciinema/blob/develop/doc/asciicast-v2.md
@@ -300,8 +304,20 @@ def replay(records, from_pyte_char, min_frame_duration=0.050, last_frame_duratio
         yield CharacterCellLineEvent(*args)
 
 
-def get_configuration(fileno=None):
-    # type: () -> (int, int, AsciiCastTheme)
+def default_themes():
+    pattern = re.compile('base16-(?P<theme>.+).Xresources')
+    themes = {}
+    for file in pkg_resources.resource_listdir(__name__, XRESOURCES_DIR):
+        match = pattern.fullmatch(file)
+        if match:
+            file_path = os.path.join(XRESOURCES_DIR, file)
+            xresources_str = pkg_resources.resource_string(__name__, file_path).decode('utf-8')
+            themes[match.group('theme')] = xresources_str
+    return themes
+
+
+def get_configuration(theme, fileno=None):
+    # type: (Union[str, None], Union[None, int]) -> (int, int, AsciiCastTheme)
     """Get configuration information related to terminal output rendering"""
     if fileno is None:
         fileno = sys.stdout.fileno()
@@ -313,7 +329,11 @@ def get_configuration(fileno=None):
         logger.debug(f'Failed to get terminal size ({e}), '
                      f'using default values instead ({columns}x{lines})')
 
-    xresources_str = _get_xresources()
+    if theme is None:
+        xresources_str = _get_xresources()
+    else:
+        xresources_str = default_themes()[theme]
+
     theme = _parse_xresources(xresources_str)
 
     return columns, lines, theme

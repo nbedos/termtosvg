@@ -1,0 +1,21 @@
+! Base16 Tomorrow
+! Scheme: Chris Kempson (http:
+*foreground: #4d4d4c
+*background: #ffffff
+*cursorColor: #4d4d4c
+*color0: #ffffff
+*color1: #c82829
+*color2: #718c00
+*color3: #eab700
+*color4: #4271ae
+*color5: #8959a8
+*color6: #3e999f
+*color7: #4d4d4c
+*color8: #8e908c
+*color9: #f5871f
+*color10: #e0e0e0
+*color11: #d6d6d6
+*color12: #969896
+*color13: #282a2e
+*color14: #a3685a
+*color15: #1d1f21

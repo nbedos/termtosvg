@@ -144,6 +144,9 @@ class TestTerm(unittest.TestCase):
             expected_screen = dict(enumerate(cmd for cmd in ''.join(commands).split('\r\n') if cmd))
             self.assertEqual(expected_screen, screen)
 
+    def test_default_themes(self):
+        term.default_themes()
+
     def test__parse_xresources(self):
         with self.subTest(case='All valid colors'):
             theme = term._parse_xresources(xresources_valid)
@@ -171,18 +174,23 @@ class TestTerm(unittest.TestCase):
             with self.assertRaises(KeyError):
                 term._parse_xresources(xresources_empty)
 
+        for theme, xresource_str in term.default_themes().items():
+            with self.subTest(case=theme):
+                term._parse_xresources(xresource_str)
+
     def test_get_configuration(self):
         m = MagicMock()
         m.screen().root.get_full_property.return_value.value = xresources_valid.encode('utf-8')
         Display_mock = MagicMock(return_value=m)
         with patch('Xlib.display.Display', Display_mock):
             with self.subTest(case='Failing get_terminal_size call'):
-                term.get_configuration(-1)
+                term.get_configuration(None, -1)
 
             with self.subTest(case='Successful get_terminal_size call'):
                 term_size_mock = MagicMock(return_value=(42, 84))
                 with patch('os.get_terminal_size', term_size_mock):
-                    term.get_configuration(-1)
+                    term.get_configuration(None, -1)
+
 
     def test__group_by_time(self):
         event_records = [

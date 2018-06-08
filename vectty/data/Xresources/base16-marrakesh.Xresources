@@ -1,0 +1,21 @@
+! Base16 Marrakesh
+! Scheme: Alexandre Gavioli (http:
+*foreground: #948e48
+*background: #201602
+*cursorColor: #948e48
+*color0: #201602
+*color1: #c35359
+*color2: #18974e
+*color3: #a88339
+*color4: #477ca1
+*color5: #8868b3
+*color6: #75a738
+*color7: #948e48
+*color8: #6c6823
+*color9: #b36144
+*color10: #302e00
+*color11: #5f5b17
+*color12: #86813b
+*color13: #ccc37a
+*color14: #b3588e
+*color15: #faf0a5

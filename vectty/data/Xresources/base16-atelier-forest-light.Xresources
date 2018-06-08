@@ -1,0 +1,21 @@
+! Base16 Atelier Forest Light
+! Scheme: Bram de Haan (http:
+*foreground: #68615e
+*background: #f1efee
+*cursorColor: #68615e
+*color0: #f1efee
+*color1: #f22c40
+*color2: #7b9726
+*color3: #c38418
+*color4: #407ee7
+*color5: #6666ea
+*color6: #3d97b8
+*color7: #68615e
+*color8: #9c9491
+*color9: #df5320
+*color10: #e6e2e0
+*color11: #a8a19f
+*color12: #766e6b
+*color13: #2c2421
+*color14: #c33ff3
+*color15: #1b1918

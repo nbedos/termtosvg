@@ -1,0 +1,21 @@
+! Base16 Summerfruit Dark
+! Scheme: Christopher Corley (http:
+*foreground: #d0d0d0
+*background: #151515
+*cursorColor: #d0d0d0
+*color0: #151515
+*color1: #ff0086
+*color2: #00c918
+*color3: #aba800
+*color4: #3777e6
+*color5: #ad00a1
+*color6: #1faaaa
+*color7: #d0d0d0
+*color8: #505050
+*color9: #fd8900
+*color10: #202020
+*color11: #303030
+*color12: #b0b0b0
+*color13: #e0e0e0
+*color14: #cc6633
+*color15: #ffffff

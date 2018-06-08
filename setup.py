@@ -7,6 +7,15 @@ setup(
     version='0.1',
     description='Record terminal sessions as SVG animations',
     packages=['vectty'],
+    package_data={
+        '': [
+            'LICENSE'
+        ],
+        'vectty': [
+            'data/Xresources/base16-*.Xresources',
+            'data/Xresources/LICENSE.md',
+        ]
+    },
     py_modules=['vectty.anim', 'vectty.term'],
     entry_points={
         'console_scripts': [
@@ -14,6 +23,7 @@ setup(
         ]
     },
     install_requires=[
+        'setuptools',
         'pyte',
         'python-xlib',
         'svgwrite'

@@ -1,0 +1,21 @@
+! Base16 Harmonic16 Dark
+! Scheme: Jannik Siebert (https:
+*foreground: #cbd6e2
+*background: #0b1c2c
+*cursorColor: #cbd6e2
+*color0: #0b1c2c
+*color1: #bf8b56
+*color2: #56bf8b
+*color3: #8bbf56
+*color4: #8b56bf
+*color5: #bf568b
+*color6: #568bbf
+*color7: #cbd6e2
+*color8: #627e99
+*color9: #bfbf56
+*color10: #223b54
+*color11: #405c79
+*color12: #aabcce
+*color13: #e5ebf1
+*color14: #bf5656
+*color15: #f7f9fb

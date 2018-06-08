@@ -1,0 +1,21 @@
+! Base16 Default Dark
+! Scheme: Chris Kempson (http:
+*foreground: #d8d8d8
+*background: #181818
+*cursorColor: #d8d8d8
+*color0: #181818
+*color1: #ab4642
+*color2: #a1b56c
+*color3: #f7ca88
+*color4: #7cafc2
+*color5: #ba8baf
+*color6: #86c1b9
+*color7: #d8d8d8
+*color8: #585858
+*color9: #dc9656
+*color10: #282828
+*color11: #383838
+*color12: #b8b8b8
+*color13: #e8e8e8
+*color14: #a16946
+*color15: #f8f8f8

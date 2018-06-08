@@ -1,0 +1,21 @@
+! Base16 Mexico Light
+! Scheme: Sheldon Johnson
+*foreground: #383838
+*background: #f8f8f8
+*cursorColor: #383838
+*color0: #f8f8f8
+*color1: #ab4642
+*color2: #538947
+*color3: #f79a0e
+*color4: #7cafc2
+*color5: #96609e
+*color6: #4b8093
+*color7: #383838
+*color8: #b8b8b8
+*color9: #dc9656
+*color10: #e8e8e8
+*color11: #d8d8d8
+*color12: #585858
+*color13: #282828
+*color14: #a16946
+*color15: #181818

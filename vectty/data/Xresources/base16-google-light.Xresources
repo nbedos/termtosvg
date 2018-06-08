@@ -1,0 +1,21 @@
+! Base16 Google Light
+! Scheme: Seth Wright (http:
+*foreground: #373b41
+*background: #ffffff
+*cursorColor: #373b41
+*color0: #ffffff
+*color1: #cc342b
+*color2: #198844
+*color3: #fba922
+*color4: #3971ed
+*color5: #a36ac7
+*color6: #3971ed
+*color7: #373b41
+*color8: #b4b7b4
+*color9: #f96a38
+*color10: #e0e0e0
+*color11: #c5c8c6
+*color12: #969896
+*color13: #282a2e
+*color14: #3971ed
+*color15: #1d1f21

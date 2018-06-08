@@ -1,0 +1,21 @@
+! Base16 Bespin
+! Scheme: Jan T. Sott
+*foreground: #8a8986
+*background: #28211c
+*cursorColor: #8a8986
+*color0: #28211c
+*color1: #cf6a4c
+*color2: #54be0d
+*color3: #f9ee98
+*color4: #5ea6ea
+*color5: #9b859d
+*color6: #afc4db
+*color7: #8a8986
+*color8: #666666
+*color9: #cf7d34
+*color10: #36312e
+*color11: #5e5d5c
+*color12: #797977
+*color13: #9d9b97
+*color14: #937121
+*color15: #baae9e

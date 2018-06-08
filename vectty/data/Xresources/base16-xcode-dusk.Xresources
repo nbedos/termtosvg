@@ -1,0 +1,21 @@
+! Base16 XCode Dusk
+! Scheme: Elsa Gonsiorowski (https:
+*foreground: #939599
+*background: #282b35
+*cursorColor: #939599
+*color0: #282b35
+*color1: #b21889
+*color2: #df0002
+*color3: #438288
+*color4: #790ead
+*color5: #b21889
+*color6: #00a0be
+*color7: #939599
+*color8: #686a71
+*color9: #786dc5
+*color10: #3d4048
+*color11: #53555d
+*color12: #7e8086
+*color13: #a9aaae
+*color14: #c77c48
+*color15: #bebfc2

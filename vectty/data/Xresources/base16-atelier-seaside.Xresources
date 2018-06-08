@@ -1,0 +1,21 @@
+! Base16 Atelier Seaside
+! Scheme: Bram de Haan (http:
+*foreground: #8ca68c
+*background: #131513
+*cursorColor: #8ca68c
+*color0: #131513
+*color1: #e6193c
+*color2: #29a329
+*color3: #98981b
+*color4: #3d62f5
+*color5: #ad2bee
+*color6: #1999b3
+*color7: #8ca68c
+*color8: #687d68
+*color9: #87711d
+*color10: #242924
+*color11: #5e6e5e
+*color12: #809980
+*color13: #cfe8cf
+*color14: #e619c3
+*color15: #f4fbf4

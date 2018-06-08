@@ -20,7 +20,6 @@ _CharacterCell.text.__doc__ = 'Text content of the cell'
 _CharacterCell.color.__doc__ = 'Color of the text'
 _CharacterCell.background_color.__doc__ = 'Background color of the cell'
 
-
 class CharacterCell(_CharacterCell):
     @classmethod
     def from_pyte(cls, char, palette):
@@ -56,6 +55,12 @@ class CharacterCell(_CharacterCell):
                 text_color = palette[colors_bold[char.fg]]
             else:
                 text_color = palette[colors[char.fg]]
+        elif len(char.fg) == 6:
+            try:
+                int(char.fg, 16)
+                text_color = f'#{char.fg}'
+            except ValueError:
+                text_color = char.fg
         else:
             text_color = char.fg
 
@@ -63,8 +68,14 @@ class CharacterCell(_CharacterCell):
             background_color = palette['background']
         elif char.bg in colors:
             background_color = palette[colors[char.bg]]
+        elif len(char.bg) == 6:
+            try:
+                int(char.bg, 16)
+                background_color = f'#{char.bg}'
+            except ValueError:
+                background_color = char.bg
         else:
-            background_color = palette[char.bg]
+            background_color = char.bg
 
         if char.reverse:
             text_color, background_color = background_color, text_color

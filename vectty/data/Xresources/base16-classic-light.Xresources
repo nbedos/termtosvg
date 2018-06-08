@@ -1,0 +1,21 @@
+! Base16 Classic Light
+! Scheme: Jason Heeris (http:
+*foreground: #303030
+*background: #f5f5f5
+*cursorColor: #303030
+*color0: #f5f5f5
+*color1: #ac4142
+*color2: #90a959
+*color3: #f4bf75
+*color4: #6a9fb5
+*color5: #aa759f
+*color6: #75b5aa
+*color7: #303030
+*color8: #b0b0b0
+*color9: #d28445
+*color10: #e0e0e0
+*color11: #d0d0d0
+*color12: #505050
+*color13: #202020
+*color14: #8f5536
+*color15: #151515

@@ -1,0 +1,21 @@
+! Base16 Mocha
+! Scheme: Chris Kempson (http:
+*foreground: #d0c8c6
+*background: #3b3228
+*cursorColor: #d0c8c6
+*color0: #3b3228
+*color1: #cb6077
+*color2: #beb55b
+*color3: #f4bc87
+*color4: #8ab3b5
+*color5: #a89bb9
+*color6: #7bbda4
+*color7: #d0c8c6
+*color8: #7e705a
+*color9: #d28b71
+*color10: #534636
+*color11: #645240
+*color12: #b8afad
+*color13: #e9e1dd
+*color14: #bb9584
+*color15: #f5eeeb

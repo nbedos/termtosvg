@@ -12,11 +12,13 @@ from vectty import term
 
 @contextmanager
 def temp_named_file(prefix):
+    filename = None
     try:
         _, filename = tempfile.mkstemp(prefix=prefix)
         yield filename
     finally:
-        os.remove(filename)
+        if filename is not None:
+            os.remove(filename)
 
 
 class TestAnim(unittest.TestCase):
@@ -27,7 +29,7 @@ class TestAnim(unittest.TestCase):
             pyte.screens.Char('C', 'red', 'blue', bold=True),
             pyte.screens.Char('D', 'red', 'blue', bold=True, reverse=True),
             pyte.screens.Char('E', 'default', 'default'),
-            pyte.screens.Char('F', '#123456', '#ABCDEF'),
+            pyte.screens.Char('F', '008700', 'ABCDEF'),
         ]
 
         char_cells = [
@@ -36,7 +38,7 @@ class TestAnim(unittest.TestCase):
             anim.CharacterCell('C', 'color9', 'color4'),
             anim.CharacterCell('D', 'color4', 'color9'),
             anim.CharacterCell('E', 'foreground', 'background'),
-            #anim.CharacterCell('F', '#123456', '#ABCDEF'),
+            anim.CharacterCell('F', '#008700', '#ABCDEF'),
         ]
 
         palette = {
