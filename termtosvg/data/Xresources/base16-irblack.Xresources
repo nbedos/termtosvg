@@ -1,0 +1,21 @@
+! Base16 IR Black
+! Scheme: Timothée Poisot (http:
+*foreground: #b5b3aa
+*background: #000000
+*cursorColor: #b5b3aa
+*color0: #000000
+*color1: #ff6c60
+*color2: #a8ff60
+*color3: #ffffb6
+*color4: #96cbfe
+*color5: #ff73fd
+*color6: #c6c5fe
+*color7: #b5b3aa
+*color8: #6c6c66
+*color9: #e9c062
+*color10: #242422
+*color11: #484844
+*color12: #918f88
+*color13: #d9d7cc
+*color14: #b18a3d
+*color15: #fdfbee

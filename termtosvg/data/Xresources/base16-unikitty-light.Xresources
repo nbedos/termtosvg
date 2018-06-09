@@ -1,0 +1,21 @@
+! Base16 Unikitty Light
+! Scheme: Josh W Lewis (@joshwlewis)
+*foreground: #6c696e
+*background: #ffffff
+*cursorColor: #6c696e
+*color0: #ffffff
+*color1: #d8137f
+*color2: #17ad98
+*color3: #dc8a0e
+*color4: #775dff
+*color5: #aa17e6
+*color6: #149bda
+*color7: #6c696e
+*color8: #a7a5a8
+*color9: #d65407
+*color10: #e1e1e2
+*color11: #c4c3c5
+*color12: #89878b
+*color13: #4f4b51
+*color14: #e013d0
+*color15: #322d34

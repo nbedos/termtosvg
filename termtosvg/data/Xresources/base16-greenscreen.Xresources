@@ -1,0 +1,21 @@
+! Base16 Green Screen
+! Scheme: Chris Kempson (http:
+*foreground: #00bb00
+*background: #001100
+*cursorColor: #00bb00
+*color0: #001100
+*color1: #007700
+*color2: #00bb00
+*color3: #007700
+*color4: #009900
+*color5: #00bb00
+*color6: #005500
+*color7: #00bb00
+*color8: #007700
+*color9: #009900
+*color10: #003300
+*color11: #005500
+*color12: #009900
+*color13: #00dd00
+*color14: #005500
+*color15: #00ff00

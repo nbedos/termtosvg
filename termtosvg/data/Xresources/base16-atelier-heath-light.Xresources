@@ -1,0 +1,21 @@
+! Base16 Atelier Heath Light
+! Scheme: Bram de Haan (http:
+*foreground: #695d69
+*background: #f7f3f7
+*cursorColor: #695d69
+*color0: #f7f3f7
+*color1: #ca402b
+*color2: #918b3b
+*color3: #bb8a35
+*color4: #516aec
+*color5: #7b59c0
+*color6: #159393
+*color7: #695d69
+*color8: #9e8f9e
+*color9: #a65926
+*color10: #d8cad8
+*color11: #ab9bab
+*color12: #776977
+*color13: #292329
+*color14: #cc33cc
+*color15: #1b181b

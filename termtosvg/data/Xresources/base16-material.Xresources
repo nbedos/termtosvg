@@ -1,0 +1,21 @@
+! Base16 Material
+! Scheme: Nate Peterson
+*foreground: #eeffff
+*background: #263238
+*cursorColor: #eeffff
+*color0: #263238
+*color1: #f07178
+*color2: #c3e88d
+*color3: #ffcb6b
+*color4: #82aaff
+*color5: #c792ea
+*color6: #89ddff
+*color7: #eeffff
+*color8: #546e7a
+*color9: #f78c6c
+*color10: #2e3c43
+*color11: #314549
+*color12: #b2ccd6
+*color13: #eeffff
+*color14: #ff5370
+*color15: #ffffff

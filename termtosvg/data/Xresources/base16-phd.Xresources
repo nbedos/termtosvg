@@ -1,0 +1,21 @@
+! Base16 PhD
+! Scheme: Hennig Hasemann (http:
+*foreground: #b8bbc2
+*background: #061229
+*cursorColor: #b8bbc2
+*color0: #061229
+*color1: #d07346
+*color2: #99bf52
+*color3: #fbd461
+*color4: #5299bf
+*color5: #9989cc
+*color6: #72b9bf
+*color7: #b8bbc2
+*color8: #717885
+*color9: #f0a000
+*color10: #2a3448
+*color11: #4d5666
+*color12: #9a99a3
+*color13: #dbdde0
+*color14: #b08060
+*color15: #ffffff

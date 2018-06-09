@@ -1,0 +1,21 @@
+! Base16 OceanicNext
+! Scheme: https:
+*foreground: #c0c5ce
+*background: #1b2b34
+*cursorColor: #c0c5ce
+*color0: #1b2b34
+*color1: #ec5f67
+*color2: #99c794
+*color3: #fac863
+*color4: #6699cc
+*color5: #c594c5
+*color6: #5fb3b3
+*color7: #c0c5ce
+*color8: #65737e
+*color9: #f99157
+*color10: #343d46
+*color11: #4f5b66
+*color12: #a7adba
+*color13: #cdd3de
+*color14: #ab7967
+*color15: #d8dee9

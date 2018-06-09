@@ -1,0 +1,21 @@
+! Base16 Atelier Sulphurpool Light
+! Scheme: Bram de Haan (http:
+*foreground: #5e6687
+*background: #f5f7ff
+*cursorColor: #5e6687
+*color0: #f5f7ff
+*color1: #c94922
+*color2: #ac9739
+*color3: #c08b30
+*color4: #3d8fd1
+*color5: #6679cc
+*color6: #22a2c9
+*color7: #5e6687
+*color8: #898ea4
+*color9: #c76b29
+*color10: #dfe2f1
+*color11: #979db4
+*color12: #6b7394
+*color13: #293256
+*color14: #9c637a
+*color15: #202746

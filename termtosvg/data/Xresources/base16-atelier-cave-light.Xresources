@@ -1,0 +1,21 @@
+! Base16 Atelier Cave Light
+! Scheme: Bram de Haan (http:
+*foreground: #585260
+*background: #efecf4
+*cursorColor: #585260
+*color0: #efecf4
+*color1: #be4678
+*color2: #2a9292
+*color3: #a06e3b
+*color4: #576ddb
+*color5: #955ae7
+*color6: #398bc6
+*color7: #585260
+*color8: #7e7887
+*color9: #aa573c
+*color10: #e2dfe7
+*color11: #8b8792
+*color12: #655f6d
+*color13: #26232a
+*color14: #bf40bf
+*color15: #19171c

@@ -1,0 +1,21 @@
+! Base16 Material Darker
+! Scheme: Nate Peterson
+*foreground: #eeffff
+*background: #212121
+*cursorColor: #eeffff
+*color0: #212121
+*color1: #f07178
+*color2: #c3e88d
+*color3: #ffcb6b
+*color4: #82aaff
+*color5: #c792ea
+*color6: #89ddff
+*color7: #eeffff
+*color8: #4a4a4a
+*color9: #f78c6c
+*color10: #303030
+*color11: #353535
+*color12: #b2ccd6
+*color13: #eeffff
+*color14: #ff5370
+*color15: #ffffff

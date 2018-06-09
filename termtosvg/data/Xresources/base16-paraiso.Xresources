@@ -1,0 +1,21 @@
+! Base16 Paraiso
+! Scheme: Jan T. Sott
+*foreground: #a39e9b
+*background: #2f1e2e
+*cursorColor: #a39e9b
+*color0: #2f1e2e
+*color1: #ef6155
+*color2: #48b685
+*color3: #fec418
+*color4: #06b6ef
+*color5: #815ba4
+*color6: #5bc4bf
+*color7: #a39e9b
+*color8: #776e71
+*color9: #f99b15
+*color10: #41323f
+*color11: #4f424c
+*color12: #8d8687
+*color13: #b9b6b0
+*color14: #e96ba8
+*color15: #e7e9db

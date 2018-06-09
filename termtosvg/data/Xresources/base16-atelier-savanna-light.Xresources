@@ -1,0 +1,21 @@
+! Base16 Atelier Savanna Light
+! Scheme: Bram de Haan (http:
+*foreground: #526057
+*background: #ecf4ee
+*cursorColor: #526057
+*color0: #ecf4ee
+*color1: #b16139
+*color2: #489963
+*color3: #a07e3b
+*color4: #478c90
+*color5: #55859b
+*color6: #1c9aa0
+*color7: #526057
+*color8: #78877d
+*color9: #9f713c
+*color10: #dfe7e2
+*color11: #87928a
+*color12: #5f6d64
+*color13: #232a25
+*color14: #867469
+*color15: #171c19

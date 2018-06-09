@@ -1,0 +1,21 @@
+! Base16 Atelier Dune
+! Scheme: Bram de Haan (http:
+*foreground: #a6a28c
+*background: #20201d
+*cursorColor: #a6a28c
+*color0: #20201d
+*color1: #d73737
+*color2: #60ac39
+*color3: #ae9513
+*color4: #6684e1
+*color5: #b854d4
+*color6: #1fad83
+*color7: #a6a28c
+*color8: #7d7a68
+*color9: #b65611
+*color10: #292824
+*color11: #6e6b5e
+*color12: #999580
+*color13: #e8e4cf
+*color14: #d43552
+*color15: #fefbec

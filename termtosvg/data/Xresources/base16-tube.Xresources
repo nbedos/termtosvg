@@ -1,0 +1,21 @@
+! Base16 London Tube
+! Scheme: Jan T. Sott
+*foreground: #d9d8d8
+*background: #231f20
+*cursorColor: #d9d8d8
+*color0: #231f20
+*color1: #ee2e24
+*color2: #00853e
+*color3: #ffd204
+*color4: #009ddc
+*color5: #98005d
+*color6: #85cebc
+*color7: #d9d8d8
+*color8: #737171
+*color9: #f386a1
+*color10: #1c3f95
+*color11: #5a5758
+*color12: #959ca1
+*color13: #e7e7e8
+*color14: #b06110
+*color15: #ffffff

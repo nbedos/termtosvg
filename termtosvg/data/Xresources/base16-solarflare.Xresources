@@ -1,0 +1,21 @@
+! Base16 Solar Flare
+! Scheme: Chuck Harmston (https:
+*foreground: #a6afb8
+*background: #18262f
+*cursorColor: #a6afb8
+*color0: #18262f
+*color1: #ef5253
+*color2: #7cc844
+*color3: #e4b51c
+*color4: #33b5e1
+*color5: #a363d5
+*color6: #52cbb0
+*color7: #a6afb8
+*color8: #667581
+*color9: #e66b2b
+*color10: #222e38
+*color11: #586875
+*color12: #85939e
+*color13: #e8e9ed
+*color14: #d73c9a
+*color15: #f5f7fa

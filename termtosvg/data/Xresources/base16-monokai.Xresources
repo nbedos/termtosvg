@@ -1,0 +1,21 @@
+! Base16 Monokai
+! Scheme: Wimer Hazenberg (http:
+*foreground: #f8f8f2
+*background: #272822
+*cursorColor: #f8f8f2
+*color0: #272822
+*color1: #f92672
+*color2: #a6e22e
+*color3: #f4bf75
+*color4: #66d9ef
+*color5: #ae81ff
+*color6: #a1efe4
+*color7: #f8f8f2
+*color8: #75715e
+*color9: #fd971f
+*color10: #383830
+*color11: #49483e
+*color12: #a59f85
+*color13: #f5f4f1
+*color14: #cc6633
+*color15: #f9f8f5

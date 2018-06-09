@@ -1,0 +1,21 @@
+! Base16 Zenburn
+! Scheme: elnawe
+*foreground: #dcdccc
+*background: #3f3f3f
+*cursorColor: #dcdccc
+*color0: #3f3f3f
+*color1: #dca3a3
+*color2: #5f7f5f
+*color3: #e0cf9f
+*color4: #7cb8bb
+*color5: #dc8cc3
+*color6: #93e0e3
+*color7: #dcdccc
+*color8: #4f4f4f
+*color9: #dfaf8f
+*color10: #404040
+*color11: #606060
+*color12: #808080
+*color13: #c0c0c0
+*color14: #000000
+*color15: #ffffff

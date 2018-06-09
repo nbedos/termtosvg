@@ -1,0 +1,21 @@
+! Base16 Rebecca
+! Scheme: Victor Borja (http:
+*foreground: #f1eff8
+*background: #292a44
+*cursorColor: #f1eff8
+*color0: #292a44
+*color1: #a0a0c5
+*color2: #6dfedf
+*color3: #ae81ff
+*color4: #2de0a7
+*color5: #7aa5ff
+*color6: #8eaee0
+*color7: #f1eff8
+*color8: #666699
+*color9: #efe4a1
+*color10: #663399
+*color11: #383a62
+*color12: #a0a0c5
+*color13: #ccccff
+*color14: #ff79c6
+*color15: #53495d

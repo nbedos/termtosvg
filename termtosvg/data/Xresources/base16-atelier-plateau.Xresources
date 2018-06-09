@@ -1,0 +1,21 @@
+! Base16 Atelier Plateau
+! Scheme: Bram de Haan (http:
+*foreground: #8a8585
+*background: #1b1818
+*cursorColor: #8a8585
+*color0: #1b1818
+*color1: #ca4949
+*color2: #4b8b8b
+*color3: #a06e3b
+*color4: #7272ca
+*color5: #8464c4
+*color6: #5485b6
+*color7: #8a8585
+*color8: #655d5d
+*color9: #b45a3c
+*color10: #292424
+*color11: #585050
+*color12: #7e7777
+*color13: #e7dfdf
+*color14: #bd5187
+*color15: #f4ecec

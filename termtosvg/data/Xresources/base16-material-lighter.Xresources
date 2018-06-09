@@ -1,0 +1,21 @@
+! Base16 Material Lighter
+! Scheme: Nate Peterson
+*foreground: #80cbc4
+*background: #fafafa
+*cursorColor: #80cbc4
+*color0: #fafafa
+*color1: #ff5370
+*color2: #91b859
+*color3: #ffb62c
+*color4: #6182b8
+*color5: #7c4dff
+*color6: #39adb5
+*color7: #80cbc4
+*color8: #ccd7da
+*color9: #f76d47
+*color10: #e7eaec
+*color11: #cceae7
+*color12: #8796b0
+*color13: #80cbc4
+*color14: #e53935
+*color15: #ffffff

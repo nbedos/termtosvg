@@ -1,0 +1,21 @@
+! Base16 Gruvbox dark, pale
+! Scheme: Dawid Kurek (dawikur@gmail.com), morhetz (https:
+*foreground: #dab997
+*background: #262626
+*cursorColor: #dab997
+*color0: #262626
+*color1: #d75f5f
+*color2: #afaf00
+*color3: #ffaf00
+*color4: #83adad
+*color5: #d485ad
+*color6: #85ad85
+*color7: #dab997
+*color8: #8a8a8a
+*color9: #ff8700
+*color10: #3a3a3a
+*color11: #4e4e4e
+*color12: #949494
+*color13: #d5c4a1
+*color14: #d65d0e
+*color15: #ebdbb2

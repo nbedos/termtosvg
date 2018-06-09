@@ -1,0 +1,21 @@
+! Base16 Seti UI
+! Scheme:
+*foreground: #d6d6d6
+*background: #151718
+*cursorColor: #d6d6d6
+*color0: #151718
+*color1: #cd3f45
+*color2: #9fca56
+*color3: #e6cd69
+*color4: #55b5db
+*color5: #a074c4
+*color6: #55dbbe
+*color7: #d6d6d6
+*color8: #41535b
+*color9: #db7b55
+*color10: #282a2b
+*color11: #3b758c
+*color12: #43a5d5
+*color13: #eeeeee
+*color14: #8a553f
+*color15: #ffffff
