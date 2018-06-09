@@ -1,0 +1,13 @@
+language: python
+
+python:
+    - "3.6"
+
+install:
+    - make venv_dev
+
+script:
+    - make coverage
+
+notifications:
+  email: false

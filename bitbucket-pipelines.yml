@@ -1,9 +1,0 @@
-image: python:3.6.5
-
-pipelines:
-  default:
-    - step:
-        caches:
-          - pip
-        script:
-          - make integration
