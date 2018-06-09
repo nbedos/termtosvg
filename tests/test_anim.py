@@ -6,8 +6,8 @@ from contextlib import contextmanager
 
 import pyte.screens
 
-from vectty import anim
-from vectty import term
+from termtosvg import anim
+from termtosvg import term
 
 
 @contextmanager

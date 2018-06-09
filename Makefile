@@ -25,7 +25,7 @@ venv_dev: setup.py
 coverage: venv_dev
 	$(VENV_ACTIVATE) && \
 	    pip freeze && \
-	    coverage run --branch --source vectty -m unittest -v && \
+	    coverage run --branch --source termtosvg -m unittest -v && \
 	    coverage report && \
 	    coverage html
 
@@ -37,4 +37,4 @@ tests: venv
 integration: coverage
 
 xresources:
-	./vectty/data/Xresources/update.sh
+	./termtosvg/data/Xresources/update.sh

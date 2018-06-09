@@ -3,7 +3,7 @@ import time
 import unittest
 from unittest.mock import MagicMock, patch
 
-from vectty import term
+from termtosvg import term
 
 xresources_valid = """*background:	#002b36
 *foreground:	#839496

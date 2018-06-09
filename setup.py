@@ -3,23 +3,23 @@
 from setuptools import setup
 
 setup(
-    name='vectty',
+    name='termtosvg',
     version='0.1',
     description='Record terminal sessions as SVG animations',
-    packages=['vectty'],
+    packages=['termtosvg'],
     package_data={
         '': [
             'LICENSE'
         ],
-        'vectty': [
+        'termtosvg': [
             'data/Xresources/base16-*.Xresources',
             'data/Xresources/LICENSE.md',
         ]
     },
-    py_modules=['vectty.anim', 'vectty.term'],
+    py_modules=['termtosvg.anim', 'termtosvg.term'],
     entry_points={
         'console_scripts': [
-            'vectty=vectty.__main__:main'
+            'termtosvg=termtosvg.__main__:main'
         ]
     },
     install_requires=[
