@@ -2,23 +2,10 @@ import os
 import tempfile
 import unittest
 
-from contextlib import contextmanager
-
 import pyte.screens
 
 from termtosvg import anim
 from termtosvg import term
-
-
-@contextmanager
-def temp_named_file(prefix):
-    filename = None
-    try:
-        _, filename = tempfile.mkstemp(prefix=prefix)
-        yield filename
-    finally:
-        if filename is not None:
-            os.remove(filename)
 
 
 class TestAnim(unittest.TestCase):
@@ -148,5 +135,6 @@ class TestAnim(unittest.TestCase):
             anim.CharacterCellLineEvent(5, line(6), 300, 60),
         ]
 
-        with temp_named_file('vectyy_') as filename:
-            anim.render_animation(records, filename)
+        _, filename = tempfile.mkstemp(prefix='termtosvg_')
+        anim.render_animation(records, filename)
+        os.remove(filename)

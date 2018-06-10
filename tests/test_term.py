@@ -181,18 +181,29 @@ class TestTerm(unittest.TestCase):
                 term._parse_xresources(xresource_str)
 
     def test_get_configuration(self):
-        m = MagicMock()
-        m.screen().root.get_full_property.return_value.value = xresources_valid.encode('utf-8')
-        Display_mock = MagicMock(return_value=m)
-        with patch('Xlib.display.Display', Display_mock):
+        _get_x_mock = MagicMock(return_value=xresources_valid)
+        with patch('termtosvg.term._get_xresources', _get_x_mock):
             with self.subTest(case='Failing get_terminal_size call'):
-                term.get_configuration(None, -1)
+                # Pass an invalid fileno (-1) to get_configuration.
+                # The call should still work and return the default terminal geometry
+                cols, lines, _ = term.get_configuration(False, 'solarized-light', -1)
+                self.assertEqual(cols, 80)
+                self.assertEqual(lines, 24)
 
             with self.subTest(case='Successful get_terminal_size call'):
                 term_size_mock = MagicMock(return_value=(42, 84))
                 with patch('os.get_terminal_size', term_size_mock):
-                    term.get_configuration(None, -1)
+                    cols, lines, _ = term.get_configuration(False, 'solarized-light', -1)
+                    self.assertEqual(cols, 42)
+                    self.assertEqual(lines, 84)
 
+        _get_x_mock = MagicMock(side_effect=term.DisplayError(None))
+        with patch('termtosvg.term._get_xresources', _get_x_mock):
+            with self.subTest(case='Failing _get_xresources call'):
+                term_size_mock = MagicMock(return_value=(42, 84))
+                with patch('os.get_terminal_size', term_size_mock):
+                    # Should work and use fallback color theme
+                    term.get_configuration(True, 'solarized-light', -1)
 
     def test__group_by_time(self):
         event_records = [

@@ -11,8 +11,8 @@ import svgwrite.path
 import svgwrite.shapes
 import svgwrite.text
 
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
 
 _CharacterCell = namedtuple('_CharacterCell', ['text', 'color', 'background_color'])
 _CharacterCell.__doc__ = 'Representation of a character cell'

@@ -7,7 +7,6 @@ import pty
 import re
 import selectors
 import struct
-import sys
 import termios
 import tty
 from collections import namedtuple
@@ -21,8 +20,8 @@ from Xlib.error import DisplayError
 
 from termtosvg.anim import CharacterCellConfig, CharacterCellLineEvent, CharacterCellRecord
 
-logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
 
 XRESOURCES_DIR = os.path.join('data', 'Xresources')
 
@@ -108,6 +107,8 @@ def _record(columns, lines, input_fileno, output_fileno):
     generator.
     See https://github.com/python/cpython/blob/master/Lib/pty.py
 
+    :param columns: Initial number of columns of the terminal
+    :param lines: Initial number of lines of the terminal
     :param input_fileno: File descriptor of the input data stream
     :param output_fileno: File descriptor of the output data stream
     """
@@ -178,8 +179,8 @@ def _capture_data(input_fileno, output_fileno, master_fd, buffer_size=1024):
 def _group_by_time(event_records, min_rec_duration, last_rec_duration):
     # type: (Iterable[AsciiCastEvent], float, float) -> Generator[AsciiCastEvent, None, None]
     """Merge event records together if they are close enough and compute the duration between
-    consecutive events. The duration between two event records returned by the function is
-    guaranteed to be at least min_rec_duration.
+    consecutive events. The duration between two consecutive event records returned by the function
+    is guaranteed to be at least min_rec_duration.
 
     :param event_records: Sequence of records in asciicast v2 format
     :param min_rec_duration: Minimum time between two records returned by the function in seconds
@@ -216,27 +217,26 @@ def _group_by_time(event_records, min_rec_duration, last_rec_duration):
         yield accumulator_event
 
 
-def replay(records, from_pyte_char, min_frame_duration=0.050, last_frame_duration=1):
+def replay(records, from_pyte_char, min_frame_duration=0.010, last_frame_duration=1):
     # type: (Iterable[AsciiCastRecord], Callable[[pyte.screen.Char, Dict[Any, str]], Any], float, float) -> Generator[CharacterCellRecord, None, None]
     """Read the records of a terminal sessions, render the corresponding screens and return lines
     of the screen that need updating.
-    Records are merged together so that there is at least a 'min_frame_duration' milliseconds pause
+
+    Records are merged together so that there is at least a 'min_frame_duration' seconds pause
     between two rendered screens.
     Lines returned are sorted by time and duration of their appearance on the screen so that lines
     in need of updating at the same time can easily be grouped together.
-    Characters on the screen are rendered as pyte.screen.Char and then converted to the caller's
-    format of choice using from_pyte_char
+    The terminal screen is rendered using Pyte and then each character of the screen is converted
+    to the caller's format of choice using from_pyte_char
 
     :param records: Records of the terminal session in asciicast v2 format. The first record must
-    be a header followed by event records.
+    be a header, which must be followed by event records.
     :param from_pyte_char: Conversion function from pyte.screen.Char to any other format
     :param min_frame_duration: Minimum frame duration in seconds
-    :param last_frame_duration: Duration of the last frame in seconds
-    :return: Tuples consisting of:
-        - Row number of the line on the screen
-        - Line: mapping between column numbers and character
-        - Time of this line in milliseconds
-        - Duration of this line on the screen in milliseconds
+    :param last_frame_duration: Last frame duration in seconds
+    :return: Records in the CharacterCellRecord format:
+        1/ a header with configuration information (CharacterCellConfig)
+        2/ one event record for each line of the screen that need to be redrawn (CharacterCellLineEvent)
     """
     def sort_by_time(d, row):
         row_line, row_line_time, row_line_duration = d[row]
@@ -302,35 +302,41 @@ def replay(records, from_pyte_char, min_frame_duration=0.050, last_frame_duratio
 
 
 def default_themes():
-    pattern = re.compile('base16-(?P<theme>.+).Xresources')
+    # type: ()-> Dict[str, str]
+    """Return all the default color themes"""
+    pattern = re.compile('base16-(?P<theme_name>.+).Xresources')
     themes = {}
     for file in pkg_resources.resource_listdir(__name__, XRESOURCES_DIR):
         match = pattern.fullmatch(file)
         if match:
             file_path = os.path.join(XRESOURCES_DIR, file)
             xresources_str = pkg_resources.resource_string(__name__, file_path).decode('utf-8')
-            themes[match.group('theme')] = xresources_str
+            themes[match.group('theme_name')] = xresources_str
     return themes
 
 
-def get_configuration(theme, fileno=None):
-    # type: (Union[str, None], Union[None, int]) -> (int, int, AsciiCastTheme)
-    """Get configuration information related to terminal output rendering"""
-    if fileno is None:
-        fileno = sys.stdout.fileno()
+def get_configuration(use_system_theme, theme_name, fileno):
+    # type: (bool, str, int) -> (int, int, AsciiCastTheme)
+    """Get configuration information related to terminal output rendering. If some information can
+    not be gathered from the system, return the default configuration.
+    """
     try:
         columns, lines = os.get_terminal_size(fileno)
     except OSError as e:
         lines = 24
         columns = 80
-        err_template = 'Failed to get terminal size ({}), using default values instead ({}x{})'
-        logger.debug(err_template.format(e, columns, lines))
+        logger.debug('Failed to get terminal size ({}), using default values '
+                     'instead ({}x{})'.format(e, columns, lines))
 
-    if theme is None:
-        xresources_str = _get_xresources()
+    if use_system_theme:
+        try:
+            xresources_str = _get_xresources()
+        except DisplayError:
+            logger.debug('Failed to gather color information from the Xserver, '
+                         'using fallback theme instead ("{}")'.format(theme_name))
+            xresources_str = default_themes()[theme_name]
     else:
-        xresources_str = default_themes()[theme]
-
+        xresources_str = default_themes()[theme_name]
     theme = _parse_xresources(xresources_str)
 
     return columns, lines, theme
@@ -339,16 +345,10 @@ def get_configuration(theme, fileno=None):
 def _get_xresources():
     # type: () -> str
     """Query the X server for the Xresources string of the default display"""
-    try:
-        d = display.Display()
-        data = d.screen(0).root.get_full_property(Xatom.RESOURCE_MANAGER,
-                                                  Xatom.STRING)
-    except DisplayError as e:
-        logger.debug('Failed to get the Xresources string from the X server: {}'.format(e))
-    else:
-        if data:
-            return data.value.decode('utf-8')
-    return ''
+    d = display.Display()
+    data = d.screen(0).root.get_full_property(Xatom.RESOURCE_MANAGER,
+                                              Xatom.STRING)
+    return data.value.decode('utf-8')
 
 
 def _parse_xresources(xresources):
