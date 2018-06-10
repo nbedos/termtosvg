@@ -74,18 +74,18 @@ class TestAnim(unittest.TestCase):
         rect_0, rect_3, rect_4, rect_6, rect_8, rect_9 = sorted(rectangles,
                                                                 key=lambda r: r.attribs['x'])
 
-        self.assertEqual(rect_0.attribs['x'], '0')
-        self.assertEqual(rect_0.attribs['width'], '16')
+        self.assertEqual(rect_0.attribs['x'], 0)
+        self.assertEqual(rect_0.attribs['width'], 16)
         self.assertEqual(rect_0.attribs['fill'], 'red')
-        self.assertEqual(rect_3.attribs['x'], '24')
-        self.assertEqual(rect_3.attribs['width'], '8')
-        self.assertEqual(rect_4.attribs['x'], '32')
-        self.assertEqual(rect_6.attribs['x'], '48')
-        self.assertEqual(rect_6.attribs['width'], '16')
+        self.assertEqual(rect_3.attribs['x'], 24)
+        self.assertEqual(rect_3.attribs['width'], 8)
+        self.assertEqual(rect_4.attribs['x'], 32)
+        self.assertEqual(rect_6.attribs['x'], 48)
+        self.assertEqual(rect_6.attribs['width'], 16)
         self.assertEqual(rect_6.attribs['fill'], 'blue')
-        self.assertEqual(rect_8.attribs['x'], '64')
+        self.assertEqual(rect_8.attribs['x'], 64)
         self.assertEqual(rect_8.attribs['fill'], 'green')
-        self.assertEqual(rect_9.attribs['x'], '72')
+        self.assertEqual(rect_9.attribs['x'], 72)
 
     def test__render_characters(self):
         screen_line = {
@@ -132,7 +132,7 @@ class TestAnim(unittest.TestCase):
 
     def test_render_animation(self):
         def line(i):
-            chars = [anim.CharacterCell(c, '#123456', '#789012') for c in f'line{i}']
+            chars = [anim.CharacterCell(c, '#123456', '#789012') for c in 'line{}'.format(i)]
             return dict(enumerate(chars))
 
         theme = term.AsciiCastTheme('#123456', '#789012', ':'.join(['#000000'] * 16))

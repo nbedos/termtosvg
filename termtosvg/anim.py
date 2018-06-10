@@ -59,7 +59,7 @@ class CharacterCell(_CharacterCell):
         elif len(char.fg) == 6:
             try:
                 int(char.fg, 16)
-                text_color = f'#{char.fg}'
+                text_color = '#{}'.format(char.fg)
             except ValueError:
                 text_color = char.fg
         else:
@@ -72,7 +72,7 @@ class CharacterCell(_CharacterCell):
         elif len(char.bg) == 6:
             try:
                 int(char.bg, 16)
-                background_color = f'#{char.bg}'
+                background_color = '#{}'.format(char.bg)
             except ValueError:
                 background_color = char.bg
         else:
@@ -93,10 +93,10 @@ CharacterCellRecord = Union[CharacterCellConfig, CharacterCellLineEvent]
 def _render_line_bg_colors(screen_line, height, line_height, cell_width, background_color):
     # type: (Dict[int, CharacterCell], float, float) -> List[svgwrite.shapes.Rect]
     def make_rectangle(group: List[int]) -> svgwrite.shapes.Rect:
-        x = f'{group[0] * cell_width}'
-        y = f'{height}'
-        sx = f'{len(group) * cell_width}'
-        sy = f'{line_height}'
+        x = group[0] * cell_width
+        y = height
+        sx = len(group) * cell_width
+        sy = line_height
         args = {
             'insert': (x, y),
             'size': (sx, sy),
@@ -136,7 +136,7 @@ def _render_characters(screen_line, height, cell_width):
         attributes = {
             'text': text.replace(' ', u'\u00A0'),
             'x': [str(group[0] * cell_width)],
-            'textLength': f'{len(group) * cell_width}',
+            'textLength': len(group) * cell_width,
             'lengthAdjust': 'spacingAndGlyphs',
             'fill': screen_line[group[0]].color
         }
@@ -159,7 +159,7 @@ def _render_characters(screen_line, height, cell_width):
 def render_animation(records, filename, end_pause=1, cell_width=8, cell_height=17):
     # type: (Iterable[CharacterCellRecord], str, int) -> None
     if end_pause < 0:
-        raise ValueError(f'Invalid end_pause (must be >= 0): "{end_pause}"')
+        raise ValueError('Invalid end_pause (must be >= 0): "{}"'.format(end_pause))
 
     if not isinstance(records, Iterator):
         records = iter(records)
@@ -173,7 +173,7 @@ def render_animation(records, filename, end_pause=1, cell_width=8, cell_height=1
         '*': {
             'font-family': '"DejaVu Sans Mono", monospace',
             'font-style': 'normal',
-            'font-size': f'{font_size}px',
+            'font-size': '{}px'.format(font_size),
         },
         'text': {
             'dominant-baseline': 'text-before-edge',
@@ -189,7 +189,7 @@ def render_animation(records, filename, end_pause=1, cell_width=8, cell_height=1
     width = header.width * cell_width
     height = header.height * cell_height
 
-    dwg = svgwrite.Drawing(filename, (f'{width}', f'{height}'), debug=True)
+    dwg = svgwrite.Drawing(filename, (width, height), debug=True)
     dwg.defs.add(dwg.style(_serialize_css_dict(css)))
     args = {
         'insert': (0, 0),
@@ -211,7 +211,7 @@ def render_animation(records, filename, end_pause=1, cell_width=8, cell_height=1
         frame = svgwrite.container.Group(display='none')
 
         animation_begin = None
-        animation_id_str = f'anim_{animation_id}'
+        animation_id_str = 'anim_{}'.format(animation_id)
         for event_record in record_group:
             height = event_record.row * cell_height
             rects = _render_line_bg_colors(event_record.line,
@@ -237,23 +237,23 @@ def render_animation(records, filename, end_pause=1, cell_width=8, cell_height=1
                 g.attribs['id'] = group_id
                 dwg.defs.add(g)
 
-            frame.add(svgwrite.container.Use(f'#{group_id}', y=height))
+            frame.add(svgwrite.container.Use('#{}'.format(group_id), y=height))
 
             # If the current row has already been animated, chain the current animation and the
             # last one
             if animation_begin is None and event_record.row in row_animations:
                 row_anim_id, row_anim_end = row_animations[event_record.row]
                 offset = line_time - row_anim_end
-                animation_begin = f'{row_anim_id}.end+{offset}ms'
+                animation_begin = '{}.end+{}ms'.format(row_anim_id, offset)
 
             row_animations[event_record.row] = (animation_id_str, line_time + line_duration)
 
         if animation_begin is None:
-            animation_begin = f'{line_time}ms;{last_animation_id_str}.end+{line_time}ms'
+            animation_begin = '{}ms;{}.end+{}ms'.format(line_time, last_animation_id_str, line_time)
 
         extra = {
             'begin': animation_begin,
-            'dur': f'{line_duration}ms',
+            'dur': '{}ms'.format(line_duration),
             'from': 'inline',
             'to': 'inline',
             'fill': 'remove',
@@ -272,7 +272,7 @@ def render_animation(records, filename, end_pause=1, cell_width=8, cell_height=1
 def _serialize_css_dict(css):
     # type: (Dict[str, Dict[str, str]]) -> str
     def serialize_css_item(item):
-        return '; '.join(f'{prop}: {item[prop]}' for prop in item)
+        return '; '.join('{}: {}'.format(prop, item[prop]) for prop in item)
 
-    items = [f'{item} {{{serialize_css_item(css[item])}}}' for item in css]
+    items = ['{} {{{}}}'.format(item, serialize_css_item(css[item])) for item in css]
     return os.linesep.join(items)

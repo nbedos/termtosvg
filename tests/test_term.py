@@ -119,7 +119,7 @@ class TestTerm(unittest.TestCase):
             records = [term.AsciiCastHeader(version=2, width=80, height=24, theme=theme)] + \
                       [term.AsciiCastEvent(time=i,
                                            event_type='o',
-                                           event_data=f'{i}\r\n'.encode('utf-8'),
+                                           event_data='{}\r\n'.format(i).encode('utf-8'),
                                            duration=None)
                        for i in range(1, nbr_records)]
 

@@ -1,13 +1,17 @@
 language: python
 
 python:
+    - "3.5"
     - "3.6"
+    - "3.7-dev"
 
 install:
-    - make venv_dev
+    - pip install -U -e .[dev]
+    - pip freeze
 
 script:
-    - make coverage
+    - coverage run --branch --source termtosvg -m unittest -v
+    - coverage report
 
 notifications:
   email: false

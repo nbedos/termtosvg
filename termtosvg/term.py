@@ -323,8 +323,8 @@ def get_configuration(theme, fileno=None):
     except OSError as e:
         lines = 24
         columns = 80
-        logger.debug(f'Failed to get terminal size ({e}), '
-                     f'using default values instead ({columns}x{lines})')
+        err_template = 'Failed to get terminal size ({}), using default values instead ({}x{})'
+        logger.debug(err_template.format(e, columns, lines))
 
     if theme is None:
         xresources_str = _get_xresources()
@@ -344,7 +344,7 @@ def _get_xresources():
         data = d.screen(0).root.get_full_property(Xatom.RESOURCE_MANAGER,
                                                   Xatom.STRING)
     except DisplayError as e:
-        logger.debug(f'Failed to get the Xresources string from the X server: {e}')
+        logger.debug('Failed to get the Xresources string from the X server: {}'.format(e))
     else:
         if data:
             return data.value.decode('utf-8')
@@ -362,7 +362,7 @@ def _parse_xresources(xresources):
 
     colors = {}
     names = [('foreground', True), ('background', True)] + \
-            [(f'color{index}', index < 8) for index in range(16)]
+            [('color{}'.format(index), index < 8) for index in range(16)]
     for name, required in names:
         res_name = 'Svg.' + name
         res_class = res_name
@@ -372,7 +372,7 @@ def _parse_xresources(xresources):
             if required:
                 raise
 
-    palette = ':'.join(colors[f'color{i}'] for i in range(len(colors)-2))
+    palette = ':'.join(colors['color{}'.format(i)] for i in range(len(colors)-2))
     theme = AsciiCastTheme(fg=colors['foreground'],
                            bg=colors['background'],
                            palette=palette)
