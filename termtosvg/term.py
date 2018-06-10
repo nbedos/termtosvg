@@ -53,8 +53,8 @@ AsciiCastEvent.duration.__doc__ = """Duration of the event in seconds (non stand
 AsciiCastRecord = Union[AsciiCastHeader, AsciiCastEvent]
 
 
-class _RawTerminalMode:
-    """Set terminal mode to raw and restore initial terminal state on exit"""
+class TerminalMode:
+    """Save terminal state on entry, restore it on exit"""
     def __init__(self, fileno: int):
         self.fileno = fileno
         self.mode = None
@@ -62,7 +62,6 @@ class _RawTerminalMode:
     def __enter__(self):
         try:
             self.mode = tty.tcgetattr(self.fileno)
-            tty.setraw(self.fileno)
         except tty.error:
             pass
         return self.mode
@@ -72,20 +71,14 @@ class _RawTerminalMode:
             tty.tcsetattr(self.fileno, tty.TCSAFLUSH, self.mode)
 
 
-def record(columns, lines, theme, input_fileno=None, output_fileno=None):
-    # type: (int, int, AsciiCastTheme, Union[int, None], Union[int, None]) -> Generator[AsciiCastRecord, None, None]
+def record(columns, lines, theme, input_fileno, output_fileno):
+    # type: (int, int, AsciiCastTheme, int, int) -> Generator[AsciiCastRecord, None, None]
     """Record a terminal session in asciicast v2 format
 
     The records returned are of two types:
         - a single header with configuration information
         - multiple event records with data captured from the terminal and timing information
     """
-    if input_fileno is None:
-        input_fileno = sys.stdin.fileno()
-
-    if output_fileno is None:
-        output_fileno = sys.stdout.fileno()
-
     yield AsciiCastHeader(version=2, width=columns, height=lines, theme=theme)
 
     start = None
@@ -130,9 +123,13 @@ def _record(columns, lines, input_fileno, output_fileno):
     fcntl.ioctl(master_fd, termios.TIOCSWINSZ, ttysize)
 
     # Parent process
-    with _RawTerminalMode(input_fileno):
-        for data, time in _capture_data(input_fileno, output_fileno, master_fd):
-            yield data, time
+    try:
+        tty.setraw(input_fileno)
+    except tty.error:
+        pass
+
+    for data, time in _capture_data(input_fileno, output_fileno, master_fd):
+        yield data, time
 
     os.close(master_fd)
 

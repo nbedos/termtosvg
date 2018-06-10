@@ -73,8 +73,9 @@ class TestTerm(unittest.TestCase):
             os._exit(0)
 
         # Parent process
-        for _ in term._record(columns, lines, fd_in_read, fd_out_write):
-            pass
+        with term.TerminalMode(fd_in_read):
+            for _ in term._record(columns, lines, fd_in_read, fd_out_write):
+                pass
 
         os.waitpid(pid, 0)
         for fd in fd_in_read, fd_in_write, fd_out_read, fd_out_write:
@@ -98,8 +99,9 @@ class TestTerm(unittest.TestCase):
             os._exit(0)
 
         # Parent process
-        for _ in term.record(columns, lines, theme, fd_in_read, fd_out_write):
-            pass
+        with term.TerminalMode(fd_in_read):
+            for _ in term.record(columns, lines, theme, fd_in_read, fd_out_write):
+                pass
 
         os.waitpid(pid, 0)
         for fd in fd_in_read, fd_in_write, fd_out_read, fd_out_write:

@@ -20,6 +20,7 @@ _CharacterCell.text.__doc__ = 'Text content of the cell'
 _CharacterCell.color.__doc__ = 'Color of the text'
 _CharacterCell.background_color.__doc__ = 'Background color of the cell'
 
+
 class CharacterCell(_CharacterCell):
     @classmethod
     def from_pyte(cls, char, palette):

@@ -24,9 +24,11 @@ def main(input_fileno=None, output_fileno=None):
         output_fileno = sys.stdout.fileno()
 
     columns, lines, theme = term.get_configuration(theme=args.theme)
-    records = term.record(columns, lines, theme, input_fileno, output_fileno)
-    replayed_records = term.replay(records, anim.CharacterCell.from_pyte)
-    anim.render_animation(replayed_records, '/tmp/test.svg')
+
+    with term.TerminalMode(input_fileno):
+        records = term.record(columns, lines, theme, input_fileno, output_fileno)
+        replayed_records = term.replay(records, anim.CharacterCell.from_pyte)
+        anim.render_animation(replayed_records, '/tmp/test.svg')
 
 
 if __name__ == '__main__':
