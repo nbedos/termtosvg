@@ -364,7 +364,7 @@ def _parse_xresources(xresources):
     names = [('foreground', True), ('background', True)] + \
             [('color{}'.format(index), index < 8) for index in range(16)]
     for name, required in names:
-        res_name = 'Svg.' + name
+        res_name = 'termtosvg.' + name
         res_class = res_name
         try:
             colors[name] = res_db[res_name, res_class]

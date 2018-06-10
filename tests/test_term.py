@@ -14,15 +14,15 @@ xresources_valid = """*background:	#002b36
 *color4:	#268bd2
 *color5:	#d33682
 *color6:	#2aa198
-Svg.color7:	#eee8d5
+termtosvg.color7:	#eee8d5
 *color9:	#cb4b16
 *color8:	#002b36
 *color10:	#586e75
 *color11:	#657b83
 *color12:	#839496
-Svg.color13:	#6c71c4
+termtosvg.color13:	#6c71c4
 *color14:	#93a1a1
-Svg.color15:	#fdf6e3"""
+termtosvg.color15:	#fdf6e3"""
 
 xresources_minimal = """*background:	#002b36
 *foreground:	#839496
@@ -33,7 +33,7 @@ xresources_minimal = """*background:	#002b36
 *color4:	#268bd2
 *color5:	#d33682
 *color6:	#2aa198
-Svg.color7:	#eee8d5
+termtosvg.color7:	#eee8d5
 """
 
 xresources_incomplete = """*background:	#002b36
