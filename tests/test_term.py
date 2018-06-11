@@ -124,11 +124,14 @@ class TestTerm(unittest.TestCase):
                        for i in range(1, nbr_records)]
 
             records = term.replay(records, pyte_to_str, 50, 1000)
+            # Last blank line is the cursor
+            lines = [str(i) for i in range(nbr_records)] + [' ']
             for i, record in enumerate(records):
+                # Skip header and cursor line
                 if i == 0:
                     pass
                 else:
-                    self.assertEqual(record.line[0], str(i))
+                    self.assertEqual(record.line[0], lines[i])
 
         with self.subTest(case='Shell command spread over multiple lines'):
             records = [term.AsciiCastHeader(version=2, width=80, height=24, theme=theme)] + \
@@ -143,7 +146,9 @@ class TestTerm(unittest.TestCase):
                 if hasattr(record, 'line'):
                     screen[record.row] = ''.join(record.line[i] for i in sorted(record.line))
 
-            expected_screen = dict(enumerate(cmd for cmd in ''.join(commands).split('\r\n') if cmd))
+            cmds = [cmd for cmd in ''.join(commands).split('\r\n') if cmd]
+            cursor = [' ']
+            expected_screen = dict(enumerate(cmds + cursor))
             self.assertEqual(expected_screen, screen)
 
     def test_default_themes(self):

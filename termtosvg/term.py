@@ -10,6 +10,7 @@ import struct
 import termios
 import tty
 from collections import namedtuple
+from copy import copy
 from functools import partial
 from typing import Any, Callable, Dict, Generator, Iterable, Iterator, Tuple, Union
 
@@ -263,35 +264,58 @@ def replay(records, from_pyte_char, min_frame_duration=0.010, last_frame_duratio
 
     pending_lines = {}
     current_time = 0
+    last_cursor = None
     for event_record in _group_by_time(records, min_frame_duration, last_frame_duration):
         stream.feed(event_record.event_data)
 
-        ascii_buffer = {}
-        for row in screen.dirty:
-            ascii_buffer[row] = {}
+        # Numbers of lines that must be redrawn
+        dirty_lines = set(screen.dirty)
+        if screen.cursor != last_cursor:
+            # Line where the cursor will be drawn
+            dirty_lines.add(screen.cursor.y)
+            if last_cursor is not None:
+                # Line where the cursor will be erased
+                dirty_lines.add(last_cursor.y)
+
+        redraw_buffer = {}
+        for row in dirty_lines:
+            redraw_buffer[row] = {}
             for column in screen.buffer[row]:
-                ascii_buffer[row][column] = from_pyte_char(screen.buffer[row][column],
-                                                           palette)
+                redraw_buffer[row][column] = from_pyte_char(screen.buffer[row][column], palette)
+
+        if screen.cursor != last_cursor:
+            try:
+                data = screen.buffer[screen.cursor.y][screen.cursor.x].data
+            except KeyError:
+                data = ' '
+
+            cursor_char = pyte.screens.Char(data=data,
+                                            fg=screen.cursor.attrs.fg,
+                                            bg=screen.cursor.attrs.bg,
+                                            reverse=True)
+            redraw_buffer[screen.cursor.y][screen.cursor.x] = from_pyte_char(cursor_char, palette)
+
+        last_cursor = copy(screen.cursor)
         screen.dirty.clear()
 
-        done_lines = {}
+        completed_lines = {}
         # Conversion from seconds to milliseconds
         duration = int(1000 * round(event_record.duration, 3))
         for row in pending_lines:
             line, line_time, line_duration = pending_lines[row]
-            if row in ascii_buffer:
-                done_lines[row] = line, line_time, line_duration
+            if row in redraw_buffer:
+                completed_lines[row] = line, line_time, line_duration
             else:
                 pending_lines[row] = line, line_time, line_duration + duration
 
-        for row in ascii_buffer:
-            if ascii_buffer[row]:
-                pending_lines[row] = ascii_buffer[row], current_time, duration
+        for row in redraw_buffer:
+            if redraw_buffer[row]:
+                pending_lines[row] = redraw_buffer[row], current_time, duration
             elif row in pending_lines:
                 del pending_lines[row]
 
-        for row in sorted(done_lines, key=partial(sort_by_time, done_lines)):
-            args = (row, *done_lines[row])
+        for row in sorted(completed_lines, key=partial(sort_by_time, completed_lines)):
+            args = (row, *completed_lines[row])
             yield CharacterCellLineEvent(*args)
 
         current_time += duration
