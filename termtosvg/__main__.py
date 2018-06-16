@@ -12,6 +12,14 @@ import termtosvg.term as term
 
 LOG_FILENAME = os.path.join(tempfile.gettempdir(), 'termtosvg.log')
 
+USAGE = """usage: termtosvg [-h] [--theme [THEME]] [--verbose]
+
+optional arguments:
+  -h, --help       show this help message and exit
+  --theme [THEME]  set the color theme used for rendering the terminal session
+                   or, if THEME is missing, list all available themes
+  --verbose, -v    increase log messages verbosity
+"""
 
 def main(input_fileno=None, output_fileno=None, args=None):
     # type: (Union[int, None], Union[int, None], Union[List[Any], None]) -> None
@@ -22,10 +30,26 @@ def main(input_fileno=None, output_fileno=None, args=None):
     if args is None:
         args = sys.argv
 
-    parser = argparse.ArgumentParser(prog=args[0])
-    parser.add_argument('--theme', help='color theme used for rendering the terminal session')
-    parser.add_argument('--verbose', '-v', action='store_true', help='increase log messages verbosity')
+    default_themes = sorted(term.default_themes())
+    parser = argparse.ArgumentParser(prog='termtosvg')
+    parser.add_argument('--theme',
+                        nargs='?',
+                        const='',
+                        help='set the color theme used for rendering the terminal '
+                             'session or, if THEME is missing, list all available '
+                             'themes',
+                        choices=[''] + default_themes,
+                        metavar='THEME')
+    parser.add_argument('--verbose',
+                        '-v',
+                        action='store_true',
+                        help='increase log messages verbosity')
     args = parser.parse_args(args[1:])
+
+    if args.theme == '':
+        for theme in sorted(term.default_themes()):
+            print(theme)
+        return
 
     logger = logging.getLogger(parser.prog)
     logger.setLevel(logging.INFO)

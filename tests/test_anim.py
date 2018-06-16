@@ -11,11 +11,19 @@ from termtosvg import term
 class TestAnim(unittest.TestCase):
     def test_from_pyte(self):
         pyte_chars = [
+            # Simple mapping
             pyte.screens.Char('A', 'red', 'blue'),
+            # Reverse colors
             pyte.screens.Char('B', 'red', 'blue', reverse=True),
+            # Bold for foreground -> bright colors
             pyte.screens.Char('C', 'red', 'blue', bold=True),
+            # Bold and reverse
             pyte.screens.Char('D', 'red', 'blue', bold=True, reverse=True),
+            # Bold with no matching bright color
+            pyte.screens.Char('G', 'blue', 'blue', bold=True),
+            # Defaults
             pyte.screens.Char('E', 'default', 'default'),
+            # Hexadecimal
             pyte.screens.Char('F', '008700', 'ABCDEF'),
         ]
 
@@ -24,6 +32,7 @@ class TestAnim(unittest.TestCase):
             anim.CharacterCell('B', 'color4', 'color1'),
             anim.CharacterCell('C', 'color9', 'color4'),
             anim.CharacterCell('D', 'color4', 'color9'),
+            anim.CharacterCell('G', 'color4', 'color4'),
             anim.CharacterCell('E', 'foreground', 'background'),
             anim.CharacterCell('F', '#008700', '#ABCDEF'),
         ]

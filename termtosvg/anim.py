@@ -53,11 +53,10 @@ class CharacterCell(_CharacterCell):
 
         if char.fg == 'default':
             text_color = palette['foreground']
+        elif char.bold and char.fg in colors_bold and colors_bold[char.fg] in palette:
+            text_color = palette[colors_bold[char.fg]]
         elif char.fg in colors:
-            if char.bold:
-                text_color = palette[colors_bold[char.fg]]
-            else:
-                text_color = palette[colors[char.fg]]
+            text_color = palette[colors[char.fg]]
         elif len(char.fg) == 6:
             try:
                 int(char.fg, 16)
