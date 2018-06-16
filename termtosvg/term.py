@@ -218,7 +218,7 @@ def _group_by_time(event_records, min_rec_duration, last_rec_duration):
         yield accumulator_event
 
 
-def replay(records, from_pyte_char, min_frame_duration=0.010, last_frame_duration=1):
+def replay(records, from_pyte_char, min_frame_duration=0, last_frame_duration=1):
     # type: (Iterable[AsciiCastRecord], Callable[[pyte.screen.Char, Dict[Any, str]], Any], float, float) -> Generator[CharacterCellRecord, None, None]
     """Read the records of a terminal sessions, render the corresponding screens and return lines
     of the screen that need updating.
