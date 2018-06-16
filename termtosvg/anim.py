@@ -4,6 +4,7 @@ from collections import namedtuple
 from itertools import groupby
 from typing import Dict, List, Iterable, Iterator, Union, Tuple, Any
 
+import pyte.graphics
 import pyte.screens
 import svgwrite.animate
 import svgwrite.container
@@ -37,6 +38,7 @@ class CharacterCell(_CharacterCell):
             'cyan': 6,
             'white': 7,
         }
+        colors.update(dict(zip(pyte.graphics.FG_BG_256[:16], range(16))))
 
         colors_bold = {
             'black': 8,
