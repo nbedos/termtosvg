@@ -4,8 +4,24 @@ from setuptools import setup
 
 setup(
     name='termtosvg',
-    version='0.1',
+    version='0.1.0',
     description='Record terminal sessions as SVG animations',
+    long_description='A Linux terminal recorder written in Python '
+                     'which renders your command line sessions as '
+                     'standalone SVG animations.',
+    url='https://github.com/nbedos/termtosvg',
+    classifiers=[
+        'Environment :: Console',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: BSD License',
+        'Operating System :: POSIX :: Linux',
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Topic :: System :: Shells',
+        'Topic :: Terminals'
+    ],
     packages=['termtosvg'],
     package_data={
         '': [
@@ -31,6 +47,8 @@ setup(
     extras_require={
         'dev': [
             'coverage',
+            'twine',
+            'wheel',
         ]
     }
 )
