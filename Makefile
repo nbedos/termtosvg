@@ -15,15 +15,16 @@ usage:
 
 build: tests
 	$(VENV_ACTIVATE) && \
+	    rm -rf dist && \
 	    python setup.py sdist bdist_wheel
 
 deploy_test: build
 	$(VENV_ACTIVATE) && \
-	    twine upload --repository-url https://test.pypi.org/legacy/ dist/*
+	    twine upload -r pypitest dist/*
 
 deploy_prod: build
 	$(VENV_ACTIVATE) && \
-	    twine upload --repository-url http://pypi.python.org/pypi/ dist/*
+	    twine upload -r pypi dist/*
 
 tests: venv_dev
 	$(VENV_ACTIVATE) && \
