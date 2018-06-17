@@ -1,4 +1,5 @@
 import os
+import tempfile
 import time
 import unittest
 
@@ -20,7 +21,7 @@ SHELL_COMMANDS = [
     'exit;\r\n'
 ]
 
-
+# TODO: Replace os.pipe + fork by Popen ?
 class TestMain(unittest.TestCase):
     @staticmethod
     def run_main(shell_commands, args):
@@ -43,13 +44,21 @@ class TestMain(unittest.TestCase):
             os.close(fd)
 
     def test_main(self):
-        with self.subTest(case='provided theme'):
-            args = ['termtosvg', '-v', '--theme', 'solarized-light']
-            TestMain.run_main(SHELL_COMMANDS, args)
+        _, svg_filename = tempfile.mkstemp(prefix='termtosvg_', suffix='.cast')
 
-        with self.subTest(case='fallback theme'):
+        with self.subTest(case='record and then render'):
             # Force use of fallback theme by mocking _get_x_resources
             get_x_mock = Mock(side_effect=DisplayError(None))
             with unittest.mock.patch('termtosvg.term._get_xresources', get_x_mock):
-                args = ['termtosvg']
+                args = ['termtosvg', 'record', svg_filename]
+                TestMain.run_main(SHELL_COMMANDS, args)
+
+                args = ['termtosvg', 'render', svg_filename]
+                TestMain.run_main([], args)
+
+        with self.subTest(case='record and render on the fly'):
+            # Force use of fallback theme by mocking _get_x_resources
+            get_x_mock = Mock(side_effect=DisplayError(None))
+            with unittest.mock.patch('termtosvg.term._get_xresources', get_x_mock):
+                args = ['termtosvg', '--verbose']
                 TestMain.run_main(SHELL_COMMANDS, args)

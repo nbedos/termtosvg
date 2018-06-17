@@ -9,17 +9,10 @@ from typing import Any, List, Union
 
 import termtosvg.anim as anim
 import termtosvg.term as term
+import termtosvg.asciicast as asciicast
 
 LOG_FILENAME = os.path.join(tempfile.gettempdir(), 'termtosvg.log')
 
-USAGE = """usage: termtosvg [-h] [--theme [THEME]] [--verbose]
-
-optional arguments:
-  -h, --help       show this help message and exit
-  --theme [THEME]  set the color theme used for rendering the terminal session
-                   or, if THEME is missing, list all available themes
-  --verbose, -v    increase log messages verbosity
-"""
 
 def main(input_fileno=None, output_fileno=None, args=None):
     # type: (Union[int, None], Union[int, None], Union[List[Any], None]) -> None
@@ -32,24 +25,23 @@ def main(input_fileno=None, output_fileno=None, args=None):
 
     default_themes = sorted(term.default_themes())
     parser = argparse.ArgumentParser(prog='termtosvg')
-    parser.add_argument('--theme',
-                        nargs='?',
-                        const='',
-                        help='set the color theme used for rendering the terminal '
-                             'session or, if THEME is missing, list all available '
-                             'themes',
-                        choices=[''] + default_themes,
-                        metavar='THEME')
-    parser.add_argument('--verbose',
-                        '-v',
-                        action='store_true',
+    parser.add_argument('--verbose', '-v', action='store_true',
                         help='increase log messages verbosity')
+    subparsers = parser.add_subparsers(help='command', dest='command')
+
+    # Subcommand RECORD: termtosvg record [output_filename] [--verbose]
+    parser_record = subparsers.add_parser('record', help='record the session to a file in asciicast'
+                                                         ' v2 format')
+    parser_record.add_argument('filename', nargs='?', help='optional output file; if missing, a '
+                               'random temporary filename will be automatically generated')
+
+    # Subcommand RENDER: termtosvg render input_filename  [--verbose]
+    parser_render = subparsers.add_parser('render', help='render an asciicast recording as an SVG '
+                                          'animation')
+    parser_render.add_argument('filename', help='recording of the terminal session in asciicast v2 format')
+
     args = parser.parse_args(args[1:])
 
-    if args.theme == '':
-        for theme in sorted(term.default_themes()):
-            print(theme)
-        return
 
     logger = logging.getLogger(parser.prog)
     logger.setLevel(logging.INFO)
@@ -68,23 +60,49 @@ def main(input_fileno=None, output_fileno=None, args=None):
         logger.handlers.append(file_handler)
         logger.info('Logging to {}'.format(LOG_FILENAME))
 
-    logger.info('Recording started, enter "exit" command or Control-D to end')
+    use_system_theme = True
+    theme = 'solarized-light'
 
-    if args.theme is None:
-        use_system_theme = True
-        theme = 'solarized-light'
+    # TODO: Gestion des thèmes: quand obligatoire ??
+    if args.command == 'record':
+        logger.info('Recording started, enter "exit" command or Control-D to end')
+        if args.filename is not None:
+            cast_filename = args.filename
+        else:
+            _, cast_filename = tempfile.mkstemp(prefix='termtosvg_', suffix='.cast')
+
+        columns, lines, theme = term.get_configuration(use_system_theme, theme, output_fileno)
+        with term.TerminalMode(input_fileno):
+            records = term.record(columns, lines, theme, input_fileno, output_fileno)
+            with open(cast_filename, 'w') as cast_file:
+                for record in records:
+                    print(record.to_json_line(), file=cast_file)
+
+        logger.info('Recording ended, cast file is {}'.format(cast_filename))
+    elif args.command == 'render':
+        def rec_gen():
+            with open(args.filename, 'r') as cast_file:
+                for line in cast_file:
+                    yield asciicast.AsciiCastRecord.from_json_line(line)
+
+        logger.info('Rendering started')
+        _, svg_filename = tempfile.mkstemp(prefix='termtosvg_', suffix='.svg')
+        replayed_records = term.replay(rec_gen(), anim.CharacterCell.from_pyte)
+        anim.render_animation(replayed_records, svg_filename)
+
+        logger.info('Rendering ended, SVG animation is {}'.format(svg_filename))
     else:
-        use_system_theme = False
-        theme = args.theme
+        # No command passed: record and render on the fly
+        logger.info('Recording started, enter "exit" command or Control-D to end')
+        _, svg_filename = tempfile.mkstemp(prefix='termtosvg_', suffix='.svg')
 
-    columns, lines, theme = term.get_configuration(use_system_theme, theme, output_fileno)
-    with term.TerminalMode(input_fileno):
-        records = term.record(columns, lines, theme, input_fileno, output_fileno)
-        replayed_records = term.replay(records, anim.CharacterCell.from_pyte)
-        _, svg_file = tempfile.mkstemp(prefix='termtosvg_', suffix='.svg')
-        anim.render_animation(replayed_records, svg_file)
+        columns, lines, theme = term.get_configuration(use_system_theme, theme, output_fileno)
+        with term.TerminalMode(input_fileno):
+            records = term.record(columns, lines, theme, input_fileno, output_fileno)
+            replayed_records = term.replay(records, anim.CharacterCell.from_pyte)
+            anim.render_animation(replayed_records, svg_filename)
 
-    logger.info('Recording ended, file is {}'.format(svg_file))
+        logger.info('Recording ended, SVG animation is {}'.format(svg_filename))
 
     for handler in logger.handlers:
         handler.close()

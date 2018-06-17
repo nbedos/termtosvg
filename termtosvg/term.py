@@ -9,7 +9,6 @@ import selectors
 import struct
 import termios
 import tty
-from collections import namedtuple
 from copy import copy
 from functools import partial
 from typing import Any, Callable, Dict, Generator, Iterable, Iterator, Tuple, Union
@@ -20,37 +19,12 @@ from Xlib import display, rdb, Xatom
 from Xlib.error import DisplayError
 
 from termtosvg.anim import CharacterCellConfig, CharacterCellLineEvent, CharacterCellRecord
+from termtosvg.asciicast import AsciiCastEvent, AsciiCastHeader, AsciiCastTheme, AsciiCastRecord
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 XRESOURCES_DIR = os.path.join('data', 'Xresources')
-
-# asciicast v2 record formats
-# Full specification: https://github.com/asciinema/asciinema/blob/develop/doc/asciicast-v2.md
-AsciiCastHeader = namedtuple('AsciiCastHeader', ['version', 'width', 'height', 'theme'])
-AsciiCastHeader.__doc__ = """Header record"""
-AsciiCastHeader.version.__doc__ = """Version of the asciicast file format"""
-AsciiCastHeader.width.__doc__ = """Initial number of columns of the terminal"""
-AsciiCastHeader.height.__doc__ = """Initial number of lines of the terminal"""
-AsciiCastHeader.theme.__doc__ = """Color theme of the terminal"""
-
-AsciiCastTheme = namedtuple('AsciiCastTheme', ['fg', 'bg', 'palette'])
-AsciiCastTheme.__doc__ = """Color theme of the terminal. All colors must use the '#rrggbb' format"""
-AsciiCastTheme.fg.__doc__ = """Default text color"""
-AsciiCastTheme.bg.__doc__ = """Default background color"""
-AsciiCastTheme.palette.__doc__ = """Colon separated list of the 8 or 16 terminal colors"""
-
-AsciiCastEvent = namedtuple('AsciiCastEvent', ['time', 'event_type', 'event_data', 'duration'])
-AsciiCastEvent.__doc__ = """Event record"""
-AsciiCastEvent.time.__doc__ = """Time elapsed since the beginning of the recording in seconds"""
-AsciiCastEvent.event_type.__doc__ = """Type 'o' if the data was captured on the standard """ \
-                                    """output of the terminal, type 'i' if it was captured on """ \
-                                    """the standard input"""
-AsciiCastEvent.event_data.__doc__ = """Data captured during the recording"""
-AsciiCastEvent.duration.__doc__ = """Duration of the event in seconds (non standard field)"""
-
-AsciiCastRecord = Union[AsciiCastHeader, AsciiCastEvent]
 
 
 class TerminalMode:
@@ -72,7 +46,7 @@ class TerminalMode:
 
 
 def record(columns, lines, theme, input_fileno, output_fileno):
-    # type: (int, int, AsciiCastTheme, int, int) -> Generator[AsciiCastRecord, None, None]
+    # type: (int, int, AsciiCastTheme, int, int) -> Generator[Union[AsciiCastHeader, AsciiCastEvent], None, None]
     """Record a terminal session in asciicast v2 format
 
     The records returned are of two types:
@@ -184,7 +158,8 @@ def _group_by_time(event_records, min_rec_duration, last_rec_duration):
     is guaranteed to be at least min_rec_duration.
 
     :param event_records: Sequence of records in asciicast v2 format
-    :param min_rec_duration: Minimum time between two records returned by the function in seconds
+    :param min_rec_duration: Minimum time between two records returned by the function in seconds.
+    This helps avoiding 0s duration animations which break SVG animations.
     :param last_rec_duration: Duration of the last record in seconds
     :return: Sequence of records
     """
@@ -218,8 +193,8 @@ def _group_by_time(event_records, min_rec_duration, last_rec_duration):
         yield accumulator_event
 
 
-def replay(records, from_pyte_char, min_frame_duration=0, last_frame_duration=1):
-    # type: (Iterable[AsciiCastRecord], Callable[[pyte.screen.Char, Dict[Any, str]], Any], float, float) -> Generator[CharacterCellRecord, None, None]
+def replay(records, from_pyte_char, min_frame_duration=0.001, last_frame_duration=1):
+    # type: (Iterable[Union[AsciiCastHeader, AsciiCastEvent]], Callable[[pyte.screen.Char, Dict[Any, str]], Any], float, float) -> Generator[CharacterCellRecord, None, None]
     """Read the records of a terminal sessions, render the corresponding screens and return lines
     of the screen that need updating.
 
@@ -233,7 +208,8 @@ def replay(records, from_pyte_char, min_frame_duration=0, last_frame_duration=1)
     :param records: Records of the terminal session in asciicast v2 format. The first record must
     be a header, which must be followed by event records.
     :param from_pyte_char: Conversion function from pyte.screen.Char to any other format
-    :param min_frame_duration: Minimum frame duration in seconds
+    :param min_frame_duration: Minimum frame duration in seconds. SVG animations break when an
+    animation is 0s so setting this to at least 1ms is recommended.
     :param last_frame_duration: Last frame duration in seconds
     :return: Records in the CharacterCellRecord format:
         1/ a header with configuration information (CharacterCellConfig)

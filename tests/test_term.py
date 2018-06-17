@@ -4,6 +4,7 @@ import unittest
 from unittest.mock import MagicMock, patch
 
 from termtosvg import term
+from termtosvg.asciicast import AsciiCastHeader, AsciiCastEvent, AsciiCastTheme
 
 xresources_valid = """*background:	#002b36
 *foreground:	#839496
@@ -88,7 +89,7 @@ class TestTerm(unittest.TestCase):
 
         lines = 24
         columns = 80
-        theme = term.AsciiCastTheme('#000000', '#111111', ':'.join(['#123456']*8))
+        theme = AsciiCastTheme('#000000', '#111111', ':'.join(['#123456']*8))
 
         pid = os.fork()
         if pid == 0:
@@ -111,16 +112,16 @@ class TestTerm(unittest.TestCase):
         def pyte_to_str(x, _):
             return x.data
 
-        theme = term.AsciiCastTheme('blue', 'blue', ':'.join(['blue'] * 16))
+        theme = AsciiCastTheme('blue', 'blue', ':'.join(['blue'] * 16))
 
         with self.subTest(case='One shell command per event'):
             nbr_records = 5
 
-            records = [term.AsciiCastHeader(version=2, width=80, height=24, theme=theme)] + \
-                      [term.AsciiCastEvent(time=i,
-                                           event_type='o',
-                                           event_data='{}\r\n'.format(i).encode('utf-8'),
-                                           duration=None)
+            records = [AsciiCastHeader(version=2, width=80, height=24, theme=theme)] + \
+                      [AsciiCastEvent(time=i,
+                                      event_type='o',
+                                      event_data='{}\r\n'.format(i).encode('utf-8'),
+                                      duration=None)
                        for i in range(1, nbr_records)]
 
             records = term.replay(records, pyte_to_str, 50, 1000)
@@ -134,11 +135,11 @@ class TestTerm(unittest.TestCase):
                     self.assertEqual(record.line[0], lines[i])
 
         with self.subTest(case='Shell command spread over multiple lines'):
-            records = [term.AsciiCastHeader(version=2, width=80, height=24, theme=theme)] + \
-                      [term.AsciiCastEvent(time=i*60,
-                                           event_type='o',
-                                           event_data=data.encode('utf-8'),
-                                           duration=None)
+            records = [AsciiCastHeader(version=2, width=80, height=24, theme=theme)] + \
+                      [AsciiCastEvent(time=i * 60,
+                                      event_type='o',
+                                      event_data=data.encode('utf-8'),
+                                      duration=None)
                        for i, data in enumerate(commands)]
 
             screen = {}
@@ -212,22 +213,22 @@ class TestTerm(unittest.TestCase):
 
     def test__group_by_time(self):
         event_records = [
-            term.AsciiCastEvent(0, 'o', b'1', None),
-            term.AsciiCastEvent(50, 'o', b'2', None),
-            term.AsciiCastEvent(80, 'o', b'3', None),
-            term.AsciiCastEvent(200, 'o', b'4', None),
-            term.AsciiCastEvent(210, 'o', b'5', None),
-            term.AsciiCastEvent(300, 'o', b'6', None),
-            term.AsciiCastEvent(310, 'o', b'7', None),
-            term.AsciiCastEvent(320, 'o', b'8', None),
-            term.AsciiCastEvent(330, 'o', b'9', None)
+            AsciiCastEvent(0, 'o', b'1', None),
+            AsciiCastEvent(50, 'o', b'2', None),
+            AsciiCastEvent(80, 'o', b'3', None),
+            AsciiCastEvent(200, 'o', b'4', None),
+            AsciiCastEvent(210, 'o', b'5', None),
+            AsciiCastEvent(300, 'o', b'6', None),
+            AsciiCastEvent(310, 'o', b'7', None),
+            AsciiCastEvent(320, 'o', b'8', None),
+            AsciiCastEvent(330, 'o', b'9', None)
         ]
 
         grouped_event_records = [
-            term.AsciiCastEvent(0, 'o', b'1', 50),
-            term.AsciiCastEvent(50, 'o', b'23', 150),
-            term.AsciiCastEvent(200, 'o', b'45', 100),
-            term.AsciiCastEvent(300, 'o', b'6789', 1234)
+            AsciiCastEvent(0, 'o', b'1', 50),
+            AsciiCastEvent(50, 'o', b'23', 150),
+            AsciiCastEvent(200, 'o', b'45', 100),
+            AsciiCastEvent(300, 'o', b'6789', 1234)
         ]
 
         result = list(term._group_by_time(event_records, 50, 1234))
