@@ -15,11 +15,11 @@ from typing import Any, Callable, Dict, Generator, Iterable, Iterator, Tuple, Un
 
 import pyte
 import pyte.screens
-from Xlib import display, rdb, Xatom
+from Xlib import display, Xatom
 from Xlib.error import DisplayError
 
 from termtosvg.anim import CharacterCellConfig, CharacterCellLineEvent, CharacterCellRecord
-from termtosvg.asciicast import AsciiCastEvent, AsciiCastHeader, AsciiCastTheme, AsciiCastRecord
+from termtosvg.asciicast import AsciiCastEvent, AsciiCastHeader, AsciiCastTheme
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -46,7 +46,7 @@ class TerminalMode:
 
 
 def record(columns, lines, theme, input_fileno, output_fileno):
-    # type: (int, int, AsciiCastTheme, int, int) -> Generator[Union[AsciiCastHeader, AsciiCastEvent], None, None]
+    # type: (int, int, Union[AsciiCastTheme, None], int, int) -> Generator[Union[AsciiCastHeader, AsciiCastEvent], None, None]
     """Record a terminal session in asciicast v2 format
 
     The records returned are of two types:
@@ -151,6 +151,7 @@ def _capture_data(input_fileno, output_fileno, master_fd, buffer_size=1024):
                 data = data[n:]
 
 
+# TODO: Fix overwriting
 def _group_by_time(event_records, min_rec_duration, last_rec_duration):
     # type: (Iterable[AsciiCastEvent], float, float) -> Generator[AsciiCastEvent, None, None]
     """Merge event records together if they are close enough and compute the duration between
@@ -193,8 +194,8 @@ def _group_by_time(event_records, min_rec_duration, last_rec_duration):
         yield accumulator_event
 
 
-def replay(records, from_pyte_char, min_frame_duration=0.001, last_frame_duration=1):
-    # type: (Iterable[Union[AsciiCastHeader, AsciiCastEvent]], Callable[[pyte.screen.Char, Dict[Any, str]], Any], float, float) -> Generator[CharacterCellRecord, None, None]
+def replay(records, from_pyte_char, theme, min_frame_duration=0.001, last_frame_duration=1):
+    # type: (Iterable[Union[AsciiCastHeader, AsciiCastEvent]], Callable[[pyte.screen.Char, Dict[Any, str]], Any], Union[None, AsciiCastTheme], float, float) -> Generator[CharacterCellRecord, None, None]
     """Read the records of a terminal sessions, render the corresponding screens and return lines
     of the screen that need updating.
 
@@ -226,17 +227,24 @@ def replay(records, from_pyte_char, min_frame_duration=0.001, last_frame_duratio
     screen = pyte.Screen(header.width, header.height)
     stream = pyte.ByteStream(screen)
 
+    if theme is not None:
+        pass
+    elif theme is None and header.theme is not None:
+        theme = header.theme
+    else:
+        raise ValueError('No valid theme')
+
     config = CharacterCellConfig(width=header.width,
                                  height=header.height,
-                                 text_color=header.theme.fg,
-                                 background_color=header.theme.bg)
+                                 text_color=theme.fg,
+                                 background_color=theme.bg)
     yield config
 
     palette = {
-        'foreground': header.theme.fg,
-        'background': header.theme.bg
+        'foreground': theme.fg,
+        'background': theme.bg
     }
-    palette.update(enumerate(header.theme.palette.split(':')))
+    palette.update(enumerate(theme.palette.split(':')))
 
     pending_lines = {}
     current_time = 0
@@ -315,8 +323,8 @@ def default_themes():
     return themes
 
 
-def get_configuration(use_system_theme, theme_name, fileno):
-    # type: (bool, str, int) -> (int, int, AsciiCastTheme)
+def get_configuration(fileno):
+    # type: (int) -> (int, int, AsciiCastTheme)
     """Get configuration information related to terminal output rendering. If some information can
     not be gathered from the system, return the default configuration.
     """
@@ -328,16 +336,17 @@ def get_configuration(use_system_theme, theme_name, fileno):
         logger.debug('Failed to get terminal size ({}), using default values '
                      'instead ({}x{})'.format(e, columns, lines))
 
-    if use_system_theme:
-        try:
-            xresources_str = _get_xresources()
-        except DisplayError:
-            logger.debug('Failed to gather color information from the Xserver, '
-                         'using fallback theme instead ("{}")'.format(theme_name))
-            xresources_str = default_themes()[theme_name]
+    try:
+        xresources_str = _get_xresources()
+    except DisplayError:
+        logger.debug('Failed to gather color information from the Xserver')
+        theme = None
     else:
-        xresources_str = default_themes()[theme_name]
-    theme = _parse_xresources(xresources_str)
+        try:
+            theme = AsciiCastTheme.from_xresources(xresources_str)
+        except ValueError:
+            logger.debug('Invalid Xresources string')
+            theme = None
 
     return columns, lines, theme
 
@@ -349,31 +358,3 @@ def _get_xresources():
     data = d.screen(0).root.get_full_property(Xatom.RESOURCE_MANAGER,
                                               Xatom.STRING)
     return data.value.decode('utf-8')
-
-
-def _parse_xresources(xresources):
-    # type: (str) -> AsciiCastTheme
-    """Parse the Xresources string and return an AsciiCastTheme containing the color information
-
-    The default text and background colors and the first 8 colors are required. If one of them is
-    missing, KeyError is raised.
-    """
-    res_db = rdb.ResourceDB(string=xresources)
-
-    colors = {}
-    names = [('foreground', True), ('background', True)] + \
-            [('color{}'.format(index), index < 8) for index in range(16)]
-    for name, required in names:
-        res_name = 'termtosvg.' + name
-        res_class = res_name
-        try:
-            colors[name] = res_db[res_name, res_class]
-        except KeyError:
-            if required:
-                raise
-
-    palette = ':'.join(colors['color{}'.format(i)] for i in range(len(colors)-2))
-    theme = AsciiCastTheme(fg=colors['foreground'],
-                           bg=colors['background'],
-                           palette=palette)
-    return theme

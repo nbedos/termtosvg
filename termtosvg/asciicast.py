@@ -6,6 +6,7 @@ import abc
 import codecs
 import json
 from collections import namedtuple
+from Xlib import rdb
 
 utf8_decoder = codecs.getincrementaldecoder('utf-8')('replace')
 
@@ -26,14 +27,73 @@ class AsciiCastRecord(abc.ABC):
             raise NotImplementedError
 
 
+_AsciiCastTheme = namedtuple('AsciiCastTheme', ['fg', 'bg', 'palette'])
+
+
+class AsciiCastTheme(_AsciiCastTheme):
+    """Color theme of the terminal.
+
+    All colors must use the '#rrggbb' format
+
+    fg: default text color
+    bg: default background colors
+    palette: colon separated list of 8 or 16 terminal colors
+    """
+    def __new__(cls, fg, bg, palette):
+        if cls.is_color(fg):
+            if cls.is_color(bg):
+                colors = palette.split(':')
+                if all([cls.is_color(c) for c in colors[:16]]):
+                    self = super().__new__(cls, fg, bg, palette)
+                    return self
+                elif all([cls.is_color(c) for c in colors[:8]]):
+                    new_palette = ':'.join(colors[:8])
+                    self = super().__new__(cls, fg, bg, new_palette)
+                    return self
+                else:
+                    raise ValueError('Invalid palette: the first 8 or 16 colors must be valid')
+            else:
+                raise ValueError('Invalid background color: {}'.format(bg))
+        else:
+            raise ValueError('Invalid foreground color: {}'.format(fg))
+
+    @classmethod
+    def from_xresources(cls, xresources):
+        # type: (str) -> AsciiCastTheme
+        """Parse the Xresources string and return an AsciiCastTheme containing the color information
+
+        Raise ValueError if no theme could be created
+        """
+        res_db = rdb.ResourceDB(string=xresources)
+
+        colors = {}
+        names = [('foreground', True), ('background', True)] + \
+                [('color{}'.format(index), index < 8) for index in range(16)]
+        for name, required in names:
+            res_name = 'termtosvg.' + name
+            res_class = res_name
+            colors[name] = res_db.get(res_name, res_class, None)
+
+        palette = ':'.join(colors['color{}'.format(i)]
+                           if colors['color{}'.format(i)] is not None else ''
+                           for i in range(len(colors) - 2))
+        theme = AsciiCastTheme(fg=colors['foreground'],
+                               bg=colors['background'],
+                               palette=palette)
+        return theme
+
+    @staticmethod
+    def is_color(color):
+        if type(color) == str and len(color) == 7 and color[0] == '#':
+            try:
+                int(color[1:], 16)
+            except ValueError:
+                return False
+            return True
+        return False
+
+
 _AsciiCastHeader = namedtuple('AsciiCastHeader', ['version', 'width', 'height', 'theme'])
-
-
-AsciiCastTheme = namedtuple('AsciiCastTheme', ['fg', 'bg', 'palette'])
-AsciiCastTheme.__doc__ = """Color theme of the terminal. All colors must use the '#rrggbb' format"""
-AsciiCastTheme.fg.__doc__ = """Default text color"""
-AsciiCastTheme.bg.__doc__ = """Default background color"""
-AsciiCastTheme.palette.__doc__ = """Colon separated list of the 8 or 16 terminal colors"""
 
 
 class AsciiCastHeader(AsciiCastRecord, _AsciiCastHeader):

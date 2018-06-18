@@ -5,7 +5,6 @@ import unittest
 import pyte.screens
 
 from termtosvg import anim
-from termtosvg import term
 
 
 class TestAnim(unittest.TestCase):
@@ -20,11 +19,13 @@ class TestAnim(unittest.TestCase):
             # Bold and reverse
             pyte.screens.Char('D', 'red', 'blue', bold=True, reverse=True),
             # Bold with no matching bright color
-            pyte.screens.Char('G', 'blue', 'blue', bold=True),
+            pyte.screens.Char('E', 'blue', 'blue', bold=True),
             # Defaults
-            pyte.screens.Char('E', 'default', 'default'),
+            pyte.screens.Char('F', 'default', 'default'),
             # Hexadecimal
-            pyte.screens.Char('F', '008700', 'ABCDEF'),
+            pyte.screens.Char('G', '008700', 'ABCDEF'),
+            # Bright and bold
+            pyte.screens.Char('H', 'brightgreen', 'ABCDEF', bold=True),
         ]
 
         char_cells = [
@@ -32,9 +33,10 @@ class TestAnim(unittest.TestCase):
             anim.CharacterCell('B', 'color4', 'color1'),
             anim.CharacterCell('C', 'color9', 'color4'),
             anim.CharacterCell('D', 'color4', 'color9'),
-            anim.CharacterCell('G', 'color4', 'color4'),
-            anim.CharacterCell('E', 'foreground', 'background'),
-            anim.CharacterCell('F', '#008700', '#ABCDEF'),
+            anim.CharacterCell('E', 'color12', 'color4'),
+            anim.CharacterCell('F', 'foreground', 'background'),
+            anim.CharacterCell('G', '#008700', '#ABCDEF'),
+            anim.CharacterCell('H', 'color10', '#ABCDEF'),
         ]
 
         palette = {
@@ -43,9 +45,12 @@ class TestAnim(unittest.TestCase):
             1: 'color1',
             4: 'color4',
             9: 'color9',
+            10: 'color10',
+            12: 'color12',
         }
         for pyte_char, cell_char in zip(pyte_chars, char_cells):
-            self.assertEqual(anim.CharacterCell.from_pyte(pyte_char, palette), cell_char)
+            with self.subTest(case=pyte_char):
+                self.assertEqual(anim.CharacterCell.from_pyte(pyte_char, palette), cell_char)
 
     def test__render_line_bg_colors(self):
         cell_width = 8
@@ -131,7 +136,6 @@ class TestAnim(unittest.TestCase):
             chars = [anim.CharacterCell(c, '#123456', '#789012') for c in 'line{}'.format(i)]
             return dict(enumerate(chars))
 
-        theme = term.AsciiCastTheme('#123456', '#789012', ':'.join(['#000000'] * 16))
         records = [
             anim.CharacterCellConfig(80, 24, 'black', 'black'),
             anim.CharacterCellLineEvent(1, line(1), 0, 60),

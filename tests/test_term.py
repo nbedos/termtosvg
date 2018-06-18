@@ -38,6 +38,7 @@ termtosvg.color7:	#eee8d5
 """
 
 xresources_incomplete = """*background:	#002b36
+*foreground:	#839496
 *color1:	#dc322f"""
 
 xresources_empty = ''
@@ -112,7 +113,8 @@ class TestTerm(unittest.TestCase):
         def pyte_to_str(x, _):
             return x.data
 
-        theme = AsciiCastTheme('blue', 'blue', ':'.join(['blue'] * 16))
+        fallback_theme = AsciiCastTheme('#000000', '#000000', ':'.join(['#000000'] * 16))
+        theme = AsciiCastTheme('#000000', '#FFFFFF', ':'.join(['#123456'] * 16))
 
         with self.subTest(case='One shell command per event'):
             nbr_records = 5
@@ -124,7 +126,7 @@ class TestTerm(unittest.TestCase):
                                       duration=None)
                        for i in range(1, nbr_records)]
 
-            records = term.replay(records, pyte_to_str, 50, 1000)
+            records = term.replay(records, pyte_to_str, fallback_theme, 50, 1000)
             # Last blank line is the cursor
             lines = [str(i) for i in range(nbr_records)] + [' ']
             for i, record in enumerate(records):
@@ -134,8 +136,8 @@ class TestTerm(unittest.TestCase):
                 else:
                     self.assertEqual(record.line[0], lines[i])
 
-        with self.subTest(case='Shell command spread over multiple lines'):
-            records = [AsciiCastHeader(version=2, width=80, height=24, theme=theme)] + \
+        with self.subTest(case='Shell command spread over multiple lines, no theme'):
+            records = [AsciiCastHeader(version=2, width=80, height=24, theme=None)] + \
                       [AsciiCastEvent(time=i * 60,
                                       event_type='o',
                                       event_data=data.encode('utf-8'),
@@ -143,7 +145,7 @@ class TestTerm(unittest.TestCase):
                        for i, data in enumerate(commands)]
 
             screen = {}
-            for record in term.replay(records, pyte_to_str, 50, 1000):
+            for record in term.replay(records, pyte_to_str, theme, 50, 1000):
                 if hasattr(record, 'line'):
                     screen[record.row] = ''.join(record.line[i] for i in sorted(record.line))
 
@@ -155,61 +157,44 @@ class TestTerm(unittest.TestCase):
     def test_default_themes(self):
         term.default_themes()
 
-    def test__parse_xresources(self):
-        with self.subTest(case='All valid colors'):
-            theme = term._parse_xresources(xresources_valid)
-            colors = theme.palette.split(':')
-            self.assertTrue(len(colors), 16)
-            self.assertEqual(colors[0], '#073642')
-            self.assertEqual(colors[15], '#fdf6e3')
-            self.assertEqual(theme.bg, '#002b36')
-            self.assertEqual(theme.fg, '#839496')
-
-        with self.subTest(case='Minimal Xresources'):
-            theme = term._parse_xresources(xresources_minimal)
-            colors = theme.palette.split(':')
-            self.assertTrue(len(colors), 8)
-            self.assertEqual(colors[0], '#073642')
-            self.assertEqual(colors[7], '#eee8d5')
-            self.assertEqual(theme.bg, '#002b36')
-            self.assertEqual(theme.fg, '#839496')
-
-        with self.subTest(case='Not all colors defined'):
-            with self.assertRaises(KeyError):
-                term._parse_xresources(xresources_incomplete)
-
-        with self.subTest(case='Empty Xresource'):
-            with self.assertRaises(KeyError):
-                term._parse_xresources(xresources_empty)
-
-        for theme, xresource_str in term.default_themes().items():
-            with self.subTest(case=theme):
-                term._parse_xresources(xresource_str)
-
     def test_get_configuration(self):
         _get_x_mock = MagicMock(return_value=xresources_valid)
         with patch('termtosvg.term._get_xresources', _get_x_mock):
             with self.subTest(case='Failing get_terminal_size call'):
                 # Pass an invalid fileno (-1) to get_configuration.
                 # The call should still work and return the default terminal geometry
-                cols, lines, _ = term.get_configuration(False, 'solarized-light', -1)
+                cols, lines, theme = term.get_configuration(-1)
                 self.assertEqual(cols, 80)
                 self.assertEqual(lines, 24)
+                self.assertIsNotNone(theme)
 
             with self.subTest(case='Successful get_terminal_size call'):
                 term_size_mock = MagicMock(return_value=(42, 84))
                 with patch('os.get_terminal_size', term_size_mock):
-                    cols, lines, _ = term.get_configuration(False, 'solarized-light', -1)
+                    cols, lines, theme = term.get_configuration(-1)
                     self.assertEqual(cols, 42)
                     self.assertEqual(lines, 84)
+                    self.assertIsNotNone(theme)
 
         _get_x_mock = MagicMock(side_effect=term.DisplayError(None))
         with patch('termtosvg.term._get_xresources', _get_x_mock):
             with self.subTest(case='Failing _get_xresources call'):
                 term_size_mock = MagicMock(return_value=(42, 84))
                 with patch('os.get_terminal_size', term_size_mock):
-                    # Should work and use fallback color theme
-                    term.get_configuration(True, 'solarized-light', -1)
+                    cols, lines, theme = term.get_configuration(-1)
+                    self.assertEqual(cols, 42)
+                    self.assertEqual(lines, 84)
+                    self.assertIsNone(theme)
+
+        _get_x_mock = MagicMock(return_value=xresources_incomplete)
+        with patch('termtosvg.term._get_xresources', _get_x_mock):
+            with self.subTest(case='Invalid Xresources string'):
+                term_size_mock = MagicMock(return_value=(42, 84))
+                with patch('os.get_terminal_size', term_size_mock):
+                    cols, lines, theme = term.get_configuration(-1)
+                    self.assertEqual(cols, 42)
+                    self.assertEqual(lines, 84)
+                    self.assertIsNone(theme)
 
     def test__group_by_time(self):
         event_records = [

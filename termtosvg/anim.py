@@ -12,6 +12,13 @@ import svgwrite.path
 import svgwrite.shapes
 import svgwrite.text
 
+# Ugliest hack: Replace the first 16 colors rgb values by their names so that termtosvg can
+# distinguish FG_BG_256[0] (which defaults to black #000000 but can be styled with e.g. Xresources)
+# from FG_BG_256[16] (which is also black #000000 but should be displayed as is).
+colors = ['black', 'red', 'green', 'brown', 'blue', 'magenta', 'cyan', 'white']
+brightcolors = ['bright{}'.format(color) for color in colors]
+pyte.graphics.FG_BG_256 = colors + brightcolors + pyte.graphics.FG_BG_256[16:]
+
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
@@ -28,56 +35,41 @@ class CharacterCell(_CharacterCell):
         # type: (pyte.screens.Char, Dict[Any, str]) -> CharacterCell
         """Create a CharacterCell from a pyte character"""
         # Mappings between colors from Pyte and colors in the palette
-        colors = {
-            'black': 0,
-            'red': 1,
-            'green': 2,
-            'brown': 3,
-            'blue': 4,
-            'magenta': 5,
-            'cyan': 6,
-            'white': 7,
-        }
-        colors.update(dict(zip(pyte.graphics.FG_BG_256[:16], range(16))))
-
-        colors_bold = {
-            'black': 8,
-            'red': 9,
-            'green': 10,
-            'brown': 11,
-            'blue': 12,
-            'magenta': 13,
-            'cyan': 14,
-            'white': 15,
-        }
-
+        all_colors = colors + brightcolors
+        # Map named colors to their respective number
+        color_numbers = dict(zip(all_colors, range(len(all_colors))))
         if char.fg == 'default':
             text_color = palette['foreground']
-        elif char.bold and char.fg in colors_bold and colors_bold[char.fg] in palette:
-            text_color = palette[colors_bold[char.fg]]
-        elif char.fg in colors:
-            text_color = palette[colors[char.fg]]
-        elif len(char.fg) == 6:
-            try:
+        else:
+            if char.bold and not str(char.fg).startswith('bright'):
+                search_color = 'bright{}'.format(char.fg)
+            else:
+                search_color = char.fg
+
+            if search_color in color_numbers and color_numbers[search_color] in palette:
+                # Named colors
+                text_color = palette[color_numbers[search_color]]
+            elif len(char.fg) == 6:
+                # Hexadecimal colors
+                # raise ValueError if char.bg hexadecimal number
                 int(char.fg, 16)
                 text_color = '#{}'.format(char.fg)
-            except ValueError:
-                text_color = char.fg
-        else:
-            text_color = char.fg
+            else:
+                raise ValueError('Invalid foreground color: {}'.format(char.fg))
 
         if char.bg == 'default':
+            # Default colors
             background_color = palette['background']
-        elif char.bg in colors:
-            background_color = palette[colors[char.bg]]
+        elif char.bg in color_numbers:
+            # Named colors
+            background_color = palette[color_numbers[char.bg]]
         elif len(char.bg) == 6:
-            try:
-                int(char.bg, 16)
-                background_color = '#{}'.format(char.bg)
-            except ValueError:
-                background_color = char.bg
+            # Hexadecimal colors
+            # raise ValueError if char.bg hexadecimal number
+            int(char.bg, 16)
+            background_color = '#{}'.format(char.bg)
         else:
-            background_color = char.bg
+            raise ValueError('Invalid background color')
 
         if char.reverse:
             text_color, background_color = background_color, text_color

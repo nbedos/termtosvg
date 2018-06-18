@@ -1,7 +1,9 @@
-.PHONY: usage tests venv_dev xresources build deploy_test deploy_prod
+.PHONY: usage tests venv_dev xresources build deploy_test deploy_prod examples
 
 VENV_PATH=.venv
 VENV_ACTIVATE=. $(VENV_PATH)/bin/activate
+EXAMPLES_DIR=examples
+CASTS_DIR=$(EXAMPLES_DIR)/casts
 
 .DEFAULT: usage
 
@@ -10,6 +12,7 @@ usage:
 	@echo "    make build           # Build source distribution archives"
 	@echo "    make deploy_prod     # Upload source distribution archives to pypi.org"
 	@echo "    make deploy_test     # Upload source distribution archives to test.pypi.org"
+	@echo "    make examples        # Render example SVG animations"
 	@echo "    make tests           # Run unit tests"
 	@echo "    make xresources      # Update Xresources data from the base16-xresources repository"
 
@@ -40,3 +43,11 @@ venv_dev: setup.py
 
 xresources:
 	./termtosvg/data/Xresources/update.sh
+
+examples:
+	$(VENV_ACTIVATE) && \
+	    for cast_file in $$(find $(CASTS_DIR) -name '*.cast'); do \
+	    	svg_file="$(EXAMPLES_DIR)/$$(basename --suffix=.cast $$cast_file).svg" && \
+		termtosvg render "$$cast_file" "$$svg_file"; \
+	    done
+
