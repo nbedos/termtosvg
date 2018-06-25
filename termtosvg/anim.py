@@ -46,12 +46,18 @@ class CharacterCell(_CharacterCell):
             else:
                 search_color = char.fg
 
-            if search_color in color_numbers and color_numbers[search_color] in palette:
-                # Named colors
-                text_color = palette[color_numbers[search_color]]
+            if search_color in color_numbers:
+                # NAMED COLORS
+                if color_numbers[search_color] in palette:
+                    # Case for color numbers < 8 (since the palette has at least the first 8 colors)
+                    # or for 16-color palette (all named colors in the palette)
+                    text_color = palette[color_numbers[search_color]]
+                else:
+                    # Case for color numbers >= 8 and 8-color palette: fallback to non bright color
+                    text_color = palette[color_numbers[char.fg]]
             elif len(char.fg) == 6:
-                # Hexadecimal colors
-                # raise ValueError if char.bg hexadecimal number
+                # HEXADECIMAL COLORS
+                # raise ValueError if char.fg is not an hexadecimal number
                 int(char.fg, 16)
                 text_color = '#{}'.format(char.fg)
             else:
@@ -65,7 +71,7 @@ class CharacterCell(_CharacterCell):
             background_color = palette[color_numbers[char.bg]]
         elif len(char.bg) == 6:
             # Hexadecimal colors
-            # raise ValueError if char.bg hexadecimal number
+            # raise ValueError if char.bg is not an hexadecimal number
             int(char.bg, 16)
             background_color = '#{}'.format(char.bg)
         else:

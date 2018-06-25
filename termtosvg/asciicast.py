@@ -67,9 +67,9 @@ class AsciiCastTheme(_AsciiCastTheme):
         res_db = rdb.ResourceDB(string=xresources)
 
         colors = {}
-        names = [('foreground', True), ('background', True)] + \
-                [('color{}'.format(index), index < 8) for index in range(16)]
-        for name, required in names:
+        names = ['foreground', 'background'] + \
+                ['color{}'.format(index) for index in range(16)]
+        for name in names:
             res_name = 'termtosvg.' + name
             res_class = res_name
             colors[name] = res_db.get(res_name, res_class, None)

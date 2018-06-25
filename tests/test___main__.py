@@ -8,6 +8,7 @@ from Xlib.error import DisplayError
 
 import termtosvg.__main__ as __main__
 import termtosvg.term as term
+from tests.test_term import xresources_minimal
 
 SHELL_COMMANDS = [
     'echo $SHELL && sleep 0.1;\r\n',
@@ -19,6 +20,8 @@ SHELL_COMMANDS = [
     'a',
     'm',
     'i\r\n',
+    "\033[1;31mbright red fg\033[0m\r\n",
+    "\033[1;41mbright red bg\033[0m\r\n",
     'exit;\r\n'
 ]
 
@@ -121,4 +124,11 @@ class TestMain(unittest.TestCase):
             get_x_mock = Mock(return_value=xresources_dracula)
             with unittest.mock.patch('termtosvg.term._get_xresources', get_x_mock):
                 args = ['termtosvg', svg_filename, '--theme', 'circus', '--verbose']
+                TestMain.run_main(SHELL_COMMANDS, args)
+
+        with self.subTest(case='8 color palette'):
+            # Mock color info gathering
+            get_x_mock = Mock(return_value=xresources_minimal)
+            with unittest.mock.patch('termtosvg.term._get_xresources', get_x_mock):
+                args = ['termtosvg', svg_filename]
                 TestMain.run_main(SHELL_COMMANDS, args)
