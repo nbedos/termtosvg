@@ -343,18 +343,25 @@ def get_configuration(fileno):
         theme = None
     else:
         try:
-            theme = AsciiCastTheme.from_xresources(xresources_str)
+            if xresources_str is None:
+                logger.debug('No Xresources string returned')
+                theme = None
+            else:
+                theme = AsciiCastTheme.from_xresources(xresources_str)
         except ValueError:
-            logger.debug('Invalid Xresources string')
+            logger.debug('Invalid Xresources string: "{}"'.format(xresources_str))
             theme = None
 
     return columns, lines, theme
 
 
 def _get_xresources():
-    # type: () -> str
+    # type: () -> Union[str, None]
     """Query the X server for the Xresources string of the default display"""
     d = display.Display()
     data = d.screen(0).root.get_full_property(Xatom.RESOURCE_MANAGER,
                                               Xatom.STRING)
+    if data is None:
+        return None
+
     return data.value.decode('utf-8')

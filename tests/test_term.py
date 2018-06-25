@@ -196,6 +196,16 @@ class TestTerm(unittest.TestCase):
                     self.assertEqual(lines, 84)
                     self.assertIsNone(theme)
 
+        # Test case for issue #2: _get_xresources might return None
+        _get_x_mock = MagicMock(return_value=None)
+        with patch('termtosvg.term._get_xresources', _get_x_mock):
+            with self.subTest(case='Invalid Xresources string'):
+                term_size_mock = MagicMock(return_value=(42, 84))
+                with patch('os.get_terminal_size', term_size_mock):
+                    cols, lines, theme = term.get_configuration(-1)
+                    self.assertIsNone(theme)
+
+
     def test__group_by_time(self):
         event_records = [
             AsciiCastEvent(0, 'o', b'1', None),
