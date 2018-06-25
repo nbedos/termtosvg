@@ -13,5 +13,14 @@ script:
     - coverage run --branch --source termtosvg -m unittest -v
     - coverage report
 
+deploy:
+  provider: pypi
+  username: "nbedos"
+  password:
+      secure: "fG7EVqOWWZ45owFkAPIBnpqDDvQ2u8Zuk/7CA9o9KlLEd9KXCITyWY1kaZ8eNMLCZGQCRx3gk3ZYFd3ybVcNB+OouNa1ZWde96nPwFa7pNoR+E4nLkZfI33hMyucCzkKaMCmbU52xyyEzIbOkvK1fkm8PGozQYd+mr4okeyS3ESNRZEIQwtTAPb3dYexvaVFvvambmbmRN1LS3MaPJO8MCceI8LFRznYVdMQuNtNBAgH0cYqu5QBic76obCISFVmbdNl4C6eAPdlLE4G+46VnbRTG7nXqzqMYOhtGe2ea0E6A6svfHKwPoNCRm/PPXYC1RGwhYaXFtWu0yKMGL4RfygaqFhwhESyofbpgbsCt7VbUmpebTZe0Hy3AAdA3X0wy8r+uDewhY7ljFtjvMFu/g7bi0Yr58G0lskKJVUg7n0dRLkqIc/jbc+gZcWA8EggrFc/cB2tILoa0lvKOyD+Y4eC9wTjxz5IthiFoPk6jI7TrRwhfrUTkAolr3GDpdhhXFPTA0biSIk12msUm7ZUiJYHThrU5iEMsGCvkP/Gkh0JEtu4WJnhOlm9FzfQGon3ScsBSWCADIUdZwasMkxwuDs5R2zKFjcZ/1VxEg/GWnAGfcvGpKcTOX+5QNbeO+/xNFR4TEJxuKKbDykFpZR+7H2SK8CiJuv6jQqoyiDC/Bo="
+  on:
+    tags: true
+  distributions: "sdist bdist_wheel"
+
 notifications:
   email: false
