@@ -155,7 +155,7 @@ def _render_characters(screen_line, height, cell_width):
     return texts
 
 
-def render_animation(records, filename, font, end_pause=1, cell_width=8, cell_height=17):
+def render_animation(records, filename, font="DejaVu Sans Mono", end_pause=1, cell_width=8, cell_height=17):
     # type: (Iterable[CharacterCellRecord], str, int) -> None
     if end_pause < 0:
         raise ValueError('Invalid end_pause (must be >= 0): "{}"'.format(end_pause))
