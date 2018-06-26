@@ -30,21 +30,28 @@ theme_parser.add_argument(
     metavar='THEME'
 )
 
-USAGE = """termtosvg [output_file] [--theme THEME] [--help] [--verbose]
+font_parser = argparse.ArgumentParser(add_help=False)
+font_parser.add_argument(
+    '--font',
+    help='font to use during rendering (fallback to DejaVu Sans)',
+    metavar='FONT'
+)
+
+USAGE = """termtosvg [output_file] [--theme THEME] [--font FONT] [--help] [--verbose]
 
 Record a terminal session and render an SVG animation on the fly
 """
 
 EPILOG = "See also 'termtosvg record --help' and 'termtosvg render --help'"
 RECORD_USAGE = """termtosvg record [output_file] [--verbose] [--help]"""
-RENDER_USAGE = """termtosvg render input_file [output_file] [--theme THEME] [--verbose] [--help]"""
+RENDER_USAGE = """termtosvg render input_file [output_file] [--theme THEME] [--font FONT] [--verbose] [--help]"""
 
 def parse(args):
     # type: (List) -> Tuple[Union[None, str], argparse.Namespace]
-    # Usage: termtosvg [--theme THEME] [--verbose] [output_file]
+    # Usage: termtosvg [--theme THEME] [--font FONT] [--verbose] [output_file]
     parser = argparse.ArgumentParser(
         prog='termtosvg',
-        parents=[theme_parser, verbose_parser],
+        parents=[theme_parser, font_parser, verbose_parser],
         usage=USAGE,
         epilog=EPILOG
     )
@@ -71,10 +78,10 @@ def parse(args):
             )
             return 'record', parser.parse_args(args[1:])
         elif args[0] == 'render':
-            # Usage: termtosvg render [--theme THEME] [--verbose] input_file [output_file]
+            # Usage: termtosvg render [--theme THEME] [--font FONT] [--verbose] input_file [output_file]
             parser = argparse.ArgumentParser(
                 description='render an asciicast recording as an SVG animation',
-                parents=[theme_parser, verbose_parser],
+                parents=[theme_parser, font_parser, verbose_parser],
                 usage=RENDER_USAGE
             )
             parser.add_argument(
@@ -121,6 +128,7 @@ def main(args=None, input_fileno=None, output_fileno=None):
         logger.info('Logging to {}'.format(LOG_FILENAME))
 
     fallback_theme_name = 'solarized-dark'
+    fallback_font = 'DejaVu Sans Mono'
     xresources_str = term.default_themes()[fallback_theme_name]
     fallback_theme = asciicast.AsciiCastTheme.from_xresources(xresources_str)
 
@@ -151,6 +159,11 @@ def main(args=None, input_fileno=None, output_fileno=None):
         else:
             svg_filename = args.output_file
 
+        if args.font is None:
+            font = fallback_font
+        else:
+            font = args.font
+
         if args.theme is None:
             theme = fallback_theme
         else:
@@ -158,7 +171,7 @@ def main(args=None, input_fileno=None, output_fileno=None):
             theme = asciicast.AsciiCastTheme.from_xresources(xresources_str)
 
         replayed_records = term.replay(rec_gen(), anim.CharacterCell.from_pyte, theme)
-        anim.render_animation(replayed_records, svg_filename)
+        anim.render_animation(replayed_records, svg_filename, font)
 
         logger.info('Rendering ended, SVG animation is {}'.format(svg_filename))
     else:
@@ -170,6 +183,11 @@ def main(args=None, input_fileno=None, output_fileno=None):
             svg_filename = args.output_file
 
         columns, lines, system_theme = term.get_configuration(output_fileno)
+
+        if args.font is None:
+            font = fallback_font
+        else:
+            font = args.font
 
         if args.theme is None:
             if system_theme is None:
@@ -183,7 +201,7 @@ def main(args=None, input_fileno=None, output_fileno=None):
         with term.TerminalMode(input_fileno):
             records = term.record(columns, lines, theme, input_fileno, output_fileno)
             replayed_records = term.replay(records, anim.CharacterCell.from_pyte, theme)
-            anim.render_animation(replayed_records, svg_filename)
+            anim.render_animation(replayed_records, svg_filename, font)
 
         logger.info('Recording ended, SVG animation is {}'.format(svg_filename))
 
