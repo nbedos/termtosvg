@@ -37,9 +37,9 @@ Once you are done, exit the shell to end the recording:
 $ exit
 Recording ended, file is /tmp/termtosvg_exp5nsr4.svg
 ```
-Finally, use your favorite image viewer to play the animation:
+Finally, use your favorite web browser to play the animation:
 ```
-$ xdg-open /tmp/termtosvg_exp5nsr4.svg
+$ firefox /tmp/termtosvg_exp5nsr4.svg
 ```
 
 ### Subcommands
