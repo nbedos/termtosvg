@@ -14,7 +14,6 @@ usage:
 	@echo "    make deploy_test     # Upload source distribution archives to test.pypi.org"
 	@echo "    make examples        # Render example SVG animations"
 	@echo "    make tests           # Run unit tests"
-	@echo "    make xresources      # Update Xresources data from the base16-xresources repository"
 
 build: tests
 	$(VENV_ACTIVATE) && \
@@ -40,9 +39,6 @@ venv_dev: setup.py
 	(test -d $(VENV_PATH) || python -m venv $(VENV_PATH))
 	$(VENV_ACTIVATE) && \
 	    pip install -U -e .[dev]
-
-xresources:
-	./termtosvg/data/Xresources/update.sh
 
 examples:
 	$(VENV_ACTIVATE) && \

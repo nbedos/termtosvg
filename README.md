@@ -139,5 +139,4 @@ to record terminal sessions with those custom colors.
 termtosvg uses:
 * [pyte](https://github.com/selectel/pyte) to render the terminal screen
 * [svgwrite](https://github.com/mozman/svgwrite) to create SVG animations
-* [python-xlib](https://github.com/python-xlib/python-xlib) to query the X server for color configuration and to parse Xresources data
 * [base16-xresources](https://github.com/chriskempson/base16-xresources) for default color themes

@@ -6,7 +6,6 @@ import abc
 import codecs
 import json
 from collections import namedtuple
-from Xlib import rdb
 
 utf8_decoder = codecs.getincrementaldecoder('utf-8')('replace')
 
@@ -56,31 +55,6 @@ class AsciiCastTheme(_AsciiCastTheme):
                 raise ValueError('Invalid background color: {}'.format(bg))
         else:
             raise ValueError('Invalid foreground color: {}'.format(fg))
-
-    @classmethod
-    def from_xresources(cls, xresources):
-        # type: (str) -> AsciiCastTheme
-        """Parse the Xresources string and return an AsciiCastTheme containing the color information
-
-        Raise ValueError if no theme could be created
-        """
-        res_db = rdb.ResourceDB(string=xresources)
-
-        colors = {}
-        names = ['foreground', 'background'] + \
-                ['color{}'.format(index) for index in range(16)]
-        for name in names:
-            res_name = 'termtosvg.' + name
-            res_class = res_name
-            colors[name] = res_db.get(res_name, res_class, None)
-
-        palette = ':'.join(colors['color{}'.format(i)]
-                           if colors['color{}'.format(i)] is not None else ''
-                           for i in range(len(colors) - 2))
-        theme = AsciiCastTheme(fg=colors['foreground'],
-                               bg=colors['background'],
-                               palette=palette)
-        return theme
 
     @staticmethod
     def is_color(color):

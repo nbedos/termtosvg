@@ -1,36 +1,22 @@
 #!/usr/bin/env python3
 import argparse
-import configparser
 import logging
 import os
 import sys
 import tempfile
 from typing import List, Tuple, Union
 
-import pkg_resources
-
 import termtosvg.anim as anim
+import termtosvg.config as config
 import termtosvg.asciicast as asciicast
 import termtosvg.term as term
 
+logger = logging.getLogger('termtosvg')
 LOG_FILENAME = os.path.join(tempfile.gettempdir(), 'termtosvg.log')
 
-verbose_parser = argparse.ArgumentParser(add_help=False)
-verbose_parser.add_argument(
-    '-v',
-    '--verbose',
-    action='store_true',
-    help='increase log messages verbosity'
-)
 
-default_themes = sorted(term.default_themes())
-theme_parser = argparse.ArgumentParser(add_help=False)
-theme_parser.add_argument(
-    '--theme',
-    help='color theme used to render the terminal session ({})'.format(', '.join(default_themes)),
-    choices=default_themes,
-    metavar='THEME'
-)
+configuration = config.init_read_conf()
+available_themes = [section for section in configuration if section != 'GLOBAL']
 
 USAGE = """termtosvg [output_file] [--theme THEME] [--help] [--verbose]
 
@@ -41,51 +27,27 @@ EPILOG = "See also 'termtosvg record --help' and 'termtosvg render --help'"
 RECORD_USAGE = """termtosvg record [output_file] [--verbose] [--help]"""
 RENDER_USAGE = """termtosvg render input_file [output_file] [--theme THEME] [--verbose] [--help]"""
 
-CONFIGURATION_PATH = os.path.join('data', 'termtosvg.ini')
-DEFAULT_CONFIG = pkg_resources.resource_string(__name__, CONFIGURATION_PATH).decode('utf-8')
-
-
-def _parse_config(configuration):
-    # type: (str) -> Tuple[str, asciicast.AsciiCastTheme]
-    """Read a configuration string in INI format and return a tuple (font, color theme)
-
-    Raise a subclass of configparser.Error if parsing the configuration string fails
-    Raise ValueError if the color theme is invalid
-    """
-    user_config = configparser.ConfigParser(comment_prefixes=(';',))
-    user_config.read_string(configuration)
-    theme_name = user_config.get('GLOBAL', 'theme')
-
-    font = user_config.get('GLOBAL', 'font')
-
-    fg = user_config.get(theme_name, 'foreground', fallback='')
-    bg = user_config.get(theme_name, 'background', fallback='')
-    palette = ':'.join(user_config.get(theme_name, 'color{}'.format(i), fallback='')
-                       for i in range(16))
-
-    # Raise ValueError is the color theme is invalid
-    theme = asciicast.AsciiCastTheme(fg, bg, palette)
-
-    return font, theme
-
-
-def parse_config(user_configuration, default_configuration):
-    # type: (str, str) -> Tuple[str, asciicast.AsciiCastTheme]
-    """ Return a tuple (font, theme) based on information gathered in user_configuration
-
-    Fallback to default_configuration if user_configuration is invalid.
-    """
-    try:
-        return _parse_config(user_configuration)
-    except (configparser.Error, ValueError) as e:
-        print('Invalid configuration file: {}'.format(e))
-        print('Falling back to default configuration')
-        return _parse_config(default_configuration)
-
 
 def parse(args):
     # type: (List) -> Tuple[Union[None, str], argparse.Namespace]
     # Usage: termtosvg [--theme THEME] [--verbose] [output_file]
+    verbose_parser = argparse.ArgumentParser(add_help=False)
+    verbose_parser.add_argument(
+        '-v',
+        '--verbose',
+        action='store_true',
+        help='increase log messages verbosity'
+    )
+
+    theme_parser = argparse.ArgumentParser(add_help=False)
+    theme_parser.add_argument(
+        '--theme',
+        help='color theme used to render the terminal session ({})'.format(
+            ', '.join(available_themes)),
+        choices=available_themes,
+        metavar='THEME'
+    )
+
     parser = argparse.ArgumentParser(
         prog='termtosvg',
         parents=[theme_parser, verbose_parser],
@@ -147,7 +109,6 @@ def main(args=None, input_fileno=None, output_fileno=None):
 
     command, args = parse(args[1:])
 
-    logger = logging.getLogger('termtosvg')
     logger.setLevel(logging.INFO)
 
     console_handler = logging.StreamHandler(sys.stderr)
@@ -164,10 +125,6 @@ def main(args=None, input_fileno=None, output_fileno=None):
         logger.handlers.append(file_handler)
         logger.info('Logging to {}'.format(LOG_FILENAME))
 
-    fallback_theme_name = 'solarized-dark'
-    xresources_str = term.default_themes()[fallback_theme_name]
-    fallback_theme = asciicast.AsciiCastTheme.from_xresources(xresources_str)
-
     if command == 'record':
         logger.info('Recording started, enter "exit" command or Control-D to end')
         if args.output_file is None:
@@ -175,9 +132,9 @@ def main(args=None, input_fileno=None, output_fileno=None):
         else:
             cast_filename = args.output_file
 
-        columns, lines, theme = term.get_configuration(output_fileno)
+        columns, lines = term.get_terminal_size(output_fileno)
         with term.TerminalMode(input_fileno):
-            records = term.record(columns, lines, theme, input_fileno, output_fileno)
+            records = term.record(columns, lines, None, input_fileno, output_fileno)
             with open(cast_filename, 'w') as cast_file:
                 for record in records:
                     print(record.to_json_line(), file=cast_file)
@@ -195,11 +152,13 @@ def main(args=None, input_fileno=None, output_fileno=None):
         else:
             svg_filename = args.output_file
 
+        font = configuration['GLOBAL']['font']
         if args.theme is None:
-            theme = fallback_theme
+            theme_name = configuration['GLOBAL']['theme']
+            theme = configuration[theme_name]
         else:
-            xresources_str = term.default_themes()[args.theme]
-            theme = asciicast.AsciiCastTheme.from_xresources(xresources_str)
+            theme = configuration[args.theme]
+
 
         replayed_records = term.replay(rec_gen(), anim.CharacterCell.from_pyte, theme)
         anim.render_animation(replayed_records, svg_filename)
@@ -213,16 +172,13 @@ def main(args=None, input_fileno=None, output_fileno=None):
         else:
             svg_filename = args.output_file
 
-        columns, lines, system_theme = term.get_configuration(output_fileno)
-
+        columns, lines = term.get_terminal_size(output_fileno)
+        font = configuration['GLOBAL']['font']
         if args.theme is None:
-            if system_theme is None:
-                theme = fallback_theme
-            else:
-                theme = system_theme
+            theme_name = configuration['GLOBAL']['theme']
+            theme = configuration[theme_name]
         else:
-            xresources_str = term.default_themes()[args.theme]
-            theme = asciicast.AsciiCastTheme.from_xresources(xresources_str)
+            theme = configuration[args.theme]
 
         with term.TerminalMode(input_fileno):
             records = term.record(columns, lines, theme, input_fileno, output_fileno)

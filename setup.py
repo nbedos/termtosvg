@@ -28,21 +28,24 @@ setup(
             'LICENSE'
         ],
         'termtosvg': [
-            'data/Xresources/base16-*.Xresources',
-            'data/Xresources/LICENSE.md',
+            'data/LICENSE.md',
             'data/termtosvg.ini',
         ]
     },
-    py_modules=['termtosvg.anim', 'termtosvg.term'],
+    py_modules=[
+        'termtosvg.anim',
+        'termtosvg.asciicast',
+        'termtosvg.config',
+        'termtosvg.term',
+    ],
     entry_points={
         'console_scripts': [
             'termtosvg=termtosvg.__main__:main'
         ]
     },
     install_requires=[
-        'setuptools',
         'pyte',
-        'python-xlib',
+        'setuptools',
         'svgwrite'
     ],
     extras_require={
