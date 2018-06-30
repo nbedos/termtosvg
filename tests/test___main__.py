@@ -46,7 +46,7 @@ class TestMain(unittest.TestCase):
 
         for args in test_cases:
             with self.subTest(case=args):
-                __main__.parse(args)
+                __main__.parse(args, ['solarized-light', 'solarized-dark'])
 
     @staticmethod
     def run_main(shell_commands, args):
@@ -96,6 +96,6 @@ class TestMain(unittest.TestCase):
             args = ['termtosvg', '--verbose']
             TestMain.run_main(SHELL_COMMANDS, args)
 
-        with self.subTest(case='record and render on the fly (circus theme)'):
-            args = ['termtosvg', svg_filename, '--theme', 'circus', '--verbose']
+        with self.subTest(case='record and render on the fly (uppercase circus theme +)'):
+            args = ['termtosvg', svg_filename, '--theme', 'CIRCUS', '--verbose']
             TestMain.run_main(SHELL_COMMANDS, args)

@@ -14,21 +14,15 @@ import termtosvg.term as term
 logger = logging.getLogger('termtosvg')
 LOG_FILENAME = os.path.join(tempfile.gettempdir(), 'termtosvg.log')
 
-
-configuration = config.init_read_conf()
-available_themes = [section for section in configuration if section != 'GLOBAL']
-
 USAGE = """termtosvg [output_file] [--theme THEME] [--help] [--verbose]
-
 Record a terminal session and render an SVG animation on the fly
 """
-
 EPILOG = "See also 'termtosvg record --help' and 'termtosvg render --help'"
 RECORD_USAGE = """termtosvg record [output_file] [--verbose] [--help]"""
 RENDER_USAGE = """termtosvg render input_file [output_file] [--theme THEME] [--verbose] [--help]"""
 
 
-def parse(args):
+def parse(args, themes):
     # type: (List) -> Tuple[Union[None, str], argparse.Namespace]
     # Usage: termtosvg [--theme THEME] [--verbose] [output_file]
     verbose_parser = argparse.ArgumentParser(add_help=False)
@@ -38,16 +32,14 @@ def parse(args):
         action='store_true',
         help='increase log messages verbosity'
     )
-
     theme_parser = argparse.ArgumentParser(add_help=False)
     theme_parser.add_argument(
         '--theme',
         help='color theme used to render the terminal session ({})'.format(
-            ', '.join(available_themes)),
-        choices=available_themes,
+            ', '.join(themes)),
+        choices=themes,
         metavar='THEME'
     )
-
     parser = argparse.ArgumentParser(
         prog='termtosvg',
         parents=[theme_parser, verbose_parser],
@@ -107,7 +99,11 @@ def main(args=None, input_fileno=None, output_fileno=None):
     if output_fileno is None:
         output_fileno = sys.stdout.fileno()
 
-    command, args = parse(args[1:])
+    configuration = config.init_read_conf()
+    available_themes = config.CaseInsensitiveDict(**configuration)
+    del available_themes['global']
+
+    command, args = parse(args[1:], available_themes)
 
     logger.setLevel(logging.INFO)
 

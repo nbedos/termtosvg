@@ -7,45 +7,80 @@ import pkg_resources
 
 import termtosvg.asciicast as asciicast
 
+
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
-_PKG_CONFIGURATION_PATH = os.path.join('data', 'termtosvg.ini')
-DEFAULT_CONFIG = pkg_resources.resource_string(__name__, _PKG_CONFIGURATION_PATH).decode('utf-8')
+PKG_CONF_PATH = os.path.join('data', 'termtosvg.ini')
+DEFAULT_CONFIG = pkg_resources.resource_string(__name__, PKG_CONF_PATH).decode('utf-8')
 
 
-if 'XDG_CONFIG_HOME' in os.environ:
-    USER_CONFIG_DIR = os.environ['XDG_CONFIG_HOME']
-elif 'HOME' in os.environ:
-    USER_CONFIG_DIR = os.path.join(os.environ['HOME'], '.config')
-else:
-    logger.info('Environment variable XDG_CONFIG_HOME and HOME are not set: user configuration '
-                'cannot be used')
-    USER_CONFIG_DIR = None
+class CaseInsensitiveDict(dict):
+    @classmethod
+    def _lower_key(cls, key):
+        return key.lower() if isinstance(key, str) else key
+
+    def __init__(self, *args, **kwargs):
+        super(CaseInsensitiveDict, self).__init__(*args, **kwargs)
+        for key in list(self.keys()):
+            value = super(CaseInsensitiveDict, self).pop(key)
+            self.__setitem__(key, value)
+
+    def __getitem__(self, key):
+        lower_case_key = self.__class__._lower_key(key)
+        return super(CaseInsensitiveDict, self).__getitem__(lower_case_key)
+
+    def __setitem__(self, key, value):
+        lower_case_key = self.__class__._lower_key(key)
+        super(CaseInsensitiveDict, self).__setitem__(lower_case_key, value)
+
+    def __delitem__(self, key):
+        lower_case_key = self.__class__._lower_key(key)
+        return super(CaseInsensitiveDict, self).__delitem__(lower_case_key)
+
+    def __contains__(self, key):
+        lower_case_key = self.__class__._lower_key(key)
+        return super(CaseInsensitiveDict, self).__contains__(lower_case_key)
+
+    def pop(self, key, *args, **kwargs):
+        lower_case_key = self.__class__._lower_key(key)
+        return super(CaseInsensitiveDict, self).pop(lower_case_key, *args, **kwargs)
+
+    def get(self, key, *args, **kwargs):
+        lower_case_key = self.__class__._lower_key(key)
+        return super(CaseInsensitiveDict, self).get(lower_case_key, *args, **kwargs)
+
+    def setdefault(self, key, *args, **kwargs):
+        lower_case_key = self.__class__._lower_key(key)
+        return super(CaseInsensitiveDict, self).setdefault(lower_case_key, *args, **kwargs)
+
+    def update(self, E=None, **F):
+        super(CaseInsensitiveDict, self).update(self.__class__(E))
+        super(CaseInsensitiveDict, self).update(self.__class__(**F))
 
 
 def conf_to_dict(configuration):
-    # type: (str) -> Dict[str, Union[Dict[str, str], asciicast.AsciiCastTheme]]
+    # type: (str) -> CaseInsensitiveDict[str, Union[Dict[str, str], asciicast.AsciiCastTheme]]
     """Read a configuration string in INI format and return a dictionary
 
     Raise a subclass of configparser.Error if parsing the configuration string fails
     Raise ValueError if the color theme is invalid
     """
-    user_config = configparser.ConfigParser(comment_prefixes=(';',))
-    user_config.read_string(configuration)
-    config_dict = {
-        'GLOBAL': {
-            'font': user_config.get('GLOBAL', 'font'),
-            'theme': user_config.get('GLOBAL', 'theme'),
+    parser = configparser.ConfigParser(dict_type=CaseInsensitiveDict,
+                                       comment_prefixes=(';',))
+    parser.read_string(configuration)
+    config_dict = CaseInsensitiveDict({
+        'global': {
+            'font': parser.get('global', 'font'),
+            'theme': parser.get('global', 'theme'),
         }
-    }
+    })
 
-    themes = user_config.sections()
-    themes.remove('GLOBAL')
+    themes = [theme.lower() for theme in parser.sections() if theme.lower() != 'global']
     for theme_name in themes:
-        fg = user_config.get(theme_name, 'foreground', fallback='')
-        bg = user_config.get(theme_name, 'background', fallback='')
-        palette = ':'.join(user_config.get(theme_name, 'color{}'.format(i), fallback='')
+        fg = parser.get(theme_name, 'foreground', fallback='')
+        bg = parser.get(theme_name, 'background', fallback='')
+        palette = ':'.join(parser.get(theme_name, 'color{}'.format(i), fallback='')
                            for i in range(16))
 
         # This line raises ValueError if the color theme is invalid
@@ -69,17 +104,28 @@ def get_configuration(user_config, default_config):
 
     # Override default values with user configuration
     for section in user_config_dict:
-        if section == 'GLOBAL':
+        if section.lower() == 'global':
             for _property in 'theme', 'font':
-                if _property in user_config_dict['GLOBAL']:
-                    config_dict['GLOBAL'][_property] = user_config_dict['GLOBAL'][_property]
+                config_dict['GLOBAL'][_property] = user_config_dict['global'][_property]
         else:
             config_dict[section] = user_config_dict[section]
 
     return config_dict
 
 
-def init_read_conf(user_config_dir=USER_CONFIG_DIR, default_config=DEFAULT_CONFIG):
+def init_read_conf():
+    if 'XDG_CONFIG_HOME' in os.environ:
+        user_config_dir = os.environ['XDG_CONFIG_HOME']
+    elif 'HOME' in os.environ:
+        user_config_dir = os.path.join(os.environ['HOME'], '.config')
+    else:
+        logger.info('Environment variable XDG_CONFIG_HOME and HOME are not set: user '
+                    'configuration cannot be used')
+        user_config_dir = None
+
+    if user_config_dir is None:
+        return get_configuration(DEFAULT_CONFIG, DEFAULT_CONFIG)
+
     config_dir = os.path.join(user_config_dir, 'termtosvg')
     config_path = os.path.join(config_dir, 'termtosvg.ini')
     try:
@@ -87,14 +133,9 @@ def init_read_conf(user_config_dir=USER_CONFIG_DIR, default_config=DEFAULT_CONFI
             user_config = config_file.read()
     except FileNotFoundError:
         user_config = DEFAULT_CONFIG
-        try:
-            with open(config_path, 'w') as config_file:
-                config_file.write(DEFAULT_CONFIG)
-            logger.info('Created default configuration file: {}'.format(config_path))
-        except FileNotFoundError:
-            os.makedirs(config_dir)
-            with open(config_path, 'w') as config_file:
-                config_file.write(DEFAULT_CONFIG)
-            logger.info('Created default configuration file: {}'.format(config_path))
+        os.makedirs(config_dir, exist_ok=True)
+        with open(config_path, 'w') as config_file:
+            config_file.write(DEFAULT_CONFIG)
+        logger.info('Created default configuration file: {}'.format(config_path))
 
-    return get_configuration(user_config, default_config)
+    return get_configuration(user_config, DEFAULT_CONFIG)
