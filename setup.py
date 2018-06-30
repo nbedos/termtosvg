@@ -30,6 +30,7 @@ setup(
         'termtosvg': [
             'data/Xresources/base16-*.Xresources',
             'data/Xresources/LICENSE.md',
+            'data/termtosvg.ini',
         ]
     },
     py_modules=['termtosvg.anim', 'termtosvg.term'],

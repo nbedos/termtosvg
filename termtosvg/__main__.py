@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 import argparse
+import configparser
 import logging
 import os
 import sys
 import tempfile
-
 from typing import List, Tuple, Union
 
+import pkg_resources
+
 import termtosvg.anim as anim
-import termtosvg.term as term
 import termtosvg.asciicast as asciicast
+import termtosvg.term as term
 
 LOG_FILENAME = os.path.join(tempfile.gettempdir(), 'termtosvg.log')
 
@@ -38,6 +40,48 @@ Record a terminal session and render an SVG animation on the fly
 EPILOG = "See also 'termtosvg record --help' and 'termtosvg render --help'"
 RECORD_USAGE = """termtosvg record [output_file] [--verbose] [--help]"""
 RENDER_USAGE = """termtosvg render input_file [output_file] [--theme THEME] [--verbose] [--help]"""
+
+CONFIGURATION_PATH = os.path.join('data', 'termtosvg.ini')
+DEFAULT_CONFIG = pkg_resources.resource_string(__name__, CONFIGURATION_PATH).decode('utf-8')
+
+
+def _parse_config(configuration):
+    # type: (str) -> Tuple[str, asciicast.AsciiCastTheme]
+    """Read a configuration string in INI format and return a tuple (font, color theme)
+
+    Raise a subclass of configparser.Error if parsing the configuration string fails
+    Raise ValueError if the color theme is invalid
+    """
+    user_config = configparser.ConfigParser(comment_prefixes=(';',))
+    user_config.read_string(configuration)
+    theme_name = user_config.get('GLOBAL', 'theme')
+
+    font = user_config.get('GLOBAL', 'font')
+
+    fg = user_config.get(theme_name, 'foreground', fallback='')
+    bg = user_config.get(theme_name, 'background', fallback='')
+    palette = ':'.join(user_config.get(theme_name, 'color{}'.format(i), fallback='')
+                       for i in range(16))
+
+    # Raise ValueError is the color theme is invalid
+    theme = asciicast.AsciiCastTheme(fg, bg, palette)
+
+    return font, theme
+
+
+def parse_config(user_configuration, default_configuration):
+    # type: (str, str) -> Tuple[str, asciicast.AsciiCastTheme]
+    """ Return a tuple (font, theme) based on information gathered in user_configuration
+
+    Fallback to default_configuration if user_configuration is invalid.
+    """
+    try:
+        return _parse_config(user_configuration)
+    except (configparser.Error, ValueError) as e:
+        print('Invalid configuration file: {}'.format(e))
+        print('Falling back to default configuration')
+        return _parse_config(default_configuration)
+
 
 def parse(args):
     # type: (List) -> Tuple[Union[None, str], argparse.Namespace]

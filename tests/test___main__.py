@@ -132,3 +132,56 @@ class TestMain(unittest.TestCase):
             with unittest.mock.patch('termtosvg.term._get_xresources', get_x_mock):
                 args = ['termtosvg', svg_filename]
                 TestMain.run_main(SHELL_COMMANDS, args)
+
+
+MINIMAL_CONFIG = """[GLOBAL]
+theme=dark
+font=Deja Vu Sans Mono
+[dark]
+foreground=#FFFFFF
+background=#000000
+color0=#000000
+color1=#111111
+color2=#222222
+color3=#333333
+color4=#444444
+color5=#555555
+color6=#666666
+color7=#777777
+"""
+
+NO_GLOBAL_SECTION_CONFIG = MINIMAL_CONFIG.replace('[GLOBAL]', ';[GLOBAL]')
+NO_FONT_CONFIG = MINIMAL_CONFIG.replace('font', ';font')
+NO_THEME_CONFIG = MINIMAL_CONFIG.replace('theme', ';theme')
+WRONG_THEME_CONFIG = MINIMAL_CONFIG.replace('theme=dark', 'theme=white')
+DUPLICATES_CONFIG = MINIMAL_CONFIG.replace('theme=dark',
+                                           'font=courrier\r\ntheme=dark\r\ntheme=white\r\n[dark]')
+
+
+class TestConf(unittest.TestCase):
+    def test_parse_config(self):
+        with self.subTest(case='minimal config'):
+            font, theme = __main__.parse_config(MINIMAL_CONFIG, '')
+            self.assertEqual(font, 'Deja Vu Sans Mono')
+            self.assertEqual(theme.fg.lower(), '#ffffff')
+            self.assertEqual(theme.bg.lower(), '#000000')
+
+        test_cases = [
+            ('default config', __main__.DEFAULT_CONFIG, __main__.DEFAULT_CONFIG),
+            ('empty user config', '', __main__.DEFAULT_CONFIG),
+            ('No global section', NO_GLOBAL_SECTION_CONFIG, __main__.DEFAULT_CONFIG),
+            ('No font property', NO_FONT_CONFIG, __main__.DEFAULT_CONFIG),
+            ('No theme property', NO_THEME_CONFIG, __main__.DEFAULT_CONFIG),
+            ('Invalid theme property', WRONG_THEME_CONFIG, __main__.DEFAULT_CONFIG),
+        ]
+
+        for case, user_config, default_config in test_cases:
+            with self.subTest(case=case):
+                font, theme = __main__.parse_config(user_config, default_config)
+                self.assertEqual(font, 'Deja Vu Sans Mono')
+                self.assertEqual(theme.fg.lower(), '#93a1a1')
+                self.assertEqual(theme.bg.lower(), '#002b36')
+                palette = theme.palette.split(':')
+                self.assertEqual(palette[0].lower(), '#002b36')
+                self.assertEqual(palette[15].lower(), '#fdf6e3')
+
