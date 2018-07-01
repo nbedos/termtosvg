@@ -90,7 +90,7 @@ font = DejaVu Sans Mono
 theme = solarized-dark
 ```
 These options can be overriden at the command line with the `--font` and
-`--theme' flags.
+`--theme` flags.
 
 #### Color themes
 All other sections of the file define color themes. For example here's
