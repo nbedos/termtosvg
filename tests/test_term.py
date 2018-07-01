@@ -53,7 +53,6 @@ class TestTerm(unittest.TestCase):
 
         lines = 24
         columns = 80
-        theme = AsciiCastTheme('#000000', '#111111', ':'.join(['#123456']*8))
 
         pid = os.fork()
         if pid == 0:
@@ -65,7 +64,7 @@ class TestTerm(unittest.TestCase):
 
         # Parent process
         with term.TerminalMode(fd_in_read):
-            for _ in term.record(columns, lines, theme, fd_in_read, fd_out_write):
+            for _ in term.record(columns, lines, fd_in_read, fd_out_write):
                 pass
 
         os.waitpid(pid, 0)
@@ -89,7 +88,7 @@ class TestTerm(unittest.TestCase):
                                       duration=None)
                        for i in range(1, nbr_records)]
 
-            records = term.replay(records, pyte_to_str, fallback_theme, 50, 1000)
+            records = term.replay(records, pyte_to_str, None, fallback_theme, 50, 1000)
             # Last blank line is the cursor
             lines = [str(i) for i in range(nbr_records)] + [' ']
             for i, record in enumerate(records):
@@ -108,7 +107,7 @@ class TestTerm(unittest.TestCase):
                        for i, data in enumerate(commands)]
 
             screen = {}
-            for record in term.replay(records, pyte_to_str, theme, 50, 1000):
+            for record in term.replay(records, pyte_to_str, None, theme, 50, 1000):
                 if hasattr(record, 'line'):
                     screen[record.row] = ''.join(record.line[i] for i in sorted(record.line))
 

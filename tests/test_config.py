@@ -7,7 +7,7 @@ import termtosvg.config as config
 
 MINIMAL_CONFIG = """[GLOBAL]
 theme=dark
-font=Deja Vu Sans Mono
+font=DejaVu Sans Mono
 [dark]
 foreground=#FFFFFF
 background=#000000
@@ -27,7 +27,7 @@ NO_THEME_CONFIG = MINIMAL_CONFIG.replace('theme', ';theme')
 WRONG_THEME_CONFIG = MINIMAL_CONFIG.replace('theme=dark', 'theme=white')
 DUPLICATES_CONFIG = MINIMAL_CONFIG.replace('theme=dark',
                                            'font=courrier\r\ntheme=dark\r\ntheme=white\r\n[dark]')
-OVERRIDE_CONFIG = MINIMAL_CONFIG.replace('#000000', '#FFFFFF').replace('Deja Vu Sans Mono', 'mono')
+OVERRIDE_CONFIG = MINIMAL_CONFIG.replace('#000000', '#FFFFFF').replace('DejaVu Sans Mono', 'mono')
 
 
 class TestConf(unittest.TestCase):
@@ -39,13 +39,13 @@ class TestConf(unittest.TestCase):
         for case, configuration in test_cases:
             with self.subTest(case=case):
                 config_dict = config.conf_to_dict(configuration)
-                self.assertEqual(config_dict['GlOBal']['font'].lower(), 'deja vu sans mono')
+                self.assertEqual(config_dict['GlOBal']['font'].lower(), 'dejavu sans mono')
                 self.assertEqual(config_dict['Dark'].fg.lower(), '#ffffff')
                 self.assertEqual(config_dict['dark'].bg.lower(), '#000000')
 
         with self.subTest(case='minimal config'):
             config_dict = config.conf_to_dict(MINIMAL_CONFIG)
-            self.assertEqual(config_dict['GLOBAL']['font'], 'Deja Vu Sans Mono')
+            self.assertEqual(config_dict['GLOBAL']['font'], 'DejaVu Sans Mono')
             self.assertEqual(config_dict['dark'].fg.lower(), '#ffffff')
             self.assertEqual(config_dict['dark'].bg.lower(), '#000000')
 
@@ -62,7 +62,7 @@ class TestConf(unittest.TestCase):
         for case, user_config, default_config in test_cases:
             with self.subTest(case=case):
                 config_dict = config.get_configuration(user_config, default_config)
-                self.assertEqual(config_dict['GLOBAL']['font'], 'Deja Vu Sans Mono')
+                self.assertEqual(config_dict['GLOBAL']['font'], 'DejaVu Sans Mono')
                 self.assertEqual(config_dict['solarized-dark'].fg.lower(), '#93a1a1')
                 self.assertEqual(config_dict['solarized-dark'].bg.lower(), '#002b36')
                 palette = config_dict['solarized-dark'].palette.split(':')

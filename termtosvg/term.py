@@ -39,15 +39,15 @@ class TerminalMode:
             tty.tcsetattr(self.fileno, tty.TCSAFLUSH, self.mode)
 
 
-def record(columns, lines, theme, input_fileno, output_fileno):
-    # type: (int, int, Union[AsciiCastTheme, None], int, int) -> Generator[Union[AsciiCastHeader, AsciiCastEvent], None, None]
+def record(columns, lines, input_fileno, output_fileno):
+    # type: (int, int, int, int) -> Generator[Union[AsciiCastHeader, AsciiCastEvent], None, None]
     """Record a terminal session in asciicast v2 format
 
     The records returned are of two types:
         - a single header with configuration information
         - multiple event records with data captured from the terminal and timing information
     """
-    yield AsciiCastHeader(version=2, width=columns, height=lines, theme=theme)
+    yield AsciiCastHeader(version=2, width=columns, height=lines, theme=None)
 
     start = None
     for data, time in _record(columns, lines, input_fileno, output_fileno):
@@ -187,8 +187,8 @@ def _group_by_time(event_records, min_rec_duration, last_rec_duration):
         yield accumulator_event
 
 
-def replay(records, from_pyte_char, theme, min_frame_duration=0.001, last_frame_duration=1):
-    # type: (Iterable[Union[AsciiCastHeader, AsciiCastEvent]], Callable[[pyte.screen.Char, Dict[Any, str]], Any], Union[None, AsciiCastTheme], float, float) -> Generator[CharacterCellRecord, None, None]
+def replay(records, from_pyte_char, override_theme, fallback_theme, min_frame_duration=0.001, last_frame_duration=1):
+    # type: (Iterable[Union[AsciiCastHeader, AsciiCastEvent]], Callable[[pyte.screen.Char, Dict[Any, str]], Any], Union[None, AsciiCastTheme], AsciiCastTheme, float, float) -> Generator[CharacterCellRecord, None, None]
     """Read the records of a terminal sessions, render the corresponding screens and return lines
     of the screen that need updating.
 
@@ -202,6 +202,9 @@ def replay(records, from_pyte_char, theme, min_frame_duration=0.001, last_frame_
     :param records: Records of the terminal session in asciicast v2 format. The first record must
     be a header, which must be followed by event records.
     :param from_pyte_char: Conversion function from pyte.screen.Char to any other format
+    :param override_theme: Color theme. If present, overrides the theme include in asciicast header
+    :param fallback_theme: Color theme. Used as a fallback override_theme is missing and no
+    theme is included in asciicast header
     :param min_frame_duration: Minimum frame duration in seconds. SVG animations break when an
     animation is 0s so setting this to at least 1ms is recommended.
     :param last_frame_duration: Last frame duration in seconds
@@ -220,12 +223,12 @@ def replay(records, from_pyte_char, theme, min_frame_duration=0.001, last_frame_
     screen = pyte.Screen(header.width, header.height)
     stream = pyte.ByteStream(screen)
 
-    if theme is not None:
-        pass
-    elif theme is None and header.theme is not None:
+    if override_theme is not None:
+        theme = override_theme
+    elif header.theme is not None:
         theme = header.theme
     else:
-        raise ValueError('No valid theme')
+        theme = fallback_theme
 
     config = CharacterCellConfig(width=header.width,
                                  height=header.height,

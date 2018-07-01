@@ -136,6 +136,6 @@ def init_read_conf():
         os.makedirs(config_dir, exist_ok=True)
         with open(config_path, 'w') as config_file:
             config_file.write(DEFAULT_CONFIG)
-        logger.info('Created default configuration file: {}'.format(config_path))
+        logger.info('Created user configuration file: {}'.format(config_path))
 
     return get_configuration(user_config, DEFAULT_CONFIG)
