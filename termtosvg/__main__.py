@@ -29,7 +29,9 @@ def parse(args, themes):
     font_parser = argparse.ArgumentParser(add_help=False)
     font_parser.add_argument(
         '--font',
-        help='CSS font to use during rendering',
+        help="font to specify in the CSS portion of the SVG animation (DejaVu Sans Mono, " \
+             "Monaco...). If the font is not installed on the viewer's machine, the browser will" \
+             " display a default monospaced font instead.",
         metavar='FONT'
     )
     theme_parser = argparse.ArgumentParser(add_help=False)
