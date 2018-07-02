@@ -108,19 +108,18 @@ def main(args=None, input_fileno=None, output_fileno=None):
     if output_fileno is None:
         output_fileno = sys.stdout.fileno()
 
-    configuration = config.init_read_conf()
-    available_themes = config.CaseInsensitiveDict(**configuration)
-    del available_themes['global']
-
-    command, args = parse(args[1:], available_themes)
-
-    logger.setLevel(logging.INFO)
-
     console_handler = logging.StreamHandler(sys.stderr)
     console_handler.setLevel(logging.INFO)
     console_formatter = logging.Formatter('%(message)s')
     console_handler.setFormatter(console_formatter)
     logger.handlers = [console_handler]
+    logger.setLevel(logging.INFO)
+
+    configuration = config.init_read_conf()
+    available_themes = config.CaseInsensitiveDict(**configuration)
+    del available_themes['global']
+
+    command, args = parse(args[1:], available_themes)
 
     if args.verbose:
         file_handler = logging.FileHandler(filename=LOG_FILENAME, mode='w')
