@@ -12,7 +12,6 @@ import termtosvg.asciicast as asciicast
 import termtosvg.term as term
 
 logger = logging.getLogger('termtosvg')
-LOG_FILENAME = os.path.join(tempfile.gettempdir(), 'termtosvg.log')
 
 USAGE = """termtosvg [output_file] [--font FONT] [--theme THEME] [--help] [--verbose]
 Record a terminal session and render an SVG animation on the fly
@@ -122,12 +121,13 @@ def main(args=None, input_fileno=None, output_fileno=None):
     command, args = parse(args[1:], available_themes)
 
     if args.verbose:
-        file_handler = logging.FileHandler(filename=LOG_FILENAME, mode='w')
+        _, log_filename = tempfile.mkstemp(prefix='termtosvg_', suffix='.log')
+        file_handler = logging.FileHandler(filename=log_filename, mode='w')
         file_handler.setLevel(logging.DEBUG)
         file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
         file_handler.setFormatter(file_formatter)
         logger.handlers.append(file_handler)
-        logger.info('Logging to {}'.format(LOG_FILENAME))
+        logger.info('Logging to {}'.format(log_filename))
 
     if command == 'record':
         logger.info('Recording started, enter "exit" command or Control-D to end')
