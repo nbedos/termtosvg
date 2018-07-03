@@ -89,7 +89,7 @@ The 'global' section of the file specifies the font and color theme used.
 font = DejaVu Sans Mono
 theme = solarized-dark
 ```
-These options can be overriden at the command line with the `--font` and
+These options can be overridden at the command line with the `--font` and
 `--theme` flags.
 
 #### Color themes
@@ -118,7 +118,7 @@ color15 = #ffffff
 ```
 
 Color themes can freely be added, removed or modified. Once a color theme
-has been added to the configuration it can be refered to in the global
+has been added to the configuration it can be referred to in the global
 section of the configuration, or be used at the command line as a parameter
 to the `--theme` flag.
 
