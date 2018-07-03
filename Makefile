@@ -14,7 +14,6 @@ usage:
 	@echo "    make deploy_test     # Upload source distribution archives to test.pypi.org"
 	@echo "    make examples        # Render example SVG animations"
 	@echo "    make tests           # Run unit tests"
-	@echo "    make xresources      # Update Xresources data from the base16-xresources repository"
 
 build: tests
 	$(VENV_ACTIVATE) && \
@@ -41,13 +40,10 @@ venv_dev: setup.py
 	$(VENV_ACTIVATE) && \
 	    pip install -U -e .[dev]
 
-xresources:
-	./termtosvg/data/Xresources/update.sh
-
 examples:
 	$(VENV_ACTIVATE) && \
 	    for cast_file in $$(find $(CASTS_DIR) -name '*.cast'); do \
 	    	svg_file="$(EXAMPLES_DIR)/$$(basename --suffix=.cast $$cast_file).svg" && \
-		termtosvg render "$$cast_file" "$$svg_file"; \
+		termtosvg render "$$cast_file" "$$svg_file" --font 'DejaVu Sans Mono' --theme solarized-dark; \
 	    done
 

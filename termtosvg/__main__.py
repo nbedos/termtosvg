@@ -4,15 +4,17 @@ import logging
 import os
 import sys
 import tempfile
-
 from typing import List, Tuple, Union
 
 import termtosvg.anim as anim
-import termtosvg.term as term
+import termtosvg.config as config
 import termtosvg.asciicast as asciicast
+import termtosvg.term as term
 
+logger = logging.getLogger('termtosvg')
 LOG_FILENAME = os.path.join(tempfile.gettempdir(), 'termtosvg.log')
 
+<<<<<<< HEAD
 verbose_parser = argparse.ArgumentParser(add_help=False)
 verbose_parser.add_argument(
     '-v',
@@ -37,21 +39,44 @@ font_parser.add_argument(
     metavar='FONT'
 )
 
-USAGE = """termtosvg [output_file] [--theme THEME] [--font FONT] [--help] [--verbose]
-
+USAGE = """termtosvg [output_file] [--font FONT] [--theme THEME] [--help] [--verbose]
 Record a terminal session and render an SVG animation on the fly
 """
-
 EPILOG = "See also 'termtosvg record --help' and 'termtosvg render --help'"
 RECORD_USAGE = """termtosvg record [output_file] [--verbose] [--help]"""
-RENDER_USAGE = """termtosvg render input_file [output_file] [--theme THEME] [--font FONT] [--verbose] [--help]"""
+RENDER_USAGE = """termtosvg render input_file [output_file] [--font FONT] [--theme THEME] """ \
+               """[--verbose] [--help]"""
 
-def parse(args):
+
+def parse(args, themes):
     # type: (List) -> Tuple[Union[None, str], argparse.Namespace]
-    # Usage: termtosvg [--theme THEME] [--font FONT] [--verbose] [output_file]
+    # Usage: termtosvg  [output_file] [--font FONT] [--theme THEME] [--verbose]
+    font_parser = argparse.ArgumentParser(add_help=False)
+    font_parser.add_argument(
+        '--font',
+        help="font to specify in the CSS portion of the SVG animation (DejaVu Sans Mono, " \
+             "Monaco...). If the font is not installed on the viewer's machine, the browser will" \
+             " display a default monospaced font instead.",
+        metavar='FONT'
+    )
+    theme_parser = argparse.ArgumentParser(add_help=False)
+    theme_parser.add_argument(
+        '--theme',
+        help='color theme used to render the terminal session ({})'.format(
+            ', '.join(themes)),
+        choices=themes,
+        metavar='THEME'
+    )
+    verbose_parser = argparse.ArgumentParser(add_help=False)
+    verbose_parser.add_argument(
+        '-v',
+        '--verbose',
+        action='store_true',
+        help='increase log messages verbosity'
+    )
     parser = argparse.ArgumentParser(
         prog='termtosvg',
-        parents=[theme_parser, font_parser, verbose_parser],
+        parents=[font_parser, theme_parser, verbose_parser],
         usage=USAGE,
         epilog=EPILOG
     )
@@ -78,10 +103,10 @@ def parse(args):
             )
             return 'record', parser.parse_args(args[1:])
         elif args[0] == 'render':
-            # Usage: termtosvg render [--theme THEME] [--font FONT] [--verbose] input_file [output_file]
+            # Usage: termtosvg render [--font FONT] [--theme THEME] [--verbose] input_file [output_file]
             parser = argparse.ArgumentParser(
                 description='render an asciicast recording as an SVG animation',
-                parents=[theme_parser, font_parser, verbose_parser],
+                parents=[font_parser, theme_parser, verbose_parser],
                 usage=RENDER_USAGE
             )
             parser.add_argument(
@@ -108,16 +133,18 @@ def main(args=None, input_fileno=None, output_fileno=None):
     if output_fileno is None:
         output_fileno = sys.stdout.fileno()
 
-    command, args = parse(args[1:])
-
-    logger = logging.getLogger('termtosvg')
-    logger.setLevel(logging.INFO)
-
     console_handler = logging.StreamHandler(sys.stderr)
     console_handler.setLevel(logging.INFO)
     console_formatter = logging.Formatter('%(message)s')
     console_handler.setFormatter(console_formatter)
     logger.handlers = [console_handler]
+    logger.setLevel(logging.INFO)
+
+    configuration = config.init_read_conf()
+    available_themes = config.CaseInsensitiveDict(**configuration)
+    del available_themes['global']
+
+    command, args = parse(args[1:], available_themes)
 
     if args.verbose:
         file_handler = logging.FileHandler(filename=LOG_FILENAME, mode='w')
@@ -127,11 +154,6 @@ def main(args=None, input_fileno=None, output_fileno=None):
         logger.handlers.append(file_handler)
         logger.info('Logging to {}'.format(LOG_FILENAME))
 
-    fallback_theme_name = 'solarized-dark'
-    fallback_font = 'DejaVu Sans Mono'
-    xresources_str = term.default_themes()[fallback_theme_name]
-    fallback_theme = asciicast.AsciiCastTheme.from_xresources(xresources_str)
-
     if command == 'record':
         logger.info('Recording started, enter "exit" command or Control-D to end')
         if args.output_file is None:
@@ -139,9 +161,9 @@ def main(args=None, input_fileno=None, output_fileno=None):
         else:
             cast_filename = args.output_file
 
-        columns, lines, theme = term.get_configuration(output_fileno)
+        columns, lines = term.get_terminal_size(output_fileno)
         with term.TerminalMode(input_fileno):
-            records = term.record(columns, lines, theme, input_fileno, output_fileno)
+            records = term.record(columns, lines, input_fileno, output_fileno)
             with open(cast_filename, 'w') as cast_file:
                 for record in records:
                     print(record.to_json_line(), file=cast_file)
@@ -160,17 +182,18 @@ def main(args=None, input_fileno=None, output_fileno=None):
             svg_filename = args.output_file
 
         if args.font is None:
-            font = fallback_font
+            font = configuration['GLOBAL']['font']
         else:
             font = args.font
 
-        if args.theme is None:
-            theme = fallback_theme
-        else:
-            xresources_str = term.default_themes()[args.theme]
-            theme = asciicast.AsciiCastTheme.from_xresources(xresources_str)
+        fallback_theme_name = configuration['GLOBAL']['theme']
+        fallback_theme = configuration[fallback_theme_name]
+        cli_theme = configuration.get(args.theme)
 
-        replayed_records = term.replay(rec_gen(), anim.CharacterCell.from_pyte, theme)
+        replayed_records = term.replay(records=rec_gen(),
+                                       from_pyte_char=anim.CharacterCell.from_pyte,
+                                       override_theme=cli_theme,
+                                       fallback_theme=fallback_theme)
         anim.render_animation(replayed_records, svg_filename, font)
 
         logger.info('Rendering ended, SVG animation is {}'.format(svg_filename))
@@ -182,25 +205,22 @@ def main(args=None, input_fileno=None, output_fileno=None):
         else:
             svg_filename = args.output_file
 
-        columns, lines, system_theme = term.get_configuration(output_fileno)
+        columns, lines = term.get_terminal_size(output_fileno)
 
         if args.font is None:
-            font = fallback_font
+            font = configuration['GLOBAL']['font']
         else:
             font = args.font
 
-        if args.theme is None:
-            if system_theme is None:
-                theme = fallback_theme
-            else:
-                theme = system_theme
-        else:
-            xresources_str = term.default_themes()[args.theme]
-            theme = asciicast.AsciiCastTheme.from_xresources(xresources_str)
-
+        fallback_theme_name = configuration['GLOBAL']['theme']
+        fallback_theme = configuration[fallback_theme_name]
+        cli_theme = configuration.get(args.theme)
         with term.TerminalMode(input_fileno):
-            records = term.record(columns, lines, theme, input_fileno, output_fileno)
-            replayed_records = term.replay(records, anim.CharacterCell.from_pyte, theme)
+            records = term.record(columns, lines, input_fileno, output_fileno)
+            replayed_records = term.replay(records=records,
+                                           from_pyte_char=anim.CharacterCell.from_pyte,
+                                           override_theme=cli_theme,
+                                           fallback_theme=fallback_theme)
             anim.render_animation(replayed_records, svg_filename, font)
 
         logger.info('Recording ended, SVG animation is {}'.format(svg_filename))

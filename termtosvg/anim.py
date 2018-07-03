@@ -155,17 +155,16 @@ def _render_characters(screen_line, height, cell_width):
     return texts
 
 
-def render_animation(records, filename, font="DejaVu Sans Mono", end_pause=1, cell_width=8, cell_height=17):
-    # type: (Iterable[CharacterCellRecord], str, int) -> None
-    if end_pause < 0:
-        raise ValueError('Invalid end_pause (must be >= 0): "{}"'.format(end_pause))
+def render_animation(records, filename, font, font_size=14, cell_width=8, cell_height=17, end_pause=1):
+    # type: (Iterable[CharacterCellRecord], str, str, int, int, int, int) -> None
+    if end_pause <= 0:
+        raise ValueError('Invalid end_pause (must be > 0): "{}"'.format(end_pause))
 
     if not isinstance(records, Iterator):
         records = iter(records)
 
     header = next(records)
 
-    font_size = 14
     css = {
         # Apply this style to each and every element since we are using coordinates that
         # depend on the size of the font

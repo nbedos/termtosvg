@@ -154,5 +154,5 @@ class TestAnim(unittest.TestCase):
         ]
 
         _, filename = tempfile.mkstemp(prefix='termtosvg_')
-        anim.render_animation(records, filename)
+        anim.render_animation(records, filename, 'DejaVu Sans Mono')
         os.remove(filename)

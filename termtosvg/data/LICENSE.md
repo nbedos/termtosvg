@@ -1,7 +1,7 @@
 # SOURCE
 
-Data from this folder comes from the Base16 Xresources project
-hosted at https://github.com/chriskempson/base16-xresources
+Default color themes in termtosvg configuration come from the Base16 Xresources
+project hosted at https://github.com/chriskempson/base16-xresources
 
 # LICENSE
 

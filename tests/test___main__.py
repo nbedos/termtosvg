@@ -3,12 +3,7 @@ import tempfile
 import time
 import unittest
 
-from unittest.mock import Mock
-from Xlib.error import DisplayError
-
 import termtosvg.__main__ as __main__
-import termtosvg.term as term
-from tests.test_term import xresources_minimal
 
 SHELL_COMMANDS = [
     'echo $SHELL && sleep 0.1;\r\n',
@@ -51,7 +46,7 @@ class TestMain(unittest.TestCase):
 
         for args in test_cases:
             with self.subTest(case=args):
-                __main__.parse(args)
+                __main__.parse(args, ['solarized-light', 'solarized-dark'])
 
     @staticmethod
     def run_main(shell_commands, args):
@@ -78,18 +73,12 @@ class TestMain(unittest.TestCase):
         svg_filename = cast_filename[:-5] + '.svg'
 
         with self.subTest(case='record (no filename)'):
-            # Force use of fallback theme by mocking _get_x_resources
-            get_x_mock = Mock(side_effect=DisplayError(None))
-            with unittest.mock.patch('termtosvg.term._get_xresources', get_x_mock):
-                args = ['termtosvg', 'record']
-                TestMain.run_main(SHELL_COMMANDS, args)
+            args = ['termtosvg', 'record']
+            TestMain.run_main(SHELL_COMMANDS, args)
 
         with self.subTest(case='record (with filename)'):
-            # Force use of fallback theme by mocking _get_x_resources
-            get_x_mock = Mock(side_effect=DisplayError(None))
-            with unittest.mock.patch('termtosvg.term._get_xresources', get_x_mock):
-                args = ['termtosvg', 'record', cast_filename]
-                TestMain.run_main(SHELL_COMMANDS, args)
+            args = ['termtosvg', 'record', cast_filename]
+            TestMain.run_main(SHELL_COMMANDS, args)
 
         with self.subTest(case='render (no filename)'):
             args = ['termtosvg', 'render', cast_filename]
@@ -99,36 +88,14 @@ class TestMain(unittest.TestCase):
             args = ['termtosvg', 'render', cast_filename, svg_filename]
             TestMain.run_main([], args)
 
-        with self.subTest(case='render (with theme)'):
+        with self.subTest(case='render (circus theme)'):
             args = ['termtosvg', 'render', cast_filename, '--theme', 'circus']
             TestMain.run_main([], args)
 
         with self.subTest(case='record and render on the fly (fallback theme)'):
-            # Force use of fallback theme by mocking _get_x_resources]
-            get_x_mock = Mock(side_effect=DisplayError(None))
-            with unittest.mock.patch('termtosvg.term._get_xresources', get_x_mock):
-                args = ['termtosvg', '--verbose']
-                TestMain.run_main(SHELL_COMMANDS, args)
+            args = ['termtosvg', '--verbose']
+            TestMain.run_main(SHELL_COMMANDS, args)
 
-        with self.subTest(case='record and render on the fly (system theme)'):
-            # Mock color info gathering
-            xresources_dracula = term.default_themes()['dracula']
-            get_x_mock = Mock(return_value=xresources_dracula)
-            with unittest.mock.patch('termtosvg.term._get_xresources', get_x_mock):
-                args = ['termtosvg', '--verbose', svg_filename]
-                TestMain.run_main(SHELL_COMMANDS, args)
-
-        with self.subTest(case='record and render on the fly (system theme)'):
-            # Mock color info gathering
-            xresources_dracula = term.default_themes()['dracula']
-            get_x_mock = Mock(return_value=xresources_dracula)
-            with unittest.mock.patch('termtosvg.term._get_xresources', get_x_mock):
-                args = ['termtosvg', svg_filename, '--theme', 'circus', '--verbose']
-                TestMain.run_main(SHELL_COMMANDS, args)
-
-        with self.subTest(case='8 color palette'):
-            # Mock color info gathering
-            get_x_mock = Mock(return_value=xresources_minimal)
-            with unittest.mock.patch('termtosvg.term._get_xresources', get_x_mock):
-                args = ['termtosvg', svg_filename]
-                TestMain.run_main(SHELL_COMMANDS, args)
+        with self.subTest(case='record and render on the fly (uppercase circus theme +)'):
+            args = ['termtosvg', svg_filename, '--theme', 'CIRCUS', '--verbose']
+            TestMain.run_main(SHELL_COMMANDS, args)

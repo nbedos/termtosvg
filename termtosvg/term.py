@@ -2,9 +2,7 @@ import datetime
 import fcntl
 import logging
 import os
-import pkg_resources
 import pty
-import re
 import selectors
 import struct
 import termios
@@ -15,16 +13,12 @@ from typing import Any, Callable, Dict, Generator, Iterable, Iterator, Tuple, Un
 
 import pyte
 import pyte.screens
-from Xlib import display, Xatom
-from Xlib.error import DisplayError
 
 from termtosvg.anim import CharacterCellConfig, CharacterCellLineEvent, CharacterCellRecord
 from termtosvg.asciicast import AsciiCastEvent, AsciiCastHeader, AsciiCastTheme
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
-
-XRESOURCES_DIR = os.path.join('data', 'Xresources')
 
 
 class TerminalMode:
@@ -45,15 +39,15 @@ class TerminalMode:
             tty.tcsetattr(self.fileno, tty.TCSAFLUSH, self.mode)
 
 
-def record(columns, lines, theme, input_fileno, output_fileno):
-    # type: (int, int, Union[AsciiCastTheme, None], int, int) -> Generator[Union[AsciiCastHeader, AsciiCastEvent], None, None]
+def record(columns, lines, input_fileno, output_fileno):
+    # type: (int, int, int, int) -> Generator[Union[AsciiCastHeader, AsciiCastEvent], None, None]
     """Record a terminal session in asciicast v2 format
 
     The records returned are of two types:
         - a single header with configuration information
         - multiple event records with data captured from the terminal and timing information
     """
-    yield AsciiCastHeader(version=2, width=columns, height=lines, theme=theme)
+    yield AsciiCastHeader(version=2, width=columns, height=lines, theme=None)
 
     start = None
     for data, time in _record(columns, lines, input_fileno, output_fileno):
@@ -151,7 +145,6 @@ def _capture_data(input_fileno, output_fileno, master_fd, buffer_size=1024):
                 data = data[n:]
 
 
-# TODO: Fix overwriting
 def _group_by_time(event_records, min_rec_duration, last_rec_duration):
     # type: (Iterable[AsciiCastEvent], float, float) -> Generator[AsciiCastEvent, None, None]
     """Merge event records together if they are close enough and compute the duration between
@@ -194,8 +187,8 @@ def _group_by_time(event_records, min_rec_duration, last_rec_duration):
         yield accumulator_event
 
 
-def replay(records, from_pyte_char, theme, min_frame_duration=0.001, last_frame_duration=1):
-    # type: (Iterable[Union[AsciiCastHeader, AsciiCastEvent]], Callable[[pyte.screen.Char, Dict[Any, str]], Any], Union[None, AsciiCastTheme], float, float) -> Generator[CharacterCellRecord, None, None]
+def replay(records, from_pyte_char, override_theme, fallback_theme, min_frame_duration=0.001, last_frame_duration=1):
+    # type: (Iterable[Union[AsciiCastHeader, AsciiCastEvent]], Callable[[pyte.screen.Char, Dict[Any, str]], Any], Union[None, AsciiCastTheme], AsciiCastTheme, float, float) -> Generator[CharacterCellRecord, None, None]
     """Read the records of a terminal sessions, render the corresponding screens and return lines
     of the screen that need updating.
 
@@ -209,6 +202,9 @@ def replay(records, from_pyte_char, theme, min_frame_duration=0.001, last_frame_
     :param records: Records of the terminal session in asciicast v2 format. The first record must
     be a header, which must be followed by event records.
     :param from_pyte_char: Conversion function from pyte.screen.Char to any other format
+    :param override_theme: Color theme. If present, overrides the theme include in asciicast header
+    :param fallback_theme: Color theme. Used as a fallback override_theme is missing and no
+    theme is included in asciicast header
     :param min_frame_duration: Minimum frame duration in seconds. SVG animations break when an
     animation is 0s so setting this to at least 1ms is recommended.
     :param last_frame_duration: Last frame duration in seconds
@@ -227,12 +223,12 @@ def replay(records, from_pyte_char, theme, min_frame_duration=0.001, last_frame_
     screen = pyte.Screen(header.width, header.height)
     stream = pyte.ByteStream(screen)
 
-    if theme is not None:
-        pass
-    elif theme is None and header.theme is not None:
+    if override_theme is not None:
+        theme = override_theme
+    elif header.theme is not None:
         theme = header.theme
     else:
-        raise ValueError('No valid theme')
+        theme = fallback_theme
 
     config = CharacterCellConfig(width=header.width,
                                  height=header.height,
@@ -309,25 +305,8 @@ def replay(records, from_pyte_char, theme, min_frame_duration=0.001, last_frame_
         yield CharacterCellLineEvent(*args)
 
 
-def default_themes():
-    # type: ()-> Dict[str, str]
-    """Return all the default color themes"""
-    pattern = re.compile('base16-(?P<theme_name>.+).Xresources')
-    themes = {}
-    for file in pkg_resources.resource_listdir(__name__, XRESOURCES_DIR):
-        match = pattern.fullmatch(file)
-        if match:
-            file_path = os.path.join(XRESOURCES_DIR, file)
-            xresources_str = pkg_resources.resource_string(__name__, file_path).decode('utf-8')
-            themes[match.group('theme_name')] = xresources_str
-    return themes
-
-
-def get_configuration(fileno):
-    # type: (int) -> (int, int, AsciiCastTheme)
-    """Get configuration information related to terminal output rendering. If some information can
-    not be gathered from the system, return the default configuration.
-    """
+def get_terminal_size(fileno):
+    # type: (int) -> (int, int)
     try:
         columns, lines = os.get_terminal_size(fileno)
     except OSError as e:
@@ -336,32 +315,4 @@ def get_configuration(fileno):
         logger.debug('Failed to get terminal size ({}), using default values '
                      'instead ({}x{})'.format(e, columns, lines))
 
-    try:
-        xresources_str = _get_xresources()
-    except DisplayError:
-        logger.debug('Failed to gather color information from the Xserver')
-        theme = None
-    else:
-        try:
-            if xresources_str is None:
-                logger.debug('No Xresources string returned')
-                theme = None
-            else:
-                theme = AsciiCastTheme.from_xresources(xresources_str)
-        except ValueError:
-            logger.debug('Invalid Xresources string: "{}"'.format(xresources_str))
-            theme = None
-
-    return columns, lines, theme
-
-
-def _get_xresources():
-    # type: () -> Union[str, None]
-    """Query the X server for the Xresources string of the default display"""
-    d = display.Display()
-    data = d.screen(0).root.get_full_property(Xatom.RESOURCE_MANAGER,
-                                              Xatom.STRING)
-    if data is None:
-        return None
-
-    return data.value.decode('utf-8')
+    return columns, lines
