@@ -14,6 +14,31 @@ import termtosvg.term as term
 logger = logging.getLogger('termtosvg')
 LOG_FILENAME = os.path.join(tempfile.gettempdir(), 'termtosvg.log')
 
+<<<<<<< HEAD
+verbose_parser = argparse.ArgumentParser(add_help=False)
+verbose_parser.add_argument(
+    '-v',
+    '--verbose',
+    action='store_true',
+    help='increase log messages verbosity'
+)
+
+default_themes = sorted(term.default_themes())
+theme_parser = argparse.ArgumentParser(add_help=False)
+theme_parser.add_argument(
+    '--theme',
+    help='color theme used to render the terminal session ({})'.format(', '.join(default_themes)),
+    choices=default_themes,
+    metavar='THEME'
+)
+
+font_parser = argparse.ArgumentParser(add_help=False)
+font_parser.add_argument(
+    '--font',
+    help='font to use during rendering (fallback to DejaVu Sans)',
+    metavar='FONT'
+)
+
 USAGE = """termtosvg [output_file] [--font FONT] [--theme THEME] [--help] [--verbose]
 Record a terminal session and render an SVG animation on the fly
 """
