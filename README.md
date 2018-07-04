@@ -1,17 +1,17 @@
 [![Build Status](https://travis-ci.org/nbedos/termtosvg.svg?branch=master)](https://travis-ci.org/nbedos/termtosvg)
 
 # termtosvg
-A Linux terminal recorder written in Python which renders your command
+A Linux terminal recorder written in Python that renders your command
 line sessions as standalone SVG animations.
 
 <p align="center">
     <img src="https://cdn.rawgit.com/nbedos/termtosvg/0.3.0/examples/awesome.svg">
 </p>
 
-More examples of recordings [here](https://github.com/nbedos/termtosvg/blob/0.3.0/examples/examples.md)
+More examples of recordings can be found [here](https://github.com/nbedos/termtosvg/blob/0.3.0/examples/examples.md)
 
 ## Motivation
-I really like the clean look of SVG animations and I also wanted to see
+I really like the clean look of SVG animations and I wanted to see
 how this solution would hold out against other attempts at terminal
 recording such as [asciinema](https://github.com/asciinema/asciinema).
 
@@ -67,9 +67,9 @@ See also 'termtosvg record --help' and 'termtosvg render --help'
 ```
 
 ### Subcommands
-Rendering the SVG animation while recording might sometimes slow the
-commands being executed a bit because of the CPU usage, so it is
-possible to proceed in two steps:
+Rendering the SVG animation while recording sometimes slows down
+the commands being executed due to the CPU usage. It is possible
+to proceed in two ways:
 1. Record the terminal session to disk in asciicast v2 format
 2. Render the SVG animation using the recording on disk
 
