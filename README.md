@@ -13,7 +13,7 @@ More examples of recordings can be found [here](https://github.com/nbedos/termto
 ## Motivation
 I really like the clean look of SVG animations. I wanted to see
 how this solution would hold out against other terminal
-recorder such as [asciinema](https://github.com/asciinema/asciinema).
+recorders such as [asciinema](https://github.com/asciinema/asciinema).
 
 ## Installation
 termtosvg is compatible with Python >= 3.5 and can be installed with pip:
