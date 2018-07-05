@@ -11,9 +11,9 @@ line sessions as standalone SVG animations.
 More examples of recordings can be found [here](https://github.com/nbedos/termtosvg/blob/0.3.0/examples/examples.md)
 
 ## Motivation
-I really like the clean look of SVG animations and I wanted to see
-how this solution would hold out against other attempts at terminal
-recording such as [asciinema](https://github.com/asciinema/asciinema).
+I really like the clean look of SVG animations. I wanted to see
+how this solution would hold out against other terminal
+recorders such as [asciinema](https://github.com/asciinema/asciinema).
 
 ## Installation
 termtosvg is compatible with Python >= 3.5 and can be installed with pip:
