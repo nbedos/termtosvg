@@ -32,15 +32,15 @@ class TestAnim(unittest.TestCase):
         ]
 
         char_cells = [
-            anim.CharacterCell('A', 'color1', 'color4'),
-            anim.CharacterCell('B', 'color4', 'color1'),
-            anim.CharacterCell('C', 'color9', 'color4'),
-            anim.CharacterCell('D', 'color4', 'color9'),
-            anim.CharacterCell('E', 'color12', 'color4'),
-            anim.CharacterCell('F', 'foreground', 'background'),
-            anim.CharacterCell('G', '#008700', '#ABCDEF'),
-            anim.CharacterCell('H', 'color10', '#ABCDEF'),
-            anim.CharacterCell('I', 'color3', '#ABCDEF'),
+            anim.CharacterCell('A', 'color1', 'color4', False),
+            anim.CharacterCell('B', 'color4', 'color1', False),
+            anim.CharacterCell('C', 'color9', 'color4', True),
+            anim.CharacterCell('D', 'color4', 'color9', True),
+            anim.CharacterCell('E', 'color12', 'color4', True),
+            anim.CharacterCell('F', 'foreground', 'background', False),
+            anim.CharacterCell('G', '#008700', '#ABCDEF', False),
+            anim.CharacterCell('H', 'color10', '#ABCDEF', True),
+            anim.CharacterCell('I', 'color3', '#ABCDEF', True),
         ]
 
         palette = {
@@ -60,16 +60,16 @@ class TestAnim(unittest.TestCase):
     def test__render_line_bg_colors(self):
         cell_width = 8
         screen_line = {
-            0: anim.CharacterCell('A', 'black', 'red'),
-            1: anim.CharacterCell('A', 'black', 'red'),
-            3: anim.CharacterCell('A', 'black', 'red'),
-            4: anim.CharacterCell('A', 'black', 'blue'),
-            6: anim.CharacterCell('A', 'black', 'blue'),
-            7: anim.CharacterCell('A', 'black', 'blue'),
-            8: anim.CharacterCell('A', 'black', 'green'),
-            9: anim.CharacterCell('A', 'black', 'red'),
-            10: anim.CharacterCell('A', 'black', 'red'),
-            99: anim.CharacterCell('A', 'black', 'black'),
+            0: anim.CharacterCell('A', 'black', 'red', False),
+            1: anim.CharacterCell('A', 'black', 'red', False),
+            3: anim.CharacterCell('A', 'black', 'red', False),
+            4: anim.CharacterCell('A', 'black', 'blue', False),
+            6: anim.CharacterCell('A', 'black', 'blue', False),
+            7: anim.CharacterCell('A', 'black', 'blue', False),
+            8: anim.CharacterCell('A', 'black', 'green', False),
+            9: anim.CharacterCell('A', 'black', 'red', False),
+            10: anim.CharacterCell('A', 'black', 'red', False),
+            99: anim.CharacterCell('A', 'black', 'black', False),
         }
 
         rectangles = anim._render_line_bg_colors(screen_line=screen_line,
@@ -95,15 +95,15 @@ class TestAnim(unittest.TestCase):
 
     def test__render_characters(self):
         screen_line = {
-            0: anim.CharacterCell('A', 'red', 'white'),
-            1: anim.CharacterCell('B', 'blue', 'white'),
-            2: anim.CharacterCell('C', 'blue', 'white'),
-            7: anim.CharacterCell('D', 'green', 'white'),
-            8: anim.CharacterCell('E', 'green', 'white'),
-            9: anim.CharacterCell('F', 'green', 'white'),
-            10: anim.CharacterCell('G', 'green', 'white'),
-            11: anim.CharacterCell('H', 'red', 'white'),
-            20: anim.CharacterCell(' ', 'black', 'black')
+            0: anim.CharacterCell('A', 'red', 'white', False),
+            1: anim.CharacterCell('B', 'blue', 'white', False),
+            2: anim.CharacterCell('C', 'blue', 'white', False),
+            7: anim.CharacterCell('D', 'green', 'white', False),
+            8: anim.CharacterCell('E', 'green', 'white', False),
+            9: anim.CharacterCell('F', 'green', 'white', False),
+            10: anim.CharacterCell('G', 'green', 'white', False),
+            11: anim.CharacterCell('H', 'red', 'white', False),
+            20: anim.CharacterCell(' ', 'black', 'black', False)
         }
 
         with self.subTest(case='Content'):
@@ -138,7 +138,7 @@ class TestAnim(unittest.TestCase):
 
     def test_render_animation(self):
         def line(i):
-            chars = [anim.CharacterCell(c, '#123456', '#789012') for c in 'line{}'.format(i)]
+            chars = [anim.CharacterCell(c, '#123456', '#789012', False) for c in 'line{}'.format(i)]
             return dict(enumerate(chars))
 
         records = [
