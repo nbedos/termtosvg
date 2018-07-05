@@ -1,0 +1,10 @@
+FROM python:3.6
+ENV BRANCH=master
+RUN apt update
+RUN apt install -y git
+
+ADD entrypoint.sh /entrypoint.sh
+VOLUME /builded
+
+ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
+
