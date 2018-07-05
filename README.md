@@ -18,7 +18,7 @@ recording such as [asciinema](https://github.com/asciinema/asciinema).
 ## Installation
 termtosvg is compatible with Python >= 3.5 and can be installed with pip:
 ```
-pip install termtosvg
+pip3 install --user termtosvg
 ```
 
 ## Usage
