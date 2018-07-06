@@ -127,3 +127,4 @@ termtosvg uses:
 * [pyte](https://github.com/selectel/pyte) to render the terminal screen
 * [svgwrite](https://github.com/mozman/svgwrite) to create SVG animations
 * [base16-xresources](https://github.com/chriskempson/base16-xresources) for default color themes
+* [rawgit](https://rawgit.com/) for SVG animation hosting (see also [rawgit on GitHub](https://github.com/rgrove/rawgit))
