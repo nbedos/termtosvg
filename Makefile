@@ -41,6 +41,7 @@ venv_dev: setup.py
 	    pip install -U -e .[dev]
 
 examples:
+	(test -d $(VENV_PATH) || python -m venv $(VENV_PATH))
 	$(VENV_ACTIVATE) && \
 	    for cast_file in $$(find $(CASTS_DIR) -name '*.cast'); do \
 	    	svg_file="$(EXAMPLES_DIR)/$$(basename --suffix=.cast $$cast_file).svg" && \
