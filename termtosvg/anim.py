@@ -22,9 +22,10 @@ pyte.graphics.FG_BG_256 = colors + brightcolors + pyte.graphics.FG_BG_256[16:]
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
-_CharacterCell = namedtuple('_CharacterCell', ['text', 'color', 'background_color'])
+_CharacterCell = namedtuple('_CharacterCell', ['text', 'color', 'background_color', 'bold'])
 _CharacterCell.__doc__ = 'Representation of a character cell'
 _CharacterCell.text.__doc__ = 'Text content of the cell'
+_CharacterCell.bold.__doc__ = 'Bold modificator flag'
 _CharacterCell.color.__doc__ = 'Color of the text'
 _CharacterCell.background_color.__doc__ = 'Background color of the cell'
 
@@ -80,7 +81,7 @@ class CharacterCell(_CharacterCell):
         if char.reverse:
             text_color, background_color = background_color, text_color
 
-        return CharacterCell(char.data, text_color, background_color)
+        return CharacterCell(char.data, text_color, background_color, char.bold)
 
 
 CharacterCellConfig = namedtuple('CharacterCellConfig', ['width', 'height', 'text_color',
@@ -139,6 +140,8 @@ def _render_characters(screen_line, height, cell_width):
             'lengthAdjust': 'spacingAndGlyphs',
             'fill': screen_line[group[0]].color
         }
+        if screen_line[group[0]].bold:
+            attributes['font-weight'] = 'bold'
         return svgwrite.text.Text(**attributes)
 
     group = []
@@ -175,9 +178,6 @@ def render_animation(records, filename, font, font_size=14, cell_width=8, cell_h
         },
         'text': {
             'dominant-baseline': 'text-before-edge',
-        },
-        '.bold': {
-            'font-weight': 'bold',
         },
         '.background': {
             'fill': header.background_color,
