@@ -39,7 +39,7 @@ Recording ended, file is /tmp/termtosvg_exp5nsr4.svg
 ```
 Finally, use your favorite web browser to play the animation:
 ```
-$ firefox /tmp/termtosvg_exp5nsr4.svg
+$ chrome /tmp/termtosvg_exp5nsr4.svg
 ```
 
 ### Detailed usage
