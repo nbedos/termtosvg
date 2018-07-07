@@ -64,7 +64,7 @@ def conf_to_dict(configuration):
     """Read a configuration string in INI format and return a dictionary
 
     Raise a subclass of configparser.Error if parsing the configuration string fails
-    Raise ValueError if the color theme is invalid
+    Raise AsciiCastError if the color theme is invalid
     """
     parser = configparser.ConfigParser(dict_type=CaseInsensitiveDict,
                                        comment_prefixes=(';',))
