@@ -12,7 +12,7 @@ More examples of recordings can be found [here](https://github.com/nbedos/termto
 
 ## Motivation
 I really like the clean look of SVG animations. I wanted to see
-how this solution would hold out against other terminal
+how this solution would compare against other terminal
 recorders such as [asciinema](https://github.com/asciinema/asciinema).
 
 ## Installation
