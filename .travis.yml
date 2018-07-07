@@ -1,9 +1,22 @@
 language: python
 
-python:
-    - "3.5"
-    - "3.6"
-    - "3.7-dev"
+jobs:
+    include:
+        - python: 3.5
+        - python: 3.6
+        - python: 3.7
+          dist: xenial
+          sudo: true
+        - python: 3.8-dev
+          dist: xenial
+          sudo: true
+        - python: nightly
+          dist: xenial
+          sudo: true
+
+matrix:
+    allow_failures:
+        - python: nightly
 
 install:
     - pip install -U -e .[dev]
