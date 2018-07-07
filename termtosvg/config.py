@@ -83,8 +83,8 @@ def conf_to_dict(configuration):
         palette = ':'.join(parser.get(theme_name, 'color{}'.format(i), fallback='')
                            for i in range(16))
 
-        # This line raises ValueError if the color theme is invalid
-        config_dict[theme_name] = asciicast.AsciiCastTheme(fg, bg, palette)
+        # This line raises AsciicastError if the color theme is invalid
+        config_dict[theme_name] = asciicast.AsciiCastV2Theme(fg, bg, palette)
 
     return config_dict
 
@@ -97,7 +97,7 @@ def get_configuration(user_config, default_config):
     config_dict = conf_to_dict(default_config)
     try:
         user_config_dict = conf_to_dict(user_config)
-    except (configparser.Error, ValueError) as e:
+    except (configparser.Error, asciicast.AsciiCastError) as e:
         logger.info('Invalid configuration file: {}'.format(e))
         logger.info('Falling back to default configuration')
         user_config_dict = {}

@@ -80,11 +80,11 @@ class TestMain(unittest.TestCase):
             args = ['termtosvg', 'record', cast_filename]
             TestMain.run_main(SHELL_COMMANDS, args)
 
-        with self.subTest(case='render (no filename)'):
+        with self.subTest(case='render (no output filename)'):
             args = ['termtosvg', 'render', cast_filename]
             TestMain.run_main([], args)
 
-        with self.subTest(case='render (with filename)'):
+        with self.subTest(case='render (with output filename)'):
             args = ['termtosvg', 'render', cast_filename, svg_filename]
             TestMain.run_main([], args)
 
@@ -99,3 +99,26 @@ class TestMain(unittest.TestCase):
         with self.subTest(case='record and render on the fly (uppercase circus theme +)'):
             args = ['termtosvg', svg_filename, '--theme', 'CIRCUS', '--verbose']
             TestMain.run_main(SHELL_COMMANDS, args)
+
+        cast_v1_data = '\r\n'.join(['{',
+                                    '  "version": 1,',
+                                    '  "width": 80,',
+                                    '  "height": 32,',
+                                    '  "duration": 10,',
+                                    '  "command": "/bin/zsh",',
+                                    '  "title": "",',
+                                    '  "env": {},',
+                                    '  "stdout": [',
+                                    '    [0.010303, "\\u001b[1;31mnico \\u001b[0;34m~\\u001b[0m"],',
+                                    '    [1.136094, "❤ ☀ ☆ ☂ ☻ ♞ ☯ ☭ ☢ € →"],',
+                                    '    [0.853603, "\\r\\n"]',
+                                    '  ]',
+                                    '}'])
+
+        with self.subTest(case='render v1 cast file'):
+            _, cast_filename_v1 = tempfile.mkstemp(prefix='termtosvg_', suffix='.cast')
+            with open(cast_filename_v1, 'w') as cast_file:
+                cast_file.write(cast_v1_data)
+
+            args = ['termtosvg', 'render', cast_filename_v1, svg_filename]
+            TestMain.run_main([], args)

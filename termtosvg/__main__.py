@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import argparse
 import logging
-import os
 import sys
 import tempfile
 from typing import List, Tuple, Union
@@ -85,7 +84,7 @@ def parse(args, themes):
             )
             parser.add_argument(
                 'input_file',
-                help='recording of the terminal session in asciicast v2 format'
+                help='recording of a terminal session in asciicast v1 or v2 format'
             )
             parser.add_argument(
                 'output_file',
@@ -145,11 +144,6 @@ def main(args=None, input_fileno=None, output_fileno=None):
 
         logger.info('Recording ended, cast file is {}'.format(cast_filename))
     elif command == 'render':
-        def rec_gen():
-            with open(args.input_file, 'r') as cast_file:
-                for line in cast_file:
-                    yield asciicast.AsciiCastRecord.from_json_line(line)
-
         logger.info('Rendering started')
         if args.output_file is None:
             _, svg_filename = tempfile.mkstemp(prefix='termtosvg_', suffix='.svg')
@@ -165,7 +159,8 @@ def main(args=None, input_fileno=None, output_fileno=None):
         fallback_theme = configuration[fallback_theme_name]
         cli_theme = configuration.get(args.theme)
 
-        replayed_records = term.replay(records=rec_gen(),
+        records = asciicast.read_records(args.input_file)
+        replayed_records = term.replay(records=records,
                                        from_pyte_char=anim.CharacterCell.from_pyte,
                                        override_theme=cli_theme,
                                        fallback_theme=fallback_theme)

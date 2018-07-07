@@ -15,7 +15,7 @@ import pyte
 import pyte.screens
 
 from termtosvg.anim import CharacterCellConfig, CharacterCellLineEvent, CharacterCellRecord
-from termtosvg.asciicast import AsciiCastEvent, AsciiCastHeader, AsciiCastTheme
+from termtosvg.asciicast import AsciiCastV2Event, AsciiCastV2Header, AsciiCastV2Theme
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -40,24 +40,24 @@ class TerminalMode:
 
 
 def record(columns, lines, input_fileno, output_fileno):
-    # type: (int, int, int, int) -> Generator[Union[AsciiCastHeader, AsciiCastEvent], None, None]
+    # type: (int, int, int, int) -> Generator[Union[AsciiCastV2Header, AsciiCastV2Event], None, None]
     """Record a terminal session in asciicast v2 format
 
     The records returned are of two types:
         - a single header with configuration information
         - multiple event records with data captured from the terminal and timing information
     """
-    yield AsciiCastHeader(version=2, width=columns, height=lines, theme=None)
+    yield AsciiCastV2Header(version=2, width=columns, height=lines, theme=None)
 
     start = None
     for data, time in _record(columns, lines, input_fileno, output_fileno):
         if start is None:
             start = time
 
-        yield AsciiCastEvent(time=(time - start).total_seconds(),
-                             event_type='o',
-                             event_data=data,
-                             duration=None)
+        yield AsciiCastV2Event(time=(time - start).total_seconds(),
+                               event_type='o',
+                               event_data=data,
+                               duration=None)
 
 
 def _record(columns, lines, input_fileno, output_fileno):
@@ -146,7 +146,7 @@ def _capture_data(input_fileno, output_fileno, master_fd, buffer_size=1024):
 
 
 def _group_by_time(event_records, min_rec_duration, last_rec_duration):
-    # type: (Iterable[AsciiCastEvent], float, float) -> Generator[AsciiCastEvent, None, None]
+    # type: (Iterable[AsciiCastV2Event], float, float) -> Generator[AsciiCastV2Event, None, None]
     """Merge event records together if they are close enough and compute the duration between
     consecutive events. The duration between two consecutive event records returned by the function
     is guaranteed to be at least min_rec_duration.
@@ -167,10 +167,10 @@ def _group_by_time(event_records, min_rec_duration, last_rec_duration):
         if current_time is not None:
             time_between_events = event_record.time - current_time
             if time_between_events >= min_rec_duration:
-                accumulator_event = AsciiCastEvent(time=current_time,
-                                                   event_type='o',
-                                                   event_data=current_string,
-                                                   duration=time_between_events)
+                accumulator_event = AsciiCastV2Event(time=current_time,
+                                                     event_type='o',
+                                                     event_data=current_string,
+                                                     duration=time_between_events)
                 yield accumulator_event
                 current_string = b''
                 current_time = event_record.time
@@ -180,15 +180,15 @@ def _group_by_time(event_records, min_rec_duration, last_rec_duration):
         current_string += event_record.event_data
 
     if current_string:
-        accumulator_event = AsciiCastEvent(time=current_time,
-                                           event_type='o',
-                                           event_data=current_string,
-                                           duration=last_rec_duration)
+        accumulator_event = AsciiCastV2Event(time=current_time,
+                                             event_type='o',
+                                             event_data=current_string,
+                                             duration=last_rec_duration)
         yield accumulator_event
 
 
 def replay(records, from_pyte_char, override_theme, fallback_theme, min_frame_duration=0.001, last_frame_duration=1):
-    # type: (Iterable[Union[AsciiCastHeader, AsciiCastEvent]], Callable[[pyte.screen.Char, Dict[Any, str]], Any], Union[None, AsciiCastTheme], AsciiCastTheme, float, float) -> Generator[CharacterCellRecord, None, None]
+    # type: (Iterable[Union[AsciiCastV2Header, AsciiCastV2Event]], Callable[[pyte.screen.Char, Dict[Any, str]], Any], Union[None, AsciiCastV2Theme], AsciiCastV2Theme, float, float) -> Generator[CharacterCellRecord, None, None]
     """Read the records of a terminal sessions, render the corresponding screens and return lines
     of the screen that need updating.
 
