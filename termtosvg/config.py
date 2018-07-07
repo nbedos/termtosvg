@@ -78,13 +78,16 @@ def conf_to_dict(configuration):
 
     themes = [theme.lower() for theme in parser.sections() if theme.lower() != 'global']
     for theme_name in themes:
-        fg = parser.get(theme_name, 'foreground', fallback='')
-        bg = parser.get(theme_name, 'background', fallback='')
+        fg = parser.get(theme_name, 'foreground', fallback=None)
+        bg = parser.get(theme_name, 'background', fallback=None)
         palette = ':'.join(parser.get(theme_name, 'color{}'.format(i), fallback='')
                            for i in range(16))
 
-        # This line raises AsciicastError if the color theme is invalid
-        config_dict[theme_name] = asciicast.AsciiCastV2Theme(fg, bg, palette)
+        try:
+            config_dict[theme_name] = asciicast.AsciiCastV2Theme(fg, bg, palette)
+        except asciicast.AsciiCastError:
+            logger.error('Failed parsing color theme "{}"'.format(theme_name))
+            raise
 
     return config_dict
 
