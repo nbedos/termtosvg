@@ -119,8 +119,13 @@ color15 = #ffffff
 
 Color themes can freely be added, removed or modified. Once a color theme
 has been added to the configuration it can be referred to in the global
-section of the configuration, or be used at the command line as a parameter
-to the `--theme` flag.
+section of the configuration file, or be used at the command line as a
+parameter to the `--theme` flag.
+
+Definitions for the foreground and background colors and for color0 to
+color7 are mandatory. If color8 through color15 (bright ANSI colors) are
+defined, they are used by termtosvg to display bold characters as a
+replacement for color0 through color7. 
 
 ## Dependencies
 termtosvg uses:
