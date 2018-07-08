@@ -4,7 +4,9 @@ from setuptools import setup
 
 setup(
     name='termtosvg',
-    version='0.3.0',
+    version='0.4.0',
+    licence='BSD 3-clause license',
+    author='Nicolas Bedos',
     description='Record terminal sessions as SVG animations',
     long_description='A Linux terminal recorder written in Python '
                      'which renders your command line sessions as '

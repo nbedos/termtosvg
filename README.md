@@ -5,10 +5,10 @@ A Linux terminal recorder written in Python that renders your command
 line sessions as standalone SVG animations.
 
 <p align="center">
-    <img src="https://cdn.rawgit.com/nbedos/termtosvg/0.3.0/examples/awesome.svg">
+    <img src="https://cdn.rawgit.com/nbedos/termtosvg/0.4.0/examples/awesome.svg">
 </p>
 
-More examples of recordings can be found [here](https://github.com/nbedos/termtosvg/blob/0.3.0/examples/examples.md)
+More examples of recordings can be found [here](https://github.com/nbedos/termtosvg/blob/0.4.0/examples/examples.md)
 
 ## Motivation
 I really like the clean look of SVG animations. I wanted to see
@@ -119,12 +119,17 @@ color15 = #ffffff
 
 Color themes can freely be added, removed or modified. Once a color theme
 has been added to the configuration it can be referred to in the global
-section of the configuration, or be used at the command line as a parameter
-to the `--theme` flag.
+section of the configuration file, or be used at the command line as a
+parameter to the `--theme` flag.
+
+Definitions for the foreground and background colors and for color0 to
+color7 are mandatory. If color8 through color15 (bright ANSI colors) are
+defined, they are used by termtosvg to display bold characters as a
+replacement for color0 through color7. 
 
 ## Dependencies
 termtosvg uses:
 * [pyte](https://github.com/selectel/pyte) to render the terminal screen
 * [svgwrite](https://github.com/mozman/svgwrite) to create SVG animations
 * [base16-xresources](https://github.com/chriskempson/base16-xresources) for default color themes
-* [rawgit](https://rawgit.com/) for SVG animation hosting (see also [rawgit on GitHub](https://github.com/rgrove/rawgit))
+* [rawgit](https://rawgit.com/) for hosting SVG animations displayed here on GitHub [rawgit on GitHub](https://github.com/rgrove/rawgit))
