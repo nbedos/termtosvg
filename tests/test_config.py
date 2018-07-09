@@ -8,6 +8,7 @@ import termtosvg.config as config
 MINIMAL_CONFIG = """[GLOBAL]
 theme=dark
 font=DejaVu Sans Mono
+playpause=false
 [dark]
 foreground=#FFFFFF
 background=#000000
@@ -24,6 +25,7 @@ UPPERCASE_CONFIG = MINIMAL_CONFIG.upper()
 NO_GLOBAL_SECTION_CONFIG = MINIMAL_CONFIG.replace('[GLOBAL]', ';[GLOBAL]')
 NO_FONT_CONFIG = MINIMAL_CONFIG.replace('font', ';font')
 NO_THEME_CONFIG = MINIMAL_CONFIG.replace('theme', ';theme')
+NO_PP_CONFIG = MINIMAL_CONFIG.replace('playpause', ';playpause')
 WRONG_THEME_CONFIG = MINIMAL_CONFIG.replace('theme=dark', 'theme=white')
 DUPLICATES_CONFIG = MINIMAL_CONFIG.replace('theme=dark',
                                            'font=courrier\r\ntheme=dark\r\ntheme=white\r\n[dark]')
@@ -56,6 +58,7 @@ class TestConf(unittest.TestCase):
             ('No global section', NO_GLOBAL_SECTION_CONFIG, config.DEFAULT_CONFIG),
             ('No font property', NO_FONT_CONFIG, config.DEFAULT_CONFIG),
             ('No theme property', NO_THEME_CONFIG, config.DEFAULT_CONFIG),
+            ('No playpause property', NO_PP_CONFIG, config.DEFAULT_CONFIG),
             ('Invalid theme property', WRONG_THEME_CONFIG, config.DEFAULT_CONFIG),
         ]
 
