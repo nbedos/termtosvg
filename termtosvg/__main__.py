@@ -12,12 +12,12 @@ import termtosvg.term as term
 
 logger = logging.getLogger('termtosvg')
 
-USAGE = """termtosvg [output_file] [--font FONT] [--theme THEME] [--help] [--verbose]
+USAGE = """termtosvg [output_file] [--font FONT] [--theme THEME] [--pp] [--help] [--verbose]
 Record a terminal session and render an SVG animation on the fly
 """
 EPILOG = "See also 'termtosvg record --help' and 'termtosvg render --help'"
 RECORD_USAGE = """termtosvg record [output_file] [--verbose] [--help]"""
-RENDER_USAGE = """termtosvg render input_file [output_file] [--font FONT] [--theme THEME] """ \
+RENDER_USAGE = """termtosvg render input_file [output_file] [--font FONT] [--theme THEME] [--pp] """ \
                """[--verbose] [--help]"""
 
 
@@ -40,6 +40,12 @@ def parse(args, themes):
         choices=themes,
         metavar='THEME'
     )
+    pp_parser = argparse.ArgumentParser(add_help=False)
+    pp_parser.add_argument(
+        '--pp',
+        help='add a play/pause button in the upper right corner',
+        action='store_true'
+    )
     verbose_parser = argparse.ArgumentParser(add_help=False)
     verbose_parser.add_argument(
         '-v',
@@ -49,7 +55,7 @@ def parse(args, themes):
     )
     parser = argparse.ArgumentParser(
         prog='termtosvg',
-        parents=[font_parser, theme_parser, verbose_parser],
+        parents=[font_parser, theme_parser, verbose_parser, pp_parser],
         usage=USAGE,
         epilog=EPILOG
     )
@@ -76,10 +82,10 @@ def parse(args, themes):
             )
             return 'record', parser.parse_args(args[1:])
         elif args[0] == 'render':
-            # Usage: termtosvg render [--font FONT] [--theme THEME] [--verbose] input_file [output_file]
+            # Usage: termtosvg render [--font FONT] [--theme THEME] [--pp] [--verbose] input_file [output_file]
             parser = argparse.ArgumentParser(
                 description='render an asciicast recording as an SVG animation',
-                parents=[font_parser, theme_parser, verbose_parser],
+                parents=[font_parser, theme_parser, verbose_parser, pp_parser],
                 usage=RENDER_USAGE
             )
             parser.add_argument(
@@ -150,6 +156,11 @@ def main(args=None, input_fileno=None, output_fileno=None):
         else:
             svg_filename = args.output_file
 
+        if args.pp is False:
+            pp = configuration['GLOBAL']['playpause']
+        else:
+            pp = True
+
         if args.font is None:
             font = configuration['GLOBAL']['font']
         else:
@@ -164,7 +175,7 @@ def main(args=None, input_fileno=None, output_fileno=None):
                                        from_pyte_char=anim.CharacterCell.from_pyte,
                                        override_theme=cli_theme,
                                        fallback_theme=fallback_theme)
-        anim.render_animation(replayed_records, svg_filename, font)
+        anim.render_animation(replayed_records, svg_filename, font, pp)
 
         logger.info('Rendering ended, SVG animation is {}'.format(svg_filename))
     else:
@@ -176,6 +187,11 @@ def main(args=None, input_fileno=None, output_fileno=None):
             svg_filename = args.output_file
 
         columns, lines = term.get_terminal_size(output_fileno)
+        
+        if args.pp is False:
+            pp = configuration['GLOBAL']['playpause']
+        else:
+            pp = True
 
         if args.font is None:
             font = configuration['GLOBAL']['font']
@@ -191,7 +207,7 @@ def main(args=None, input_fileno=None, output_fileno=None):
                                            from_pyte_char=anim.CharacterCell.from_pyte,
                                            override_theme=cli_theme,
                                            fallback_theme=fallback_theme)
-            anim.render_animation(replayed_records, svg_filename, font)
+            anim.render_animation(replayed_records, svg_filename, font, pp)
 
         logger.info('Recording ended, SVG animation is {}'.format(svg_filename))
 

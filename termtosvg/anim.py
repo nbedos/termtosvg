@@ -158,7 +158,7 @@ def _render_characters(screen_line, height, cell_width):
     return texts
 
 
-def render_animation(records, filename, font, font_size=14, cell_width=8, cell_height=17, end_pause=1):
+def render_animation(records, filename, font, pp, font_size=14, cell_width=8, cell_height=17, end_pause=1):
     # type: (Iterable[CharacterCellRecord], str, str, int, int, int, int) -> None
     if end_pause <= 0:
         raise ValueError('Invalid end_pause (must be > 0): "{}"'.format(end_pause))
@@ -262,8 +262,41 @@ def render_animation(records, filename, font, font_size=14, cell_width=8, cell_h
         frame.add(animation)
 
         dwg.add(frame)
-
     animation.attribs['id'] = last_animation_id_str
+
+    if pp is True:
+        js = """
+        function myDisplay() { 
+            var x = document.getElementById("on");
+            var y = document.getElementById("on_text");
+            x.style.display = "block";
+            y.style.display = "block";
+        }
+        function myHide() {
+            var x = document.getElementById("on");
+            var y = document.getElementById("on_text");
+            x.style.display = "none";
+            y.style.display = "none";
+        }
+        """
+
+        dwg.add(svgwrite.container.Script(content=js))
+        pause = svgwrite.container.Group()
+        pause.add(svgwrite.shapes.Rect(insert=(width - 20, 1), size=(18, 18), 
+                                    fill='white', stroke="black",
+                                    onclick="document.documentElement.pauseAnimations();myDisplay();"))
+        pause.add(svgwrite.text.Text("\u23F8", insert=(width-18,3), 
+                                    onclick="document.documentElement.pauseAnimations();myDisplay();"))
+        play = svgwrite.container.Group()
+        play.add(svgwrite.shapes.Rect(insert=(width - 20, 1), size=(18, 18), 
+                                    fill='white', stroke="black", id="on", style="display:none",
+                                    onclick="document.documentElement.unpauseAnimations();myHide();"))
+        play.add(svgwrite.text.Text("\u23EF", insert=(width-18,3), fill="black", 
+                                    id="on_text", style="display:none", 
+                                    onclick="document.documentElement.unpauseAnimations();myHide();"))
+        dwg.add(pause)
+        dwg.add(play)
+
     dwg.save()
 
 
