@@ -266,34 +266,30 @@ def render_animation(records, filename, font, pp, font_size=14, cell_width=8, ce
 
     if pp is True:
         js = """
-        function myDisplay() { 
-            var x = document.getElementById("on");
-            var y = document.getElementById("on_text");
-            x.style.display = "block";
-            y.style.display = "block";
+        function termtosvgShow() { 
+            document.getElementById("on").style.display = "block";
+            document.getElementById("on_text").style.display = "block";
         }
-        function myHide() {
-            var x = document.getElementById("on");
-            var y = document.getElementById("on_text");
-            x.style.display = "none";
-            y.style.display = "none";
+        function termtosvgHide() {
+            document.getElementById("on").style.display = "none";
+            document.getElementById("on_text").style.display = "none";
         }
         """
 
         dwg.add(svgwrite.container.Script(content=js))
         pause = svgwrite.container.Group()
         pause.add(svgwrite.shapes.Rect(insert=(width - 20, 1), size=(18, 18), 
-                                    fill='white', stroke="black",
-                                    onclick="document.documentElement.pauseAnimations();myDisplay();"))
+                            fill='white', stroke="black",
+                            onclick="document.documentElement.pauseAnimations();termtosvgShow();"))
         pause.add(svgwrite.text.Text("\u23F8", insert=(width-18,3), 
-                                    onclick="document.documentElement.pauseAnimations();myDisplay();"))
+                            onclick="document.documentElement.pauseAnimations();termtosvgShow();"))
         play = svgwrite.container.Group()
         play.add(svgwrite.shapes.Rect(insert=(width - 20, 1), size=(18, 18), 
-                                    fill='white', stroke="black", id="on", style="display:none",
-                                    onclick="document.documentElement.unpauseAnimations();myHide();"))
+                            fill='white', stroke="black", id="on", style="display:none",
+                            onclick="document.documentElement.unpauseAnimations();termtosvgHide();"))
         play.add(svgwrite.text.Text("\u23EF", insert=(width-18,3), fill="black", 
-                                    id="on_text", style="display:none", 
-                                    onclick="document.documentElement.unpauseAnimations();myHide();"))
+                            id="on_text", style="display:none", 
+                            onclick="document.documentElement.unpauseAnimations();termtosvgHide();"))
         dwg.add(pause)
         dwg.add(play)
 
