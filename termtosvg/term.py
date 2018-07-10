@@ -3,7 +3,7 @@ import fcntl
 import logging
 import os
 import pty
-import selectors
+import select
 import struct
 import termios
 import tty
@@ -117,24 +117,24 @@ def _capture_data(input_fileno, output_fileno, master_fd, buffer_size=1024):
     generator.
     See https://github.com/python/cpython/blob/master/Lib/pty.py
     """
-    sel = selectors.DefaultSelector()
-    sel.register(master_fd, selectors.EVENT_READ)
-    sel.register(input_fileno, selectors.EVENT_READ)
+    rlist = [input_fileno, master_fd]
+    xlist = [input_fileno, output_fileno, master_fd]
 
-    while {master_fd, input_fileno} <= set(sel.get_map()):
-        events = sel.select()
-        for key, _ in events:
+    xfds = []
+    while not xfds:
+        rfds, _, xfds = select.select(rlist, [], xlist)
+        for fd in rfds:
             try:
-                data = os.read(key.fileobj, buffer_size)
+                data = os.read(fd, buffer_size)
             except OSError:
-                sel.unregister(key.fileobj)
+                xfds.append(fd)
                 continue
 
             if not data:
-                sel.unregister(key.fileobj)
+                xfds.append(fd)
                 continue
 
-            if key.fileobj == input_fileno:
+            if fd == input_fileno:
                 write_fileno = master_fd
             else:
                 write_fileno = output_fileno
