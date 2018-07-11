@@ -29,6 +29,8 @@ class TestAnim(unittest.TestCase):
             # Bright but not in the palette --> fallback to the non bright color
             # for compatibility with an 8-color palette (issue #1)
             pyte.screens.Char('I', 'brown', 'ABCDEF', bold=True),
+            # Bright + bold and fallback to non bright
+            pyte.screens.Char('J', 'brightbrown', 'ABCDEF', bold=True),
         ]
 
         char_cells = [
@@ -41,6 +43,7 @@ class TestAnim(unittest.TestCase):
             anim.CharacterCell('G', '#008700', '#ABCDEF', False),
             anim.CharacterCell('H', 'color10', '#ABCDEF', True),
             anim.CharacterCell('I', 'color3', '#ABCDEF', True),
+            anim.CharacterCell('J', 'color3', '#ABCDEF', True),
         ]
 
         palette = {
