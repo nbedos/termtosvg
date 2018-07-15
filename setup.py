@@ -46,9 +46,9 @@ setup(
         ]
     },
     install_requires=[
+        'lxml',
         'pyte',
         'setuptools',
-        'svgwrite'
     ],
     extras_require={
         'dev': [

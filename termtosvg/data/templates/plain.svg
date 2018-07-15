@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg id="terminal" baseProfile="full" viewBox="0 0 656 323" width="656" version="1.1"
+     xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <desc>
+        Plain template
+        No terminal UI, no controls, nothing but the screen of the terminal.
+    </desc>
+    <defs>
+        <style type="text/css"><![CDATA[* {font-family: "DejaVu Sans Mono", monospace; font-style: normal; font-size: 14px}
+        text {dominant-baseline: text-before-edge}
+        .background {fill: #002b36}]]></style>
+    </defs>
+    <svg id="screen" width="656" viewBox="0 0 656 323" preserveAspectRatio="xMidYMin meet">
+        <defs>
+            <text id="awesome" fill="#93a1a1" lengthAdjust="spacingAndGlyphs" textLength="168">
+                termtosvg is awesome!
+            </text>
+        </defs>
+        <rect class="background" height="100%" width="100%" x="0" y="0"/>
+        <use href="#awesome" x="0" y="0"/>
+        <use href="#awesome" x="8" y="17"/>
+        <use href="#awesome" x="16" y="34"/>
+        <use href="#awesome" x="24" y="51"/>
+        <use href="#awesome" x="32" y="68"/>
+        <use href="#awesome" x="40" y="85"/>
+        <use href="#awesome" x="48" y="102"/>
+        <use href="#awesome" x="56" y="119"/>
+        <use href="#awesome" x="64" y="136"/>
+        <use href="#awesome" x="72" y="153"/>
+        <use href="#awesome" x="80" y="170"/>
+        <use href="#awesome" x="88" y="187"/>
+        <use href="#awesome" x="96" y="204"/>
+        <use href="#awesome" x="104" y="221"/>
+        <use href="#awesome" x="112" y="238"/>
+        <use href="#awesome" x="120" y="255"/>
+        <use href="#awesome" x="128" y="272"/>
+        <use href="#awesome" x="136" y="289"/>
+        <use href="#awesome" x="144" y="306"/>
+    </svg>
+</svg>

@@ -4,16 +4,13 @@ from collections import namedtuple
 from itertools import groupby
 from typing import Dict, List, Iterable, Iterator, Union, Tuple, Any
 
+import pkg_resources
 import pyte.graphics
 import pyte.screens
-import svgwrite.animate
-import svgwrite.container
-import svgwrite.path
-import svgwrite.shapes
-import svgwrite.text
+from lxml import etree
 
 # Ugliest hack: Replace the first 16 colors rgb values by their names so that termtosvg can
-# distinguish FG_BG_256[0] (which defaults to black #000000 but can be styled with e.g. Xresources)
+# distinguish FG_BG_256[0] (which defaults to black #000000 but can be styled with themes)
 # from FG_BG_256[16] (which is also black #000000 but should be displayed as is).
 colors = ['black', 'red', 'green', 'brown', 'blue', 'magenta', 'cyan', 'white']
 brightcolors = ['bright{}'.format(color) for color in colors]
@@ -21,6 +18,10 @@ pyte.graphics.FG_BG_256 = colors + brightcolors + pyte.graphics.FG_BG_256[16:]
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
+
+# Id for the very last SVG animation. This is used to make the first animations start when the
+# last one ends (animation looping)
+LAST_ANIMATION_ID = 'anim_last'
 
 _CharacterCell = namedtuple('_CharacterCell', ['text', 'color', 'background_color', 'bold'])
 _CharacterCell.__doc__ = 'Representation of a character cell'
@@ -91,84 +92,102 @@ CharacterCellLineEvent = namedtuple('CharacterCellLineEvent', ['row', 'line', 't
 CharacterCellRecord = Union[CharacterCellConfig, CharacterCellLineEvent]
 
 
-def _render_line_bg_colors(screen_line, height, line_height, cell_width, background_color):
-    # type: (Dict[int, CharacterCell], float, float) -> List[svgwrite.shapes.Rect]
-    def make_rectangle(group: List[int]) -> svgwrite.shapes.Rect:
-        x = group[0] * cell_width
-        y = height
-        sx = len(group) * cell_width
-        sy = line_height
-        args = {
-            'insert': (x, y),
-            'size': (sx, sy),
-            'fill': screen_line[group[0]].background_color
-        }
-        return svgwrite.shapes.Rect(**args)
+class ConsecutiveWithSameAttributes:
+    """Callable to be used as a key for itertools.groupby to group together consecutive elements
+    of a list with the same attributes"""
+    def __init__(self, attributes):
+        self.group_index = None
+        self.last_index = None
+        self.attributes = attributes
+        self.last_key_attributes = None
 
-    group = []
-    groups = []
-    cols = {col for col in screen_line if screen_line[col].background_color is not None}
-    for index in sorted(cols):
-        group.append(index)
-        if index + 1 not in screen_line or \
-                screen_line[index].background_color != screen_line[index + 1].background_color:
-            if screen_line[index].background_color != background_color:
-                groups.append(group)
-            group = []
-
-    rectangles = [make_rectangle(group) for group in groups]
-    return rectangles
+    def __call__(self, arg):
+        index, obj = arg
+        key_attributes = {name: getattr(obj, name) for name in self.attributes}
+        if self.last_index != index - 1 or self.last_key_attributes != key_attributes:
+            self.group_index = index
+        self.last_index = index
+        self.last_key_attributes = key_attributes
+        return self.group_index, key_attributes
 
 
-def _render_characters(screen_line, height, cell_width):
-    # type: (Dict[int, CharacterCell], float) -> List[svgwrite.text.Tspan]
-    """Render a screen of the terminal as a list of SVG text elements
+def make_rect_tag(column, length, height, cell_width, cell_height, background_color):
+    # type: (int, int, int, int, int, str) -> etree.ElementBase
+    attributes = {
+        'x': str(column * cell_width),
+        'y': str(height),
+        'width': str(length * cell_width),
+        'height': str(cell_height),
+        'fill': background_color
+    }
+    rect_tag = etree.Element('rect', attributes)
+    return rect_tag
 
-    Characters with the same attributes (color) are grouped together in a
-    single text element.
 
-    :param screen_line: Mapping between positions on the row and characters
-    :param height: Vertical position of the line
-    :return: List of SVG text elements
+def _render_line_bg_colors(screen_line, height, cell_height, cell_width, default_bg_color):
+    # type: (Dict[int, CharacterCell], int, int, int) -> List[etree.ElementBase]
+    """Return a list of 'rect' tags representing the background of 'screen_line'
+
+    If consecutive cells have the same background color, a single 'rect' tag is returned for all
+    these cells.
+    If a cell background uses default_bg_color, no 'rect' will be generated for this cell since
+    the default background is always displayed.
+
+    :param screen_line: Mapping between column numbers and CharacterCells
+    :param height: Vertical position of the line on the screen in pixels
+    :param cell_height: Height of the a character cell in pixels
+    :param cell_width: Width of a character cell in pixels
+    :param default_bg_color: Default background color
     """
+    non_default_bg_cells = [(index, cell) for (index, cell) in sorted(screen_line.items())
+                            if cell.background_color != default_bg_color]
 
-    def make_text(group: List[int]) -> svgwrite.text.Text:
-        text = ''.join(screen_line[c].text for c in group)
-        attributes = {
-            'text': text.replace(' ', u'\u00A0'),
-            'x': [str(group[0] * cell_width)],
-            'textLength': len(group) * cell_width,
-            'lengthAdjust': 'spacingAndGlyphs',
-            'fill': screen_line[group[0]].color
-        }
-        if screen_line[group[0]].bold:
-            attributes['font-weight'] = 'bold'
-        return svgwrite.text.Text(**attributes)
+    key = ConsecutiveWithSameAttributes(['background_color'])
+    rect_tags = [make_rect_tag(column, len(list(group)), height, cell_width, cell_height,
+                               attributes['background_color'])
+                 for (column, attributes), group in groupby(non_default_bg_cells, key)]
 
-    group = []
-    groups = []
-    cols = {col for col in screen_line if screen_line[col].background_color is not None}
-    for col in sorted(cols):
-        group.append(col)
-        if col + 1 not in screen_line or \
-                screen_line[col].color != screen_line[col+1].color:
-            groups.append(group)
-            group = []
-
-    texts = [make_text(group) for group in groups]
-    return texts
+    return rect_tags
 
 
-def render_animation(records, filename, font, font_size=14, cell_width=8, cell_height=17, end_pause=1):
-    # type: (Iterable[CharacterCellRecord], str, str, int, int, int, int) -> None
-    if end_pause <= 0:
-        raise ValueError('Invalid end_pause (must be > 0): "{}"'.format(end_pause))
+def make_text_tag(column, attributes, text, cell_width):
+    # type: (List[Tuple[int, CharacterCell]], Dict[str, str], str, int) -> etree.ElementBase
+    text_tag_attributes = {
+        'x': str(column * cell_width),
+        'textLength': str(len(text) * cell_width),
+        'lengthAdjust': 'spacingAndGlyphs',
+        'fill': attributes['color']
+    }
+    if attributes['bold']:
+        text_tag_attributes['font-weight'] = 'bold'
 
-    if not isinstance(records, Iterator):
-        records = iter(records)
+    text_tag = etree.Element('text', text_tag_attributes)
+    # Replace usual spaces with unbreakable spaces so that indenting the SVG does not mess up
+    # the whole animation; this is somewhat better than the 'white-space: pre' CSS option
+    text_tag.text = text.replace(' ', u'\u00A0')
+    return text_tag
 
-    header = next(records)
 
+def _render_characters(screen_line, cell_width):
+    # type: (Dict[int, CharacterCell], int) -> List[etree.ElementBase]
+    """Return a list of 'text' elements representing the line of the screen
+
+    Consecutive characters with the same styling attributes (text color and font weight) are
+    grouped together in a single text element.
+
+    :param screen_line: Mapping between column numbers and characters
+    :param cell_width: Width of a character cell in pixels
+    """
+    line = [(col, char) for (col, char) in sorted(screen_line.items())]
+    key = ConsecutiveWithSameAttributes(['color', 'bold'])
+    text_tags = [make_text_tag(column, attributes, ''.join(c.text for _, c in group), cell_width)
+                 for (column, attributes), group in groupby(line, key)]
+
+    return text_tags
+
+
+def build_style_tag(font, font_size, background_color):
+    # type: (str, int, str) -> etree.ElementBase
     css = {
         # Apply this style to each and every element since we are using coordinates that
         # depend on the size of the font
@@ -181,91 +200,162 @@ def render_animation(records, filename, font, font_size=14, cell_width=8, cell_h
             'dominant-baseline': 'text-before-edge',
         },
         '.background': {
-            'fill': header.background_color,
+            'fill': background_color,
         },
     }
 
-    width = header.width * cell_width
-    height = header.height * cell_height
-
-    dwg = svgwrite.Drawing(filename, (width, height), debug=True)
-    dwg.defs.add(dwg.style(_serialize_css_dict(css)))
-    args = {
-        'insert': (0, 0),
-        'size': ('100%', '100%'),
-        'class': 'background'
+    style_attributes = {
+        'type': "text/css"
     }
-    r = svgwrite.shapes.Rect(**args)
-    dwg.add(r)
+    style_tag = etree.Element('style', style_attributes)
+    style_tag.text = etree.CDATA(_serialize_css_dict(css))
+    return style_tag
 
+
+_BG_RECT_TAG_ATTRIBUTES = {
+    'class': 'background',
+    'height': '100%',
+    'width': '100%',
+    'x': '0',
+    'y': '0'
+}
+BG_RECT_TAG = etree.Element('rect', _BG_RECT_TAG_ATTRIBUTES)
+
+
+def make_animated_group(records, time, duration, cell_height, cell_width, default_bg_color, defs):
+    # type: (Iterable[CharacterCellLineEvent], int, int, int, int, str, Dict[str, etree.ElementBase]) -> Tuple[etree.ElementBase, Dict[str, etree.ElementBase]]
+    """Return a group element containing an SVG version of the provided records. This group is
+    animated, that is to say displayede on the screen and then removed according to the timing
+    information provided by the caller.
+
+    :param records: List of lines that should be included in the group
+    :param time: Time the group should appear on the screen (milliseconds)
+    :param duration: Duration of the appearance on the screen (milliseconds)
+    :param cell_height: Height of a character cell in pixels
+    :param cell_width: Width of a character cell in pixels
+    :param default_bg_color: Default background color
+    :param defs: Existing definitions
+    :return: A tuple consisting of the animated group and the new definitions
+    """
+    animation_group_tag = etree.Element('g', attrib={'display': 'none'})
+    new_definitions = {}
+    for event_record in records:
+        # Background elements
+        rect_tags = _render_line_bg_colors(screen_line=event_record.line,
+                                               height=event_record.row * cell_height,
+                                               cell_height=cell_height,
+                                               cell_width=cell_width,
+                                               default_bg_color=default_bg_color)
+        for tag in rect_tags:
+            animation_group_tag.append(tag)
+
+        # Group text elements for the current line into text_group_tag
+        text_group_tag = etree.Element('g')
+        text_tags = _render_characters(event_record.line, cell_width)
+        for tag in text_tags:
+            text_group_tag.append(tag)
+
+        # Find or create a definition for text_group_tag
+        text_group_tag_str = etree.tostring(text_group_tag)
+        if text_group_tag_str in defs:
+            group_id = defs[text_group_tag_str].attrib['id']
+        elif text_group_tag_str in new_definitions:
+            group_id = new_definitions[text_group_tag_str].attrib['id']
+        else:
+            group_id = 'g{}'.format(len(defs) + len(new_definitions) + 1)
+            assert group_id not in defs.values() and group_id not in new_definitions.values()
+            text_group_tag.attrib['id'] = group_id
+            new_definitions[text_group_tag_str] = text_group_tag
+
+        # Add a reference to the definition of text_group_tag with a 'use' tag
+        use_attributes = {
+            '{http://www.w3.org/1999/xlink}href': '#{}'.format(group_id),
+            'y': str(event_record.row * cell_height),
+        }
+        use_tag = etree.Element('use', use_attributes)
+        animation_group_tag.append(use_tag)
+
+    # Finally, add an animation tag so that the whole group goes from 'display: none' to
+    # 'display: inline' at the time the line should appear on the screen
+    if time == 0:
+        # Animations starting at 0ms should also start when the last animation ends (looping)
+        begin_time = '0ms; {id}.end'.format(id=LAST_ANIMATION_ID)
+    else:
+        begin_time = '{time}ms; {id}.end+{time}ms'.format(time=time, id=LAST_ANIMATION_ID)
+    attributes = {
+        'attributeName': 'display',
+        'from': 'inline',
+        'to': 'inline',
+        'begin': begin_time,
+        'dur': '{}ms'.format(duration),
+        'fill': 'remove',
+    }
+
+    animation = etree.Element('animate', attributes)
+    animation_group_tag.append(animation)
+
+    return animation_group_tag, new_definitions
+
+
+def render_animation(records, filename, font, font_size=14, cell_width=8, cell_height=17):
+    root = _render_animation(records, font, font_size, cell_width, cell_height)
+    with open(filename, 'wb') as f:
+        f.write(etree.tostring(root))
+
+
+def _render_animation(records, font, font_size, cell_width, cell_height):
+    # type: (Iterable[CharacterCellRecord], str, int, int, int) -> etree.ElementBase
+    with pkg_resources.resource_stream(__name__, 'data/templates/plain.svg') as bytestream:
+        tree = etree.parse(bytestream)
+
+    # Get a SVG template
+    root = tree.getroot()
+    svg_screen_tag = root.find('.//{http://www.w3.org/2000/svg}svg[@id="screen"]')
+    if svg_screen_tag is None:
+        raise ValueError('Missing tag: <svg id="screen" ...>...</svg>')
+
+    for child in svg_screen_tag.getchildren():
+        svg_screen_tag.remove(child)
+
+    # Reader header record and add the corresponding information to the SVG
+    if not isinstance(records, Iterator):
+        records = iter(records)
+    header = next(records)
+
+    def_tag = etree.SubElement(svg_screen_tag, 'defs')
+    style_tag = build_style_tag(font, font_size, header.background_color)
+    def_tag.append(style_tag)
+    svg_screen_tag.append(BG_RECT_TAG)
+
+    # Process event records
     def by_time(record: CharacterCellRecord) -> Tuple[int, int]:
         return record.time, record.duration
 
-    row_animations = {}
     definitions = {}
-    last_animation_id_str = 'anim_last'
-    animation = None
-    for animation_id, (key, record_group) in enumerate(groupby(records, key=by_time)):
-        line_time, line_duration = key
-        frame = svgwrite.container.Group(display='none')
+    last_animated_group = None
+    for (line_time, line_duration), record_group in groupby(records, key=by_time):
+        animated_group, new_defs = make_animated_group(records=record_group,
+                                                       time=line_time,
+                                                       duration=line_duration,
+                                                       cell_height=cell_height,
+                                                       cell_width=cell_width,
+                                                       default_bg_color=header.background_color,
+                                                       defs=definitions)
+        definitions.update(new_defs)
+        for definition in new_defs.values():
+            def_tag.append(definition)
 
-        animation_begin = None
-        animation_id_str = 'anim_{}'.format(animation_id)
-        for event_record in record_group:
-            height = event_record.row * cell_height
-            rects = _render_line_bg_colors(event_record.line,
-                                           height,
-                                           cell_height,
-                                           cell_width,
-                                           header.background_color)
-            for rect in rects:
-                frame.add(rect)
+        svg_screen_tag.append(animated_group)
+        last_animated_group = animated_group
 
-            g = svgwrite.container.Group()
-            for text in _render_characters(event_record.line, height, cell_width):
-                g.add(text)
+    # Add id attribute to the last 'animate' tag so that it can be refered to by the first
+    # animations (enables animation looping)
+    if last_animated_group is not None:
+        animate_tags = last_animated_group.findall('animate')
+        assert len(animate_tags) == 1
+        animate_tags.pop().attrib['id'] = LAST_ANIMATION_ID
 
-            # Define this line or reuse the existing definition
-            g_str = g.tostring()
-            if g_str in definitions:
-                group_id = definitions[g_str]
-            else:
-                group_id = len(definitions) + 1
-                assert group_id not in definitions
-                definitions[g_str] = group_id
-                g.attribs['id'] = group_id
-                dwg.defs.add(g)
-
-            frame.add(svgwrite.container.Use('#{}'.format(group_id), y=height))
-
-            # If the current row has already been animated, chain the current animation and the
-            # last one
-            if animation_begin is None and event_record.row in row_animations:
-                row_anim_id, row_anim_end = row_animations[event_record.row]
-                offset = line_time - row_anim_end
-                animation_begin = '{}.end+{}ms'.format(row_anim_id, offset)
-
-            row_animations[event_record.row] = (animation_id_str, line_time + line_duration)
-
-        if animation_begin is None:
-            animation_begin = '{}ms;{}.end+{}ms'.format(line_time, last_animation_id_str, line_time)
-
-        extra = {
-            'begin': animation_begin,
-            'dur': '{}ms'.format(line_duration),
-            'from': 'inline',
-            'to': 'inline',
-            'fill': 'remove',
-            'id': animation_id_str
-        }
-
-        animation = svgwrite.animate.Animate('display', **extra)
-        frame.add(animation)
-
-        dwg.add(frame)
-
-    animation.attribs['id'] = last_animation_id_str
-    dwg.save()
+    return root
 
 
 def _serialize_css_dict(css):
