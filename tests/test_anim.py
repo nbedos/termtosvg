@@ -1,7 +1,9 @@
+import io
 import tempfile
 import unittest
 from collections import namedtuple
 
+import pkg_resources
 import pyte.screens
 from lxml import etree
 
@@ -222,3 +224,25 @@ class TestAnim(unittest.TestCase):
         with open(filename, 'wb') as f:
             print(filename)
             f.write(etree.tostring(svg_root))
+
+    def test_validate_svg(self):
+        failure_test_cases = [
+            '',
+            '<svg>',
+            '</svg>',
+            '<svg></a>',
+            None,
+        ]
+        for case in failure_test_cases:
+            with self.subTest(case=case):
+                with self.assertRaises(ValueError):
+                    anim.validate_svg(io.StringIO(case))
+
+        success_test_cases = [
+            pkg_resources.resource_stream('termtosvg', 'data/templates/plain.svg')
+        ]
+
+        for bstream in success_test_cases:
+            with self.subTest(case=bstream):
+                anim.validate_svg(bstream)
+

@@ -222,6 +222,23 @@ _BG_RECT_TAG_ATTRIBUTES = {
 BG_RECT_TAG = etree.Element('rect', _BG_RECT_TAG_ATTRIBUTES)
 
 
+def validate_svg(svg_file):
+    """Validate an SVG file against the latest version of SVG 1.1 Document Type Definition"""
+    with pkg_resources.resource_stream(__name__, 'data/svg11-flat-20110816.dtd') as bstream:
+        dtd = etree.DTD(bstream)
+
+    try:
+        tree = etree.parse(svg_file)
+        root = tree.getroot()
+        is_valid = dtd.validate(root)
+    except etree.Error as exc:
+        raise ValueError('Invalid SVG file') from exc
+
+    if not is_valid:
+        reason = dtd.error_log.filter_from_errors()[0]
+        raise ValueError('Invalid SVG file: {}'.format(reason))
+
+
 def make_animated_group(records, time, duration, cell_height, cell_width, default_bg_color, defs):
     # type: (Iterable[CharacterCellLineEvent], int, int, int, int, str, Dict[str, etree.ElementBase]) -> Tuple[etree.ElementBase, Dict[str, etree.ElementBase]]
     """Return a group element containing an SVG version of the provided records. This group is
@@ -242,10 +259,10 @@ def make_animated_group(records, time, duration, cell_height, cell_width, defaul
     for event_record in records:
         # Background elements
         rect_tags = _render_line_bg_colors(screen_line=event_record.line,
-                                               height=event_record.row * cell_height,
-                                               cell_height=cell_height,
-                                               cell_width=cell_width,
-                                               default_bg_color=default_bg_color)
+                                           height=event_record.row * cell_height,
+                                           cell_height=cell_height,
+                                           cell_width=cell_width,
+                                           default_bg_color=default_bg_color)
         for tag in rect_tags:
             animation_group_tag.append(tag)
 
