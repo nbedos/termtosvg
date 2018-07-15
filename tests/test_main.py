@@ -3,7 +3,7 @@ import tempfile
 import time
 import unittest
 
-import termtosvg.__main__ as __main__
+import termtosvg.main
 
 SHELL_COMMANDS = [
     'echo $SHELL && sleep 0.1;\r\n',
@@ -46,7 +46,7 @@ class TestMain(unittest.TestCase):
 
         for args in test_cases:
             with self.subTest(case=args):
-                __main__.parse(args, ['solarized-light', 'solarized-dark'])
+                termtosvg.main.parse(args, ['solarized-light', 'solarized-dark'])
 
     @staticmethod
     def run_main(shell_commands, args):
@@ -62,7 +62,7 @@ class TestMain(unittest.TestCase):
                 time.sleep(0.060)
             os._exit(0)
 
-        __main__.main(args, fd_in_read, fd_out_write)
+        termtosvg.main.main(args, fd_in_read, fd_out_write)
 
         os.waitpid(pid, 0)
         for fd in fd_in_read, fd_in_write, fd_out_read, fd_out_write:

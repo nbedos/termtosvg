@@ -1,10 +1,11 @@
+import io
 import logging
 import os
+import pkgutil
 from collections import namedtuple
 from itertools import groupby
 from typing import Dict, List, Iterable, Iterator, Union, Tuple, Any
 
-import pkg_resources
 import pyte.graphics
 import pyte.screens
 from lxml import etree
@@ -224,8 +225,8 @@ BG_RECT_TAG = etree.Element('rect', _BG_RECT_TAG_ATTRIBUTES)
 
 def validate_svg(svg_file):
     """Validate an SVG file against the latest version of SVG 1.1 Document Type Definition"""
-    with pkg_resources.resource_stream(__name__, 'data/svg11-flat-20110816.dtd') as bstream:
-        dtd = etree.DTD(bstream)
+    data = pkgutil.get_data(__name__, 'data/svg11-flat-20110816.dtd')
+    dtd = etree.DTD(io.BytesIO(data))
 
     try:
         tree = etree.parse(svg_file)
@@ -322,8 +323,8 @@ def render_animation(records, filename, font, font_size=14, cell_width=8, cell_h
 
 def _render_animation(records, font, font_size, cell_width, cell_height):
     # type: (Iterable[CharacterCellRecord], str, int, int, int) -> etree.ElementBase
-    with pkg_resources.resource_stream(__name__, 'data/templates/plain.svg') as bytestream:
-        tree = etree.parse(bytestream)
+    data = pkgutil.get_data(__name__, 'data/templates/plain.svg')
+    tree = etree.parse(io.BytesIO(data))
 
     # Get a SVG template
     root = tree.getroot()

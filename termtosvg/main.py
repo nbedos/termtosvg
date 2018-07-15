@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import argparse
 import logging
 import sys
@@ -197,7 +196,3 @@ def main(args=None, input_fileno=None, output_fileno=None):
 
     for handler in logger.handlers:
         handler.close()
-
-
-if __name__ == '__main__':
-    main()

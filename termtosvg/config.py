@@ -1,18 +1,16 @@
 import configparser
 import logging
 import os
+import pkgutil
 from typing import Union, Dict
 
-import pkg_resources
-
 import termtosvg.asciicast as asciicast
-
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 PKG_CONF_PATH = os.path.join('data', 'termtosvg.ini')
-DEFAULT_CONFIG = pkg_resources.resource_string(__name__, PKG_CONF_PATH).decode('utf-8')
+DEFAULT_CONFIG = pkgutil.get_data(__name__, PKG_CONF_PATH).decode('utf-8')
 
 
 class CaseInsensitiveDict(dict):

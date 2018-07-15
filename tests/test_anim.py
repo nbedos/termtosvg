@@ -3,7 +3,7 @@ import tempfile
 import unittest
 from collections import namedtuple
 
-import pkg_resources
+import pkgutil
 import pyte.screens
 from lxml import etree
 
@@ -239,10 +239,10 @@ class TestAnim(unittest.TestCase):
                     anim.validate_svg(io.StringIO(case))
 
         success_test_cases = [
-            pkg_resources.resource_stream('termtosvg', 'data/templates/plain.svg')
+            pkgutil.get_data('termtosvg', 'data/templates/plain.svg')
         ]
 
-        for bstream in success_test_cases:
-            with self.subTest(case=bstream):
-                anim.validate_svg(bstream)
+        for data in success_test_cases:
+            with self.subTest(case=data):
+                anim.validate_svg(io.BytesIO(data))
 
