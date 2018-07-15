@@ -4,11 +4,6 @@ import sys
 import tempfile
 from typing import List, Tuple, Union
 
-import termtosvg.anim as anim
-import termtosvg.config as config
-import termtosvg.asciicast as asciicast
-import termtosvg.term as term
-
 logger = logging.getLogger('termtosvg')
 
 USAGE = """termtosvg [output_file] [--font FONT] [--theme THEME] [--help] [--verbose]
@@ -112,6 +107,7 @@ def main(args=None, input_fileno=None, output_fileno=None):
     logger.handlers = [console_handler]
     logger.setLevel(logging.INFO)
 
+    import termtosvg.config as config
     configuration = config.init_read_conf()
     available_themes = config.CaseInsensitiveDict(**configuration)
     del available_themes['global']
@@ -127,6 +123,9 @@ def main(args=None, input_fileno=None, output_fileno=None):
         logger.handlers.append(file_handler)
         logger.info('Logging to {}'.format(log_filename))
 
+    import termtosvg.anim as anim
+    import termtosvg.term as term
+    import termtosvg.asciicast as asciicast
     if command == 'record':
         logger.info('Recording started, enter "exit" command or Control-D to end')
         if args.output_file is None:
