@@ -164,7 +164,7 @@ class AsciiCastV2Header(AsciiCastV2Record, _AsciiCastV2Header):
                           if isinstance(attr, attr_type)]
             if not attr_types:
                 raise AsciiCastError('Invalid type for attribute {}: {} (expected one of {})'
-                                .format(attr_name, type(attr), cls.types[attr_name]))
+                                     .format(attr_name, type(attr), cls.types[attr_name]))
         if version != 2:
             raise AsciiCastError('Only asciicast v2 format is supported')
         return self

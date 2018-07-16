@@ -198,9 +198,6 @@ class TestAnim(unittest.TestCase):
                                                    cell_height=17,
                                                    default_bg_color='black',
                                                    defs={})
-        from lxml import etree
-        print(etree.tostring(group, pretty_print=True).decode('utf-8'))
-        print(new_defs)
 
     def test__render_animation(self):
         def line(i):
@@ -222,7 +219,6 @@ class TestAnim(unittest.TestCase):
 
         _, filename = tempfile.mkstemp(prefix='termtosvg_', suffix='.svg')
         with open(filename, 'wb') as f:
-            print(filename)
             f.write(etree.tostring(svg_root))
 
     def test_validate_svg(self):

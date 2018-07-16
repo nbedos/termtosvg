@@ -243,8 +243,7 @@ def validate_svg(svg_file):
 def make_animated_group(records, time, duration, cell_height, cell_width, default_bg_color, defs):
     # type: (Iterable[CharacterCellLineEvent], int, int, int, int, str, Dict[str, etree.ElementBase]) -> Tuple[etree.ElementBase, Dict[str, etree.ElementBase]]
     """Return a group element containing an SVG version of the provided records. This group is
-    animated, that is to say displayede on the screen and then removed according to the timing
-    information provided by the caller.
+    animated, that is to say displayed then removed according to the timing arguments.
 
     :param records: List of lines that should be included in the group
     :param time: Time the group should appear on the screen (milliseconds)
@@ -326,7 +325,7 @@ def _render_animation(records, font, font_size, cell_width, cell_height):
     data = pkgutil.get_data(__name__, 'data/templates/plain.svg')
     tree = etree.parse(io.BytesIO(data))
 
-    # Get a SVG template
+    # Get SVG template
     root = tree.getroot()
     svg_screen_tag = root.find('.//{http://www.w3.org/2000/svg}svg[@id="screen"]')
     if svg_screen_tag is None:
@@ -335,11 +334,10 @@ def _render_animation(records, font, font_size, cell_width, cell_height):
     for child in svg_screen_tag.getchildren():
         svg_screen_tag.remove(child)
 
-    # Reader header record and add the corresponding information to the SVG
+    # Read header record and add the corresponding information to the SVG
     if not isinstance(records, Iterator):
         records = iter(records)
     header = next(records)
-
     def_tag = etree.SubElement(svg_screen_tag, 'defs')
     style_tag = build_style_tag(font, font_size, header.background_color)
     def_tag.append(style_tag)
