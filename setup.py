@@ -42,6 +42,7 @@ setup(
     extras_require={
         'dev': [
             'coverage',
+            'pylint',
             'twine',
             'wheel',
         ]

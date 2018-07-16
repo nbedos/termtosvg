@@ -34,6 +34,8 @@ tests: venv_dev
 	    coverage run --branch --source termtosvg -m unittest -v && \
 	    coverage report && \
 	    coverage html
+	-$(VENV_ACTIVATE) && \
+	    pylint --extension-pkg-whitelist lxml termtosvg/*.py
 
 venv_dev: setup.py
 	(test -d $(VENV_PATH) || python -m venv $(VENV_PATH))

@@ -23,6 +23,7 @@ install:
 script:
     - coverage run --branch --source termtosvg -m unittest -v
     - coverage report
+    - pylint --extension-pkg-whitelist lxml termtosvg/*.py
 
 notifications:
   email: false
