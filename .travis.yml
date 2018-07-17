@@ -22,6 +22,8 @@ install:
 
 script:
     - coverage run --branch --source termtosvg -m unittest -v
+
+after_success:
     - coverage report
     - pylint --extension-pkg-whitelist lxml termtosvg/*.py
 

@@ -24,6 +24,14 @@ logger.addHandler(logging.NullHandler())
 # last one ends (animation looping)
 LAST_ANIMATION_ID = 'anim_last'
 
+# XML namespaces
+SVG_NS = 'http://www.w3.org/2000/svg'
+XLINK_NS = 'http://www.w3.org/1999/xlink'
+TERMTOSVG_NS = 'https://github.com/nbedos/termtosvg'
+
+class TemplateError(Exception):
+    pass
+
 _CharacterCell = namedtuple('_CharacterCell', ['text', 'color', 'background_color', 'bold'])
 _CharacterCell.__doc__ = 'Representation of a character cell'
 _CharacterCell.text.__doc__ = 'Text content of the cell'
@@ -68,7 +76,6 @@ class CharacterCell(_CharacterCell):
                 raise ValueError('Invalid foreground color: {}'.format(char.fg))
 
         if char.bg == 'default':
-            # Default colors
             background_color = palette['background']
         elif char.bg in color_numbers:
             # Named colors
@@ -140,7 +147,7 @@ def _render_line_bg_colors(screen_line, height, cell_height, cell_width, default
     :param cell_width: Width of a character cell in pixels
     :param default_bg_color: Default background color
     """
-    non_default_bg_cells = [(index, cell) for (index, cell) in sorted(screen_line.items())
+    non_default_bg_cells = [(column, cell) for (column, cell) in sorted(screen_line.items())
                             if cell.background_color != default_bg_color]
 
     key = ConsecutiveWithSameAttributes(['background_color'])
@@ -165,7 +172,7 @@ def make_text_tag(column, attributes, text, cell_width):
     text_tag = etree.Element('text', text_tag_attributes)
     # Replace usual spaces with unbreakable spaces so that indenting the SVG does not mess up
     # the whole animation; this is somewhat better than the 'white-space: pre' CSS option
-    text_tag.text = text.replace(' ', u'\u00A0')
+    text_tag.text = text.replace(' ', '\u00A0')
     return text_tag
 
 
@@ -286,7 +293,7 @@ def make_animated_group(records, time, duration, cell_height, cell_width, defaul
 
         # Add a reference to the definition of text_group_tag with a 'use' tag
         use_attributes = {
-            '{http://www.w3.org/1999/xlink}href': '#{}'.format(group_id),
+            '{{{}}}href'.format(XLINK_NS): '#{}'.format(group_id),
             'y': str(event_record.row * cell_height),
         }
         use_tag = etree.Element('use', use_attributes)
@@ -320,13 +327,72 @@ def render_animation(records, filename, font, font_size=14, cell_width=8, cell_h
         f.write(etree.tostring(root))
 
 
+def resize_template(template, columns, rows, cell_width, cell_height):
+    # type: (str, int, int, int, int) -> etree.ElementBase
+    def scaled_viewbox(element, template_columns, template_rows, columns, rows):
+        try:
+            viewbox = element.attrib['viewBox'].replace(',', ' ').split()
+        except KeyError:
+            raise TemplateError('Missing "viewBox" for element "{}"'.format(element))
+
+        vb_min_x, vb_min_y, vb_width, vb_height = [int(n) for n in viewbox]
+        vb_width += cell_width * (columns - template_columns)
+        vb_height += cell_height * (rows - template_rows)
+        return ' '.join([str(n) for n in (vb_min_x, vb_min_y, vb_width, vb_height)])
+
+    data = pkgutil.get_data(__name__, template)
+
+    try:
+        tree = etree.parse(io.BytesIO(data))
+        root = tree.getroot()
+    except etree.Error as exc:
+        raise TemplateError('Invalid template') from exc
+
+    # Extract the screen geometry which is saved in a private data portion of the template
+    settings = root.find('.//{{{}}}defs/{{{}}}template_settings'.format(SVG_NS, TERMTOSVG_NS))
+    if settings is None:
+        raise TemplateError('Missing "template_settings" element in definitions')
+
+    geometry = settings.find('{{{}}}screen_geometry[@columns][@rows]'.format(TERMTOSVG_NS))
+    if geometry is None:
+        raise TemplateError('Missing "screen_geometry" element in "template_settings"')
+
+    attributes_err_msg = ('Missing or invalid "columns" or "rows" attribute for element '
+                          '"screen_geometry": expected positive integers')
+    try:
+        template_columns = int(geometry.attrib['columns'])
+        template_rows = int(geometry.attrib['rows'])
+    except (KeyError, ValueError) as exc:
+        raise TemplateError(attributes_err_msg) from exc
+
+    if template_rows <= 0 or template_columns <= 0:
+        raise TemplateError(attributes_err_msg)
+
+    # Scale the viewBox of the root svg element based on the size of the screen and the size
+    # registered in the template
+    root.attrib['viewBox'] = scaled_viewbox(root, template_columns, template_rows, columns, rows)
+
+    # Also scale the viewBox of the svg element with id 'screen'
+    screen = root.find('.//{{{}}}svg[@id="screen"]'.format(SVG_NS))
+    if screen is None:
+        raise TemplateError('svg element with id "screen" not found')
+    screen.attrib['viewBox'] = scaled_viewbox(screen, template_columns, template_rows, columns, rows)
+
+    # Remove termtosvg private data so that the template can be validated against the DTD of SVG 1.1
+    settings.getparent().remove(settings)
+
+    return root
+
+
 def _render_animation(records, font, font_size, cell_width, cell_height):
     # type: (Iterable[CharacterCellRecord], str, int, int, int) -> etree.ElementBase
-    data = pkgutil.get_data(__name__, 'data/templates/plain.svg')
-    tree = etree.parse(io.BytesIO(data))
+    # Read header record and add the corresponding information to the SVG
+    if not isinstance(records, Iterator):
+        records = iter(records)
+    header = next(records)
 
-    # Get SVG template
-    root = tree.getroot()
+    root = resize_template('data/templates/plain.svg', header.width, header.height, cell_width, cell_height)
+
     svg_screen_tag = root.find('.//{http://www.w3.org/2000/svg}svg[@id="screen"]')
     if svg_screen_tag is None:
         raise ValueError('Missing tag: <svg id="screen" ...>...</svg>')
@@ -334,10 +400,8 @@ def _render_animation(records, font, font_size, cell_width, cell_height):
     for child in svg_screen_tag.getchildren():
         svg_screen_tag.remove(child)
 
-    # Read header record and add the corresponding information to the SVG
-    if not isinstance(records, Iterator):
-        records = iter(records)
-    header = next(records)
+
+
     def_tag = etree.SubElement(svg_screen_tag, 'defs')
     style_tag = build_style_tag(font, font_size, header.background_color)
     def_tag.append(style_tag)

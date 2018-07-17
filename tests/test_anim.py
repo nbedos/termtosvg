@@ -3,7 +3,6 @@ import tempfile
 import unittest
 from collections import namedtuple
 
-import pkgutil
 import pyte.screens
 from lxml import etree
 
@@ -234,11 +233,4 @@ class TestAnim(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     anim.validate_svg(io.StringIO(case))
 
-        success_test_cases = [
-            pkgutil.get_data('termtosvg', 'data/templates/plain.svg')
-        ]
-
-        for data in success_test_cases:
-            with self.subTest(case=data):
-                anim.validate_svg(io.BytesIO(data))
 
