@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/nbedos/termtosvg.svg?branch=master)](https://travis-ci.org/nbedos/termtosvg)
 
 # termtosvg
-A Linux terminal recorder written in Python that renders your command
+termtosvg is a Linux terminal recorder written in Python that renders your command
 line sessions as standalone SVG animations.
 
 <p align="center">
@@ -16,7 +16,7 @@ how this solution would hold out against other terminal
 recorders such as [asciinema](https://github.com/asciinema/asciinema).
 
 ## Installation
-termtosvg is compatible with Python >= 3.5 and can be installed with pip:
+termtosvg is compatible with Python >= 3.5 and can be installed using pip:
 ```
 pip3 install --user termtosvg
 ```
@@ -117,14 +117,14 @@ color14 = #b888e2
 color15 = #ffffff
 ```
 
-Color themes can freely be added, removed or modified. Once a color theme
+Color themes can be added, removed or modified. Once a color theme
 has been added to the configuration it can be referred to in the global
 section of the configuration file, or be used at the command line as a
 parameter to the `--theme` flag.
 
-Definitions for the foreground and background colors and for color0 to
+Definitions for the foreground and background colors, as well as for color0 to
 color7 are mandatory. If color8 through color15 (bright ANSI colors) are
-defined, they are used by termtosvg to display bold characters as a
+defined, they are used to display bold characters as a
 replacement for color0 through color7. 
 
 ## Dependencies
