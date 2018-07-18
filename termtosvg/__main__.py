@@ -149,45 +149,12 @@ def main(args=None, input_fileno=None, output_fileno=None):
                     print(record.to_json_line(), file=cast_file)
 
         logger.info('Recording ended, cast file is {}'.format(cast_filename))
-    elif command == 'render':
-        logger.info('Rendering started')
-        if args.output_file is None:
-            _, svg_filename = tempfile.mkstemp(prefix='termtosvg_', suffix='.svg')
-        else:
-            svg_filename = args.output_file
-
-        if args.pp is False:
-            pp = configuration['GLOBAL']['playpause']
-        else:
-            pp = True
-
-        if args.font is None:
-            font = configuration['GLOBAL']['font']
-        else:
-            font = args.font
-
-        fallback_theme_name = configuration['GLOBAL']['theme']
-        fallback_theme = configuration[fallback_theme_name]
-        cli_theme = configuration.get(args.theme)
-
-        records = asciicast.read_records(args.input_file)
-        replayed_records = term.replay(records=records,
-                                       from_pyte_char=anim.CharacterCell.from_pyte,
-                                       override_theme=cli_theme,
-                                       fallback_theme=fallback_theme)
-        anim.render_animation(replayed_records, svg_filename, font, pp)
-
-        logger.info('Rendering ended, SVG animation is {}'.format(svg_filename))
     else:
-        # No command passed: record and render on the fly
-        logger.info('Recording started, enter "exit" command or Control-D to end')
         if args.output_file is None:
             _, svg_filename = tempfile.mkstemp(prefix='termtosvg_', suffix='.svg')
         else:
             svg_filename = args.output_file
 
-        columns, lines = term.get_terminal_size(output_fileno)
-        
         if args.pp is False:
             pp = configuration['GLOBAL']['playpause']
         else:
@@ -201,15 +168,29 @@ def main(args=None, input_fileno=None, output_fileno=None):
         fallback_theme_name = configuration['GLOBAL']['theme']
         fallback_theme = configuration[fallback_theme_name]
         cli_theme = configuration.get(args.theme)
-        with term.TerminalMode(input_fileno):
-            records = term.record(columns, lines, input_fileno, output_fileno)
+        
+        if command == 'render':
+            logger.info('Rendering started')
+
+            records = asciicast.read_records(args.input_file)
             replayed_records = term.replay(records=records,
-                                           from_pyte_char=anim.CharacterCell.from_pyte,
-                                           override_theme=cli_theme,
-                                           fallback_theme=fallback_theme)
+                                        from_pyte_char=anim.CharacterCell.from_pyte,
+                                        override_theme=cli_theme,
+                                        fallback_theme=fallback_theme)
             anim.render_animation(replayed_records, svg_filename, font, pp)
 
-        logger.info('Recording ended, SVG animation is {}'.format(svg_filename))
+            logger.info('Rendering ended, SVG animation is {}'.format(svg_filename))
+        else:
+            # No command passed: record and render on the fly
+            logger.info('Recording started, enter "exit" command or Control-D to end')
+            with term.TerminalMode(input_fileno):
+                records = term.record(columns, lines, input_fileno, output_fileno)
+                replayed_records = term.replay(records=records,
+                                            from_pyte_char=anim.CharacterCell.from_pyte,
+                                            override_theme=cli_theme,
+                                            fallback_theme=fallback_theme)
+                anim.render_animation(replayed_records, svg_filename, font, pp)
+            logger.info('Recording ended, SVG animation is {}'.format(svg_filename))
 
     for handler in logger.handlers:
         handler.close()
