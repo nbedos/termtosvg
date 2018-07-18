@@ -124,6 +124,7 @@ def main(args=None, input_fileno=None, output_fileno=None):
     del available_themes['global']
 
     command, args = parse(args[1:], available_themes)
+    columns, lines = term.get_terminal_size(output_fileno)
 
     if args.verbose:
         _, log_filename = tempfile.mkstemp(prefix='termtosvg_', suffix='.log')
@@ -141,7 +142,6 @@ def main(args=None, input_fileno=None, output_fileno=None):
         else:
             cast_filename = args.output_file
 
-        columns, lines = term.get_terminal_size(output_fileno)
         with term.TerminalMode(input_fileno):
             records = term.record(columns, lines, input_fileno, output_fileno)
             with open(cast_filename, 'w') as cast_file:
