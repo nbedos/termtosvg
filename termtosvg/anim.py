@@ -1,5 +1,7 @@
 import logging
 import os
+import re
+import random
 from collections import namedtuple
 from itertools import groupby
 from typing import Dict, List, Iterable, Iterator, Union, Tuple, Any
@@ -172,15 +174,15 @@ def render_animation(records, filename, font, font_size=14, cell_width=8, cell_h
     css = {
         # Apply this style to each and every element since we are using coordinates that
         # depend on the size of the font
-        '*': {
+        'svg': {
             'font-family': '"{}", monospace'.format(font),
             'font-style': 'normal',
             'font-size': '{}px'.format(font_size),
         },
-        'text': {
+        'svg text': {
             'dominant-baseline': 'text-before-edge',
         },
-        '.background': {
+        'svg .background': {
             'fill': header.background_color,
         },
     }
@@ -203,14 +205,22 @@ def render_animation(records, filename, font, font_size=14, cell_width=8, cell_h
 
     row_animations = {}
     definitions = {}
-    last_animation_id_str = 'anim_last'
+
+    # If more than one SVG is included inline in the same HTML file, we'll
+    # need unique IDs for all elements in each SVG
+    # To ensure that we get unique IDs, use the name of the file during rendering
+    # However, if the same SVG is included multiple times, we want to avoid the
+    # animations stomping on each other, so we add a random number to the mix
+    anim_id_template = re.sub('[^\w]+', '_', os.path.basename(filename)) + str(random.randrange(1000000)) + "_{}"
+    group_id_template = re.sub('[^\w]+', '_', os.path.basename(filename)) + str(random.randrange(1000000)) + "_gid_{}"
+    last_animation_id_str = anim_id_template.format("last")
     animation = None
     for animation_id, (key, record_group) in enumerate(groupby(records, key=by_time)):
         line_time, line_duration = key
         frame = svgwrite.container.Group(display='none')
 
         animation_begin = None
-        animation_id_str = 'anim_{}'.format(animation_id)
+        animation_id_str = anim_id_template.format(animation_id)
         for event_record in record_group:
             height = event_record.row * cell_height
             rects = _render_line_bg_colors(event_record.line,
@@ -230,7 +240,7 @@ def render_animation(records, filename, font, font_size=14, cell_width=8, cell_h
             if g_str in definitions:
                 group_id = definitions[g_str]
             else:
-                group_id = len(definitions) + 1
+                group_id = group_id_template.format(len(definitions) + 1)
                 assert group_id not in definitions
                 definitions[g_str] = group_id
                 g.attribs['id'] = group_id
