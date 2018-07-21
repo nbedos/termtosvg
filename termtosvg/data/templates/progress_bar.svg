@@ -4,10 +4,10 @@ must be specified in user units (e.g width="123") -->
 <svg id="terminal" baseProfile="full" viewBox="0 0 656 325" width="656" version="1.1"
      xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
     <title>
-        minimal
+        svg_progress_bar
     </title>
     <desc>
-        Minimal template
+        A simple progress bar at the bottom of the image
     </desc>
     <defs>
         <termtosvg:template_settings xmlns:termtosvg="https://github.com/nbedos/termtosvg">
@@ -16,11 +16,27 @@ must be specified in user units (e.g width="123") -->
         <style type="text/css" class="generated"><![CDATA[
             :root {
                 --foreground-color: #cccccc;
-                --background-color: #111111;
+                --background-color: #000000;
                 --animation-duration: 10s;
             }]]>
         </style>
-        <style type="text/css"></style>
+        <style type="text/css"><![CDATA[
+            @keyframes progress-bar-animation {
+                from {
+                    transform: translate(0px, calc(100% - 2px)) scale(0, 1);
+                }
+                to {
+                    transform: translate(0px, calc(100% - 2px)) scale(1, 1);
+                }
+            }
+            #progress-bar {
+                animation-duration: var(--animation-duration);
+                animation-iteration-count: infinite;
+                animation-name: progress-bar-animation;
+                animation-timing-function: linear;
+                transform-origin: left;
+            }]]>
+        </style>
     </defs>
     <svg id="screen" width="656" viewBox="0 0 656 323" preserveAspectRatio="xMidYMin meet">
         <!-- The content of this SVG tag does not serve any purpose and will be replaced
@@ -51,4 +67,5 @@ must be specified in user units (e.g width="123") -->
         <use xlink:href="#awesome" x="136" y="289"/>
         <use xlink:href="#awesome" x="144" y="306"/>
     </svg>
+    <rect id="progress-bar" width="100%" height="2" fill="#ff5722"/>
 </svg>

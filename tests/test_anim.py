@@ -1,4 +1,5 @@
 import io
+import pkgutil
 import tempfile
 import unittest
 from collections import namedtuple
@@ -219,6 +220,13 @@ class TestAnim(unittest.TestCase):
         _, filename = tempfile.mkstemp(prefix='termtosvg_', suffix='.svg')
         with open(filename, 'wb') as f:
             f.write(etree.tostring(svg_root))
+
+    def test_add_css_variables(self):
+        data = pkgutil.get_data('termtosvg', '/data/templates/progress_bar.svg')
+
+        tree = etree.parse(io.BytesIO(data))
+        root = tree.getroot()
+        anim.add_css_variables(root, 'aa', 'bb', 42)
 
     def test_validate_svg(self):
         failure_test_cases = [

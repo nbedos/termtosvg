@@ -13,12 +13,13 @@ from lxml import etree
 # Ugliest hack: Replace the first 16 colors rgb values by their names so that termtosvg can
 # distinguish FG_BG_256[0] (which defaults to black #000000 but can be styled with themes)
 # from FG_BG_256[16] (which is also black #000000 but should be displayed as is).
-colors = ['black', 'red', 'green', 'brown', 'blue', 'magenta', 'cyan', 'white']
-brightcolors = ['bright{}'.format(color) for color in colors]
-pyte.graphics.FG_BG_256 = colors + brightcolors + pyte.graphics.FG_BG_256[16:]
+_COLORS = ['black', 'red', 'green', 'brown', 'blue', 'magenta', 'cyan', 'white']
+_BRIGHTCOLORS = ['bright{}'.format(color) for color in _COLORS]
+ALL_COLORS = _COLORS + _BRIGHTCOLORS
+pyte.graphics.FG_BG_256 = ALL_COLORS + pyte.graphics.FG_BG_256[16:]
 
-logger = logging.getLogger(__name__)
-logger.addHandler(logging.NullHandler())
+LOGGER = logging.getLogger(__name__)
+LOGGER.addHandler(logging.NullHandler())
 
 # Id for the very last SVG animation. This is used to make the first animations start when the
 # last one ends (animation looping)
@@ -29,8 +30,10 @@ SVG_NS = 'http://www.w3.org/2000/svg'
 XLINK_NS = 'http://www.w3.org/1999/xlink'
 TERMTOSVG_NS = 'https://github.com/nbedos/termtosvg'
 
+
 class TemplateError(Exception):
     pass
+
 
 _CharacterCell = namedtuple('_CharacterCell', ['text', 'color', 'background_color', 'bold'])
 _CharacterCell.__doc__ = 'Representation of a character cell'
@@ -45,10 +48,8 @@ class CharacterCell(_CharacterCell):
     def from_pyte(cls, char, palette):
         # type: (pyte.screens.Char, Dict[Any, str]) -> CharacterCell
         """Create a CharacterCell from a pyte character"""
-        # Mappings between colors from Pyte and colors in the palette
-        all_colors = colors + brightcolors
         # Map named colors to their respective number
-        color_numbers = dict(zip(all_colors, range(len(all_colors))))
+        color_numbers = dict(zip(ALL_COLORS, range(len(ALL_COLORS))))
         if char.fg == 'default':
             text_color = palette['foreground']
         else:
@@ -323,13 +324,13 @@ def make_animated_group(records, time, duration, cell_height, cell_width, defaul
 
 def render_animation(records, filename, font, font_size=14, cell_width=8, cell_height=17):
     root = _render_animation(records, font, font_size, cell_width, cell_height)
-    with open(filename, 'wb') as f:
-        f.write(etree.tostring(root))
+    with open(filename, 'wb') as output_file:
+        output_file.write(etree.tostring(root))
 
 
 def resize_template(template, columns, rows, cell_width, cell_height):
     # type: (str, int, int, int, int) -> etree.ElementBase
-    def scaled_viewbox(element, template_columns, template_rows, columns, rows):
+    def scale(element, template_columns, template_rows, columns, rows):
         try:
             viewbox = element.attrib['viewBox'].replace(',', ' ').split()
         except KeyError:
@@ -338,7 +339,21 @@ def resize_template(template, columns, rows, cell_width, cell_height):
         vb_min_x, vb_min_y, vb_width, vb_height = [int(n) for n in viewbox]
         vb_width += cell_width * (columns - template_columns)
         vb_height += cell_height * (rows - template_rows)
-        return ' '.join([str(n) for n in (vb_min_x, vb_min_y, vb_width, vb_height)])
+        element.attrib['viewBox'] = ' '.join([str(n) for n in (vb_min_x, vb_min_y, vb_width, vb_height)])
+
+        scalable_attributes = {
+            'width': cell_width * (columns - template_columns),
+            'height': cell_height * (rows - template_rows)
+        }
+
+        for attribute, delta in scalable_attributes.items():
+            if attribute in element.attrib:
+                try:
+                    element.attrib[attribute] = str(int(element.attrib[attribute]) + delta)
+                except ValueError:
+                    raise TemplateError('"{}" attribute of {} must be in user units'
+                                        .format(attribute, element))
+        return element
 
     data = pkgutil.get_data(__name__, template)
 
@@ -370,13 +385,13 @@ def resize_template(template, columns, rows, cell_width, cell_height):
 
     # Scale the viewBox of the root svg element based on the size of the screen and the size
     # registered in the template
-    root.attrib['viewBox'] = scaled_viewbox(root, template_columns, template_rows, columns, rows)
+    scale(root, template_columns, template_rows, columns, rows)
 
     # Also scale the viewBox of the svg element with id 'screen'
     screen = root.find('.//{{{}}}svg[@id="screen"]'.format(SVG_NS))
     if screen is None:
         raise TemplateError('svg element with id "screen" not found')
-    screen.attrib['viewBox'] = scaled_viewbox(screen, template_columns, template_rows, columns, rows)
+    scale(screen, template_columns, template_rows, columns, rows)
 
     # Remove termtosvg private data so that the template can be validated against the DTD of SVG 1.1
     settings.getparent().remove(settings)
@@ -391,7 +406,9 @@ def _render_animation(records, font, font_size, cell_width, cell_height):
         records = iter(records)
     header = next(records)
 
-    root = resize_template('data/templates/plain.svg', header.width, header.height, cell_width, cell_height)
+    #root = resize_template('data/templates/plain.svg', header.width, header.height, cell_width, cell_height)
+    root = resize_template('data/templates/carbon.svg', header.width, header.height, cell_width,
+                           cell_height)
 
     svg_screen_tag = root.find('.//{http://www.w3.org/2000/svg}svg[@id="screen"]')
     if svg_screen_tag is None:
@@ -399,8 +416,6 @@ def _render_animation(records, font, font_size, cell_width, cell_height):
 
     for child in svg_screen_tag.getchildren():
         svg_screen_tag.remove(child)
-
-
 
     def_tag = etree.SubElement(svg_screen_tag, 'defs')
     style_tag = build_style_tag(font, font_size, header.background_color)
@@ -413,6 +428,7 @@ def _render_animation(records, font, font_size, cell_width, cell_height):
 
     definitions = {}
     last_animated_group = None
+    animation_duration = None
     for (line_time, line_duration), record_group in groupby(records, key=by_time):
         animated_group, new_defs = make_animated_group(records=record_group,
                                                        time=line_time,
@@ -427,6 +443,7 @@ def _render_animation(records, font, font_size, cell_width, cell_height):
 
         svg_screen_tag.append(animated_group)
         last_animated_group = animated_group
+        animation_duration = line_time + line_duration
 
     # Add id attribute to the last 'animate' tag so that it can be refered to by the first
     # animations (enables animation looping)
@@ -435,6 +452,30 @@ def _render_animation(records, font, font_size, cell_width, cell_height):
         assert len(animate_tags) == 1
         animate_tags.pop().attrib['id'] = LAST_ANIMATION_ID
 
+    add_css_variables(root, header.text_color, header.background_color, animation_duration)
+
+    return root
+
+
+def add_css_variables(root, foreground_color, background_color, animation_duration):
+    # type: (etree.ElementBase, str, str, int) -> etree.ElementBase
+    try:
+        style = root.find('.//{{{}}}defs/{{{}}}style[@class="generated"]'.format(SVG_NS, SVG_NS))
+    except etree.Error as exc:
+        raise TemplateError('Invalid template') from exc
+
+    if style is None:
+        raise TemplateError('Missing <style class="generated" ...> element in "defs"')
+
+    css = {
+        ':root': {
+            '--foreground-color':  foreground_color,
+            '--background-color':  background_color,
+            '--animation-duration': '{}ms'.format(animation_duration)
+        }
+    }
+
+    style.text = etree.CDATA(_serialize_css_dict(css))
     return root
 
 
