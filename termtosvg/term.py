@@ -252,8 +252,9 @@ def replay(records, from_pyte_char, override_theme, fallback_theme, min_frame_du
         dirty_lines = set(screen.dirty)
         if screen.cursor != last_cursor:
             # Line where the cursor will be drawn
-            dirty_lines.add(screen.cursor.y)
-            if last_cursor is not None:
+            if not screen.cursor.hidden:
+                dirty_lines.add(screen.cursor.y)
+            if last_cursor is not None and not last_cursor.hidden:
                 # Line where the cursor will be erased
                 dirty_lines.add(last_cursor.y)
 
@@ -263,7 +264,7 @@ def replay(records, from_pyte_char, override_theme, fallback_theme, min_frame_du
             for column in screen.buffer[row]:
                 redraw_buffer[row][column] = from_pyte_char(screen.buffer[row][column], palette)
 
-        if screen.cursor != last_cursor:
+        if screen.cursor != last_cursor and not screen.cursor.hidden:
             try:
                 data = screen.buffer[screen.cursor.y][screen.cursor.x].data
             except KeyError:

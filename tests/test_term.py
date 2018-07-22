@@ -3,6 +3,7 @@ import time
 import unittest
 from unittest.mock import MagicMock, patch
 
+import termtosvg.anim as anim
 from termtosvg import term
 from termtosvg.asciicast import AsciiCastV2Header, AsciiCastV2Event, AsciiCastV2Theme
 
@@ -115,6 +116,37 @@ class TestTerm(unittest.TestCase):
             cursor = [' ']
             expected_screen = dict(enumerate(cmds + cursor))
             self.assertEqual(expected_screen, screen)
+
+        with self.subTest(case='Hidden cursor'):
+            # '\u001b[?25h' : display cursor
+            # '\u001b[?25l' : hide cursor
+            records = [AsciiCastV2Header(version=2, width=80, height=24, theme=None)] + \
+                      [
+                          AsciiCastV2Event(0, 'o', '\u001b[?25haaaa'.encode('utf-8'), None),
+                          AsciiCastV2Event(100, 'o', '\r\n\u001b[?25lbbbb'.encode('utf-8'), None),
+                          AsciiCastV2Event(200, 'o', '\r\n\u001b[?25hcccc'.encode('utf-8'), None),
+                      ]
+
+            gen = term.replay(records, anim.CharacterCell.from_pyte, None, theme, 50, 1000)
+            header, *events = list(gen)
+
+            # Event #0: First line - cursor displayed after 'aaaa'
+            self.assertEqual(events[0].row, 0)
+            self.assertEqual(events[0].line[4].color, theme.bg)
+            self.assertEqual(events[0].line[4].background_color, theme.fg)
+
+            # Event #1: First line - cursor removed at position 4
+            self.assertEqual(events[1].row, 0)
+            self.assertNotIn(4, events[1].line)
+
+            # Event #2: Second line - cursor hidden
+            self.assertEqual(events[2].row, 1)
+            self.assertNotIn(4, events[2].line)
+
+            # Event #3: Third line - cursor displayed after 'cccc'
+            self.assertEqual(events[3].row, 2)
+            self.assertEqual(events[3].line[4].color, theme.bg)
+            self.assertEqual(events[3].line[4].background_color, theme.fg)
 
     def test_get_terminal_size(self):
         with self.subTest(case='Successful get_terminal_size call'):
