@@ -28,8 +28,10 @@ class TestMain(unittest.TestCase):
             [],
             ['--theme', 'solarized-light'],
             ['--verbose'],
+            ['--screen-geometry', '82x19'],
             ['--theme', 'solarized-light', '--verbose'],
             ['--theme', 'solarized-light'],
+            ['--theme', 'solarized-light', '--verbose', '--screen-geometry', '82x19'],
             ['record'],
             ['record', 'output_filename'],
             ['record', 'output_filename', '--verbose'],
@@ -37,11 +39,14 @@ class TestMain(unittest.TestCase):
             ['render', 'input_filename'],
             ['render', 'input_filename', '--verbose'],
             ['render', 'input_filename', '--verbose', '--theme', 'solarized-light'],
+            ['render', 'input_filename', '--verbose', '--theme', 'solarized-light', '--screen-geometry', '82x19'],
             ['render', 'input_filename', '--theme', 'solarized-light'],
+            ['render', 'input_filename', '--screen-geometry', '82x19'],
             ['render', 'input_filename', 'output_filename'],
             ['render', 'input_filename', 'output_filename', '--verbose'],
             ['render', 'input_filename', 'output_filename', '--verbose', '--theme', 'solarized-light'],
             ['render', 'input_filename', 'output_filename', '--theme', 'solarized-light'],
+            ['render', 'input_filename', 'output_filename', '--verbose', '--theme', 'solarized-light', '--screen-geometry', '82x19'],
         ]
 
         for args in test_cases:
@@ -88,12 +93,16 @@ class TestMain(unittest.TestCase):
             args = ['termtosvg', 'render', cast_filename, svg_filename]
             TestMain.run_main([], args)
 
+        with self.subTest(case='render (with geometry)'):
+            args = ['termtosvg', 'render', cast_filename, '--screen-geometry', '82x19']
+            TestMain.run_main([], args)
+
         with self.subTest(case='render (circus theme)'):
             args = ['termtosvg', 'render', cast_filename, '--theme', 'circus']
             TestMain.run_main([], args)
 
         with self.subTest(case='record and render on the fly (fallback theme)'):
-            args = ['termtosvg', '--verbose']
+            args = ['termtosvg', '--verbose', '--screen-geometry', '82x19']
             TestMain.run_main(SHELL_COMMANDS, args)
 
         with self.subTest(case='record and render on the fly (uppercase circus theme +)'):

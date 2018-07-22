@@ -187,8 +187,8 @@ def _group_by_time(event_records, min_rec_duration, last_rec_duration):
         yield accumulator_event
 
 
-def replay(records, from_pyte_char, override_theme, fallback_theme, min_frame_duration=0.001, last_frame_duration=1):
-    # type: (Iterable[Union[AsciiCastV2Header, AsciiCastV2Event]], Callable[[pyte.screen.Char, Dict[Any, str]], Any], Union[None, AsciiCastV2Theme], AsciiCastV2Theme, float, float) -> Generator[CharacterCellRecord, None, None]
+def replay(records, from_pyte_char, min_frame_duration=0.001, last_frame_duration=1):
+    # type: (Iterable[Union[AsciiCastV2Header, AsciiCastV2Event]], Callable[[pyte.screen.Char, Dict[Any, str]], Any], float, float) -> Generator[CharacterCellRecord, None, None]
     """Read the records of a terminal sessions, render the corresponding screens and return lines
     of the screen that need updating.
 
@@ -202,9 +202,6 @@ def replay(records, from_pyte_char, override_theme, fallback_theme, min_frame_du
     :param records: Records of the terminal session in asciicast v2 format. The first record must
     be a header, which must be followed by event records.
     :param from_pyte_char: Conversion function from pyte.screen.Char to any other format
-    :param override_theme: Color theme. If present, overrides the theme include in asciicast header
-    :param fallback_theme: Color theme. Used as a fallback override_theme is missing and no
-    theme is included in asciicast header
     :param min_frame_duration: Minimum frame duration in seconds. SVG animations break when an
     animation is 0s so setting this to at least 1ms is recommended.
     :param last_frame_duration: Last frame duration in seconds
@@ -223,24 +220,17 @@ def replay(records, from_pyte_char, override_theme, fallback_theme, min_frame_du
     screen = pyte.Screen(header.width, header.height)
     stream = pyte.ByteStream(screen)
 
-    if override_theme is not None:
-        theme = override_theme
-    elif header.theme is not None:
-        theme = header.theme
-    else:
-        theme = fallback_theme
-
     config = CharacterCellConfig(width=header.width,
                                  height=header.height,
-                                 text_color=theme.fg,
-                                 background_color=theme.bg)
+                                 text_color=header.theme.fg,
+                                 background_color=header.theme.bg)
     yield config
 
     palette = {
-        'foreground': theme.fg,
-        'background': theme.bg
+        'foreground': header.theme.fg,
+        'background': header.theme.bg
     }
-    palette.update(enumerate(theme.palette.split(':')))
+    palette.update(enumerate(header.theme.palette.split(':')))
 
     pending_lines = {}
     current_time = 0
@@ -311,9 +301,19 @@ def get_terminal_size(fileno):
     try:
         columns, lines = os.get_terminal_size(fileno)
     except OSError as e:
-        lines = 24
-        columns = 80
+        columns, lines = 80, 24
         logger.debug('Failed to get terminal size ({}), using default values '
                      'instead ({}x{})'.format(e, columns, lines))
 
     return columns, lines
+
+
+def update_header(asciicast_records, theme, geometry):
+    # type: (Iterable[Union[AsciiCastV2Header, AsciiCastV2Event]], AsciiCastV2Theme) -> Iterable[Union[AsciiCastV2Header, AsciiCastV2Event]]
+    for rec in asciicast_records:
+        if isinstance(rec, AsciiCastV2Header):
+            # Override header attributes with values from the configuration or CLI
+            header_theme = theme or rec.theme
+            columns, rows = geometry or (rec.width, rec.height)
+            rec = AsciiCastV2Header(rec.version, columns, rows, header_theme)
+        yield rec

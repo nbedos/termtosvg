@@ -8,6 +8,7 @@ import termtosvg.config as config
 MINIMAL_CONFIG = """[GLOBAL]
 theme=dark
 font=DejaVu Sans Mono
+;screen-geometry=82x19
 [dark]
 foreground=#FFFFFF
 background=#000000
@@ -21,13 +22,16 @@ color6=#666666
 color7=#777777
 """
 UPPERCASE_CONFIG = MINIMAL_CONFIG.upper()
+GEOMETRY_CONFIG = MINIMAL_CONFIG.replace(';screen-geometry', 'screen-geometry')
 NO_GLOBAL_SECTION_CONFIG = MINIMAL_CONFIG.replace('[GLOBAL]', ';[GLOBAL]')
 NO_FONT_CONFIG = MINIMAL_CONFIG.replace('font', ';font')
 NO_THEME_CONFIG = MINIMAL_CONFIG.replace('theme', ';theme')
 WRONG_THEME_CONFIG = MINIMAL_CONFIG.replace('theme=dark', 'theme=white')
 DUPLICATES_CONFIG = MINIMAL_CONFIG.replace('theme=dark',
                                            'font=courrier\r\ntheme=dark\r\ntheme=white\r\n[dark]')
-OVERRIDE_CONFIG = MINIMAL_CONFIG.replace('#000000', '#FFFFFF').replace('DejaVu Sans Mono', 'mono')
+OVERRIDE_CONFIG = (MINIMAL_CONFIG.replace('#000000', '#FFFFFF')
+                                 .replace('DejaVu Sans Mono', 'mono')
+                                 .replace(';screen-geometry', 'screen-geometry'))
 
 
 class TestConf(unittest.TestCase):
@@ -39,15 +43,20 @@ class TestConf(unittest.TestCase):
         for case, configuration in test_cases:
             with self.subTest(case=case):
                 config_dict = config.conf_to_dict(configuration)
-                self.assertEqual(config_dict['GlOBal']['font'].lower(), 'dejavu sans mono')
+                self.assertEqual(config_dict['GlOBal']['fOnT'].lower(), 'dejavu sans mono')
                 self.assertEqual(config_dict['Dark'].fg.lower(), '#ffffff')
                 self.assertEqual(config_dict['dark'].bg.lower(), '#000000')
 
         with self.subTest(case='minimal config'):
             config_dict = config.conf_to_dict(MINIMAL_CONFIG)
             self.assertEqual(config_dict['GLOBAL']['font'], 'DejaVu Sans Mono')
+            self.assertEqual(config_dict['GLOBAL']['screen-geometry'], None)
             self.assertEqual(config_dict['dark'].fg.lower(), '#ffffff')
             self.assertEqual(config_dict['dark'].bg.lower(), '#000000')
+
+        with self.subTest(case='geometry config'):
+            config_dict = config.conf_to_dict(GEOMETRY_CONFIG)
+            self.assertEqual(config_dict['GLOBAL']['screen-geometry'], (82, 19))
 
     def test_get_configuration(self):
         test_cases = [
@@ -63,6 +72,7 @@ class TestConf(unittest.TestCase):
             with self.subTest(case=case):
                 config_dict = config.get_configuration(user_config, default_config)
                 self.assertEqual(config_dict['GLOBAL']['font'], 'DejaVu Sans Mono')
+                self.assertEqual(config_dict['GLOBAL']['screen-geometry'], None)
                 self.assertEqual(config_dict['solarized-dark'].fg.lower(), '#93a1a1')
                 self.assertEqual(config_dict['solarized-dark'].bg.lower(), '#002b36')
                 palette = config_dict['solarized-dark'].palette.split(':')
@@ -72,6 +82,7 @@ class TestConf(unittest.TestCase):
         with self.subTest(case="Override defaults"):
             config_dict = config.get_configuration(OVERRIDE_CONFIG, MINIMAL_CONFIG)
             self.assertEqual(config_dict['GLOBAL']['font'], 'mono')
+            self.assertEqual(config_dict['GLOBAL']['screen-geometry'], (82, 19))
             self.assertEqual(config_dict['dark'].bg.lower(), '#ffffff')
             palette = config_dict['dark'].palette.split(':')
             self.assertEqual(palette[0].lower(), '#ffffff')

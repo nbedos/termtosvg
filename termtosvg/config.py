@@ -52,9 +52,20 @@ class CaseInsensitiveDict(dict):
         lower_case_key = self.__class__._lower_key(key)
         return super(CaseInsensitiveDict, self).setdefault(lower_case_key, *args, **kwargs)
 
-    def update(self, E=None, **F):
-        super(CaseInsensitiveDict, self).update(self.__class__(E))
-        super(CaseInsensitiveDict, self).update(self.__class__(**F))
+    def update(self, other=None, **kwargs):
+        if other is None:
+            other = {}
+        super(CaseInsensitiveDict, self).update(self.__class__(other, **kwargs))
+
+
+def validate_geometry(screen_geometry):
+    # Will raise ValueError if the right hand side is made of more or less than two values,
+    # or if the values can't be turned into integers
+    columns, rows = [int(value) for value in screen_geometry.lower().split('x')]
+    if columns <= 0 or rows <= 0:
+        raise ValueError('Invalid value for screen-geometry option: "{}"'
+                         .format(screen_geometry))
+    return columns, rows
 
 
 def conf_to_dict(configuration):
@@ -68,11 +79,16 @@ def conf_to_dict(configuration):
                                        comment_prefixes=(';',))
     parser.read_string(configuration)
     config_dict = CaseInsensitiveDict({
-        'global': {
+        'global': CaseInsensitiveDict({
             'font': parser.get('global', 'font'),
             'theme': parser.get('global', 'theme'),
-        }
+            'screen-geometry': parser.get('global', 'screen-geometry', fallback=None),
+        })
     })
+
+    # Convert screen-geometry option to tuple of integers
+    if config_dict['global']['screen-geometry'] is not None:
+        config_dict['global']['screen-geometry'] = validate_geometry(config_dict['global']['screen-geometry'])
 
     themes = [theme.lower() for theme in parser.sections() if theme.lower() != 'global']
     for theme_name in themes:
@@ -98,15 +114,15 @@ def get_configuration(user_config, default_config):
     config_dict = conf_to_dict(default_config)
     try:
         user_config_dict = conf_to_dict(user_config)
-    except (configparser.Error, asciicast.AsciiCastError) as e:
-        logger.info('Invalid configuration file: {}'.format(e))
+    except (configparser.Error, asciicast.AsciiCastError, ValueError) as exc:
+        logger.info('Invalid configuration file: {}'.format(exc))
         logger.info('Falling back to default configuration')
         user_config_dict = {}
 
     # Override default values with user configuration
     for section in user_config_dict:
         if section.lower() == 'global':
-            for _property in 'theme', 'font':
+            for _property in 'theme', 'font', 'screen-geometry':
                 config_dict['GLOBAL'][_property] = user_config_dict['global'][_property]
         else:
             config_dict[section] = user_config_dict[section]

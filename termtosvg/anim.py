@@ -18,8 +18,8 @@ _BRIGHTCOLORS = ['bright{}'.format(color) for color in _COLORS]
 ALL_COLORS = _COLORS + _BRIGHTCOLORS
 pyte.graphics.FG_BG_256 = ALL_COLORS + pyte.graphics.FG_BG_256[16:]
 
-LOGGER = logging.getLogger(__name__)
-LOGGER.addHandler(logging.NullHandler())
+logger = logging.getLogger(__name__)
+logger.addHandler(logging.NullHandler())
 
 # Id for the very last SVG animation. This is used to make the first animations start when the
 # last one ends (animation looping)
