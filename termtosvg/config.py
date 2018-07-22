@@ -73,6 +73,7 @@ def conf_to_dict(configuration):
         'global': {
             'font': parser.get('global', 'font'),
             'theme': parser.get('global', 'theme'),
+            'playpause': parser.get('global', 'playpause'),
         }
     })
 
@@ -108,7 +109,7 @@ def get_configuration(user_config, default_config):
     # Override default values with user configuration
     for section in user_config_dict:
         if section.lower() == 'global':
-            for _property in 'theme', 'font':
+            for _property in 'theme', 'font', 'playpause':
                 config_dict['GLOBAL'][_property] = user_config_dict['global'][_property]
         else:
             config_dict[section] = user_config_dict[section]
