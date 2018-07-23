@@ -1,14 +1,17 @@
 import tempfile
+import pkgutil
 import unittest
 from unittest.mock import patch
 
 import termtosvg.config as config
 
 
+DEFAULT_CONFIG = pkgutil.get_data('termtosvg.config', config.PKG_CONF_PATH).decode('utf-8')
 MINIMAL_CONFIG = """[GLOBAL]
 theme=dark
 font=DejaVu Sans Mono
 ;screen-geometry=82x19
+template=carbon
 [dark]
 foreground=#FFFFFF
 background=#000000
@@ -50,42 +53,12 @@ class TestConf(unittest.TestCase):
         with self.subTest(case='minimal config'):
             config_dict = config.conf_to_dict(MINIMAL_CONFIG)
             self.assertEqual(config_dict['GLOBAL']['font'], 'DejaVu Sans Mono')
-            self.assertEqual(config_dict['GLOBAL']['screen-geometry'], None)
             self.assertEqual(config_dict['dark'].fg.lower(), '#ffffff')
             self.assertEqual(config_dict['dark'].bg.lower(), '#000000')
 
         with self.subTest(case='geometry config'):
             config_dict = config.conf_to_dict(GEOMETRY_CONFIG)
             self.assertEqual(config_dict['GLOBAL']['screen-geometry'], (82, 19))
-
-    def test_get_configuration(self):
-        test_cases = [
-            ('Default config', config.DEFAULT_CONFIG, config.DEFAULT_CONFIG),
-            ('Empty user config', '', config.DEFAULT_CONFIG),
-            ('No global section', NO_GLOBAL_SECTION_CONFIG, config.DEFAULT_CONFIG),
-            ('No font property', NO_FONT_CONFIG, config.DEFAULT_CONFIG),
-            ('No theme property', NO_THEME_CONFIG, config.DEFAULT_CONFIG),
-            ('Invalid theme property', WRONG_THEME_CONFIG, config.DEFAULT_CONFIG),
-        ]
-
-        for case, user_config, default_config in test_cases:
-            with self.subTest(case=case):
-                config_dict = config.get_configuration(user_config, default_config)
-                self.assertEqual(config_dict['GLOBAL']['font'], 'DejaVu Sans Mono')
-                self.assertEqual(config_dict['GLOBAL']['screen-geometry'], None)
-                self.assertEqual(config_dict['solarized-dark'].fg.lower(), '#93a1a1')
-                self.assertEqual(config_dict['solarized-dark'].bg.lower(), '#002b36')
-                palette = config_dict['solarized-dark'].palette.split(':')
-                self.assertEqual(palette[0].lower(), '#002b36')
-                self.assertEqual(palette[15].lower(), '#fdf6e3')
-
-        with self.subTest(case="Override defaults"):
-            config_dict = config.get_configuration(OVERRIDE_CONFIG, MINIMAL_CONFIG)
-            self.assertEqual(config_dict['GLOBAL']['font'], 'mono')
-            self.assertEqual(config_dict['GLOBAL']['screen-geometry'], (82, 19))
-            self.assertEqual(config_dict['dark'].bg.lower(), '#ffffff')
-            palette = config_dict['dark'].palette.split(':')
-            self.assertEqual(palette[0].lower(), '#ffffff')
 
     def test_init_read_conf(self):
         with self.subTest(case='XDG_CONFIG_HOME'):
@@ -94,30 +67,48 @@ class TestConf(unittest.TestCase):
             }
             with patch('os.environ', mock_environ):
                 # First call should create config dirs and return it
-                self.assertEqual(config.conf_to_dict(config.DEFAULT_CONFIG),
-                                 config.init_read_conf())
+                configuration, templates = config.init_read_conf()
+                self.assertEqual(config.conf_to_dict(DEFAULT_CONFIG),
+                                 configuration)
                 # Second call only reads the config file which was created by the first call
-                self.assertEqual(config.conf_to_dict(config.DEFAULT_CONFIG),
-                                 config.init_read_conf())
+                configuration, templates = config.init_read_conf()
+                self.assertEqual(config.conf_to_dict(DEFAULT_CONFIG),
+                                 configuration)
 
         with self.subTest(case='XDG_CONFIG_HOME'):
             mock_environ = {
                 'XDG_CONFIG_HOME': tempfile.mkdtemp(prefix='termtosvg_config_')
             }
             with patch('os.environ', mock_environ):
-                self.assertEqual(config.conf_to_dict(config.DEFAULT_CONFIG),
-                                 config.init_read_conf())
+                configuration, templates = config.init_read_conf()
+                self.assertEqual(config.conf_to_dict(DEFAULT_CONFIG),
+                                 configuration)
 
         with self.subTest(case='HOME'):
             mock_environ = {
                 'HOME': tempfile.mkdtemp(prefix='termtosvg_config_')
             }
             with patch('os.environ', mock_environ):
-                self.assertEqual(config.conf_to_dict(config.DEFAULT_CONFIG),
-                                 config.init_read_conf())
+                configuration, templates = config.init_read_conf()
+                self.assertEqual(config.conf_to_dict(DEFAULT_CONFIG),
+                                 configuration)
 
         with self.subTest(case='No environment variable'):
             mock_environ = {}
             with patch('os.environ', mock_environ):
-                self.assertEqual(config.conf_to_dict(config.DEFAULT_CONFIG),
-                                 config.init_read_conf())
+                configuration, templates = config.init_read_conf()
+                self.assertEqual(config.conf_to_dict(DEFAULT_CONFIG),
+                                 configuration)
+
+        with self.subTest(case='Templates'):
+            mock_environ = {
+                'XDG_CONFIG_HOME': tempfile.mkdtemp(prefix='termtosvg_config_')
+            }
+            with patch('os.environ', mock_environ):
+                # First call to init_read_conf populates directory with default configuration
+                default_configuration, default_templates = config.init_read_conf()
+                # Second call reads configuration in the directory
+                configuration, templates = config.init_read_conf()
+                self.assertEqual(default_configuration, configuration)
+                self.assertEqual(default_templates, templates)
+

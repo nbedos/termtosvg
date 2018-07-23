@@ -134,7 +134,7 @@ def make_rect_tag(column, length, height, cell_width, cell_height, background_co
 
 
 def _render_line_bg_colors(screen_line, height, cell_height, cell_width, default_bg_color):
-    # type: (Dict[int, CharacterCell], int, int, int) -> List[etree.ElementBase]
+    # type: (Dict[int, CharacterCell], int, int, int, str) -> List[etree.ElementBase]
     """Return a list of 'rect' tags representing the background of 'screen_line'
 
     If consecutive cells have the same background color, a single 'rect' tag is returned for all
@@ -294,7 +294,7 @@ def make_animated_group(records, time, duration, cell_height, cell_width, defaul
 
         # Add a reference to the definition of text_group_tag with a 'use' tag
         use_attributes = {
-            '{{{}}}href'.format(XLINK_NS): '#{}'.format(group_id),
+            '{{{namespace}}}href'.format(namespace=XLINK_NS): '#{_id}'.format(_id=group_id),
             'y': str(event_record.row * cell_height),
         }
         use_tag = etree.Element('use', use_attributes)
@@ -322,14 +322,14 @@ def make_animated_group(records, time, duration, cell_height, cell_width, defaul
     return animation_group_tag, new_definitions
 
 
-def render_animation(records, filename, font, font_size=14, cell_width=8, cell_height=17):
-    root = _render_animation(records, font, font_size, cell_width, cell_height)
+def render_animation(records, filename, template, font, font_size=14, cell_width=8, cell_height=17):
+    root = _render_animation(records, template, font, font_size, cell_width, cell_height)
     with open(filename, 'wb') as output_file:
         output_file.write(etree.tostring(root))
 
 
 def resize_template(template, columns, rows, cell_width, cell_height):
-    # type: (str, int, int, int, int) -> etree.ElementBase
+    # type: (bytes, int, int, int, int) -> etree.ElementBase
     def scale(element, template_columns, template_rows, columns, rows):
         try:
             viewbox = element.attrib['viewBox'].replace(',', ' ').split()
@@ -355,10 +355,8 @@ def resize_template(template, columns, rows, cell_width, cell_height):
                                         .format(attribute, element))
         return element
 
-    data = pkgutil.get_data(__name__, template)
-
     try:
-        tree = etree.parse(io.BytesIO(data))
+        tree = etree.parse(io.BytesIO(template))
         root = tree.getroot()
     except etree.Error as exc:
         raise TemplateError('Invalid template') from exc
@@ -388,7 +386,7 @@ def resize_template(template, columns, rows, cell_width, cell_height):
     scale(root, template_columns, template_rows, columns, rows)
 
     # Also scale the viewBox of the svg element with id 'screen'
-    screen = root.find('.//{{{}}}svg[@id="screen"]'.format(SVG_NS))
+    screen = root.find('.//{{{namespace}}}svg[@id="screen"]'.format(namespace=SVG_NS))
     if screen is None:
         raise TemplateError('svg element with id "screen" not found')
     scale(screen, template_columns, template_rows, columns, rows)
@@ -399,18 +397,16 @@ def resize_template(template, columns, rows, cell_width, cell_height):
     return root
 
 
-def _render_animation(records, font, font_size, cell_width, cell_height):
-    # type: (Iterable[CharacterCellRecord], str, int, int, int) -> etree.ElementBase
+def _render_animation(records, template, font, font_size, cell_width, cell_height):
+    # type: (Iterable[CharacterCellRecord], bytes, str, int, int, int) -> etree.ElementBase
     # Read header record and add the corresponding information to the SVG
     if not isinstance(records, Iterator):
         records = iter(records)
     header = next(records)
 
-    #root = resize_template('data/templates/plain.svg', header.width, header.height, cell_width, cell_height)
-    root = resize_template('data/templates/carbon.svg', header.width, header.height, cell_width,
-                           cell_height)
+    root = resize_template(template, header.width, header.height, cell_width, cell_height)
 
-    svg_screen_tag = root.find('.//{http://www.w3.org/2000/svg}svg[@id="screen"]')
+    svg_screen_tag = root.find('.//{{{namespace}}}svg[@id="screen"]'.format(namespace=SVG_NS))
     if svg_screen_tag is None:
         raise ValueError('Missing tag: <svg id="screen" ...>...</svg>')
 
@@ -460,7 +456,8 @@ def _render_animation(records, font, font_size, cell_width, cell_height):
 def add_css_variables(root, foreground_color, background_color, animation_duration):
     # type: (etree.ElementBase, str, str, int) -> etree.ElementBase
     try:
-        style = root.find('.//{{{}}}defs/{{{}}}style[@class="generated"]'.format(SVG_NS, SVG_NS))
+        style = root.find('.//{{{namespace}}}defs/{{{namespace}}}style[@class="generated"]'
+                          .format(namespace=SVG_NS))
     except etree.Error as exc:
         raise TemplateError('Invalid template') from exc
 
@@ -481,8 +478,12 @@ def add_css_variables(root, foreground_color, background_color, animation_durati
 
 def _serialize_css_dict(css):
     # type: (Dict[str, Dict[str, str]]) -> str
-    def serialize_css_item(item):
-        return '; '.join('{}: {}'.format(prop, item[prop]) for prop in item)
+    def serialize(properties):
+        return '; '.join('{property}: {value}'.format(property=_property, value=value)
+                         for _property, value in properties.items())
 
-    items = ['{} {{{}}}'.format(item, serialize_css_item(css[item])) for item in css]
+    items = [('{selector} {{{properties}}}'
+              .format(selector=selector, properties=serialize(properties)))
+             for selector, properties in css.items()]
+
     return os.linesep.join(items)

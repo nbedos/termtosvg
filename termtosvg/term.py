@@ -22,19 +22,30 @@ logger.addHandler(logging.NullHandler())
 
 
 class TerminalMode:
-    """Save terminal state on entry, restore it on exit"""
+    """Save terminal mode and size on entry, restore them on exit"""
     def __init__(self, fileno: int):
         self.fileno = fileno
         self.mode = None
+        self.ttysize = None
 
     def __enter__(self):
         try:
             self.mode = tty.tcgetattr(self.fileno)
-        except tty.error:
-            pass
-        return self.mode
+        except tty.error as exc:
+            logger.debug('Terminal mode could not be saved: {}'.format(exc))
+
+        try:
+            columns, lines = os.get_terminal_size(self.fileno)
+            self.ttysize = struct.pack("HHHH", lines, columns, 0, 0)
+        except OSError as exc:
+            logger.debug('Terminal size could not be saved: {}'.format(exc))
+
+        return self.mode, self.ttysize
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.ttysize is not None:
+            fcntl.ioctl(self.fileno, termios.TIOCSWINSZ, self.ttysize)
+
         if self.mode is not None:
             tty.tcsetattr(self.fileno, tty.TCSAFLUSH, self.mode)
 
@@ -188,7 +199,7 @@ def _group_by_time(event_records, min_rec_duration, last_rec_duration):
 
 
 def replay(records, from_pyte_char, min_frame_duration=0.001, last_frame_duration=1):
-    # type: (Iterable[Union[AsciiCastV2Header, AsciiCastV2Event]], Callable[[pyte.screen.Char, Dict[Any, str]], Any], float, float) -> Generator[CharacterCellRecord, None, None]
+    # type: (Iterable[Union[AsciiCastV2Header, AsciiCastV2Event]], Callable[[pyte.screens.Char, Dict[Any, str]], Any], float, float) -> Generator[CharacterCellRecord, None, None]
     """Read the records of a terminal sessions, render the corresponding screens and return lines
     of the screen that need updating.
 
@@ -217,6 +228,7 @@ def replay(records, from_pyte_char, min_frame_duration=0.001, last_frame_duratio
         records = iter(records)
 
     header = next(records)
+    
     screen = pyte.Screen(header.width, header.height)
     stream = pyte.ByteStream(screen)
 
@@ -308,12 +320,11 @@ def get_terminal_size(fileno):
     return columns, lines
 
 
-def update_header(asciicast_records, theme, geometry):
+def update_header(asciicast_records, theme):
     # type: (Iterable[Union[AsciiCastV2Header, AsciiCastV2Event]], AsciiCastV2Theme) -> Iterable[Union[AsciiCastV2Header, AsciiCastV2Event]]
     for rec in asciicast_records:
         if isinstance(rec, AsciiCastV2Header):
             # Override header attributes with values from the configuration or CLI
             header_theme = theme or rec.theme
-            columns, rows = geometry or (rec.width, rec.height)
-            rec = AsciiCastV2Header(rec.version, columns, rows, header_theme)
+            rec = AsciiCastV2Header(rec.version, rec.width, rec.height, header_theme)
         yield rec

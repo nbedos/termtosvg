@@ -1,12 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="terminal" baseProfile="full" viewBox="0 0 656 323" width="656" version="1.1">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="terminal" baseProfile="full" viewBox="0 0 656 325" width="656" version="1.1">
+    <title>
+        minimal
+    </title>
     <desc>
-        Plain template
-        No terminal UI, no controls, nothing but the screen of the terminal.
+        Minimal template
     </desc>
     <defs>
-        <style type="text/css">* {font-family: "DejaVu Sans Mono", monospace; font-style: normal; font-size: 14px}
-        text {dominant-baseline: text-before-edge}
-        .background {fill: #002b36}</style>
+        <style type="text/css" class="generated"><![CDATA[:root {--foreground-color: #93a1a1; --background-color: #002b36; --animation-duration: 17540ms}]]></style>
+        <style type="text/css"/>
     </defs>
     <svg id="screen" width="656" viewBox="0 0 656 323" preserveAspectRatio="xMidYMin meet">
         <defs><style type="text/css"><![CDATA[* {font-family: "DejaVu Sans Mono", monospace; font-style: normal; font-size: 14px}

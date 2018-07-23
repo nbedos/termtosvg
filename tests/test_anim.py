@@ -146,7 +146,6 @@ class TestAnim(unittest.TestCase):
             self.assertEqual(text_defg.attrib['fill'], 'green')
             self.assertEqual(text_defg.attrib['x'], '56')
 
-
     def test_build_style_tag(self):
         style_tag = anim.build_style_tag('Roboto', 14, 'blue')
 
@@ -215,7 +214,8 @@ class TestAnim(unittest.TestCase):
             # Override line for animation chaining
             anim.CharacterCellLineEvent(5, line(6), 300, 60),
         ]
-        svg_root = anim._render_animation(records, 'DejaVu Sans Mono', 14, 8, 17)
+        template = pkgutil.get_data('termtosvg', '/data/templates/progress_bar.svg')
+        svg_root = anim._render_animation(records, template, 'DejaVu Sans Mono', 14, 8, 17)
 
         _, filename = tempfile.mkstemp(prefix='termtosvg_', suffix='.svg')
         with open(filename, 'wb') as f:
