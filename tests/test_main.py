@@ -56,7 +56,7 @@ class TestMain(unittest.TestCase):
         }
         for args in test_cases:
             with self.subTest(case=args):
-                termtosvg.main.parse(args, ['solarized-light', 'solarized-dark'], ['carbon'], defaults)
+                cmd, parsed_args = termtosvg.main.parse(args, ['solarized-light', 'solarized-dark'], ['carbon'], defaults)
 
     @staticmethod
     def run_main(shell_commands, args):

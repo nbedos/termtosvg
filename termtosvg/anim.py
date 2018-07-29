@@ -96,7 +96,7 @@ class CharacterCell(_CharacterCell):
 
 
 CharacterCellConfig = namedtuple('CharacterCellConfig', ['width', 'height', 'text_color',
-                                                         'background_color'])
+                                                         'background_color', 'palette'])
 CharacterCellLineEvent = namedtuple('CharacterCellLineEvent', ['row', 'line', 'time', 'duration'])
 CharacterCellRecord = Union[CharacterCellConfig, CharacterCellLineEvent]
 
@@ -312,8 +312,7 @@ def make_animated_group(records, time, duration, cell_height, cell_width, defaul
         'from': 'inline',
         'to': 'inline',
         'begin': begin_time,
-        'dur': '{}ms'.format(duration),
-        'fill': 'remove',
+        'dur': '{}ms'.format(duration)
     }
 
     animation = etree.Element('animate', attributes)
@@ -448,21 +447,25 @@ def _render_animation(records, template, font, font_size, cell_width, cell_heigh
         assert len(animate_tags) == 1
         animate_tags.pop().attrib['id'] = LAST_ANIMATION_ID
 
-    add_css_variables(root, header.text_color, header.background_color, animation_duration)
+    add_css_variables(root=root,
+                      foreground_color=header.text_color,
+                      background_color=header.background_color,
+                      animation_duration=animation_duration,
+                      palette=header.palette)
 
     return root
 
 
-def add_css_variables(root, foreground_color, background_color, animation_duration):
-    # type: (etree.ElementBase, str, str, int) -> etree.ElementBase
+def add_css_variables(root, foreground_color, background_color, animation_duration, palette):
+    # type: (etree.ElementBase, str, str, int, List[str]) -> etree.ElementBase
     try:
-        style = root.find('.//{{{namespace}}}defs/{{{namespace}}}style[@class="generated"]'
+        style = root.find('.//{{{namespace}}}defs/{{{namespace}}}style[@id="generated"]'
                           .format(namespace=SVG_NS))
     except etree.Error as exc:
         raise TemplateError('Invalid template') from exc
 
     if style is None:
-        raise TemplateError('Missing <style class="generated" ...> element in "defs"')
+        raise TemplateError('Missing <style id="generated" ...> element in "defs"')
 
     css = {
         ':root': {
@@ -471,6 +474,10 @@ def add_css_variables(root, foreground_color, background_color, animation_durati
             '--animation-duration': '{}ms'.format(animation_duration)
         }
     }
+
+    for index, color in enumerate(palette):
+        css_variable = '--color{}'.format(index)
+        css[':root'][css_variable] = color
 
     style.text = etree.CDATA(_serialize_css_dict(css))
     return root

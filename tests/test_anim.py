@@ -204,7 +204,7 @@ class TestAnim(unittest.TestCase):
             return dict(enumerate(chars))
 
         records = [
-            anim.CharacterCellConfig(80, 24, 'black', 'black'),
+            anim.CharacterCellConfig(80, 24, 'black', 'black', ''),
             anim.CharacterCellLineEvent(1, line(1), 0, 60),
             anim.CharacterCellLineEvent(2, line(2), 60, 60),
             anim.CharacterCellLineEvent(3, line(3), 120, 60),
@@ -226,7 +226,7 @@ class TestAnim(unittest.TestCase):
 
         tree = etree.parse(io.BytesIO(data))
         root = tree.getroot()
-        anim.add_css_variables(root, 'aa', 'bb', 42)
+        anim.add_css_variables(root, 'aa', 'bb', 42, ['#000000', '#111111'])
 
     def test_validate_svg(self):
         failure_test_cases = [

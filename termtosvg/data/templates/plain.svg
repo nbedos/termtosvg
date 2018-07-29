@@ -13,7 +13,7 @@ must be specified in user units (e.g width="123") -->
         <termtosvg:template_settings xmlns:termtosvg="https://github.com/nbedos/termtosvg">
             <termtosvg:screen_geometry columns="82" rows="19"/>
         </termtosvg:template_settings>
-        <style type="text/css" class="generated"><![CDATA[
+        <style type="text/css" id="generated"><![CDATA[
             :root {
                 --foreground-color: #cccccc;
                 --background-color: #111111;

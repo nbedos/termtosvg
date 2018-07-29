@@ -235,7 +235,8 @@ def replay(records, from_pyte_char, min_frame_duration=0.001, last_frame_duratio
     config = CharacterCellConfig(width=header.width,
                                  height=header.height,
                                  text_color=header.theme.fg,
-                                 background_color=header.theme.bg)
+                                 background_color=header.theme.bg,
+                                 palette=header.theme.palette.split(':'))
     yield config
 
     palette = {
