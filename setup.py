@@ -24,6 +24,7 @@ setup(
         'Topic :: System :: Shells',
         'Topic :: Terminals'
     ],
+    python_requires='>=3.5',
     packages=['termtosvg'],
     package_data={
         '': [
