@@ -14,7 +14,7 @@ must be specified in user units (e.g width="123") -->
                 --animation-duration: 10s;
             }]]>
         </style>
-        <style type="text/css">
+        <style type="text/css"><![CDATA[
             /* gjm8 color theme (source: https://terminal.sexy/) */
             .foreground {fill: #c5c5c5;}
             .background {fill: #1c1c1c;}
@@ -34,6 +34,18 @@ must be specified in user units (e.g width="123") -->
             .color13 {fill: #833c9f;}
             .color14 {fill: #0ac1cd;}
             .color15 {fill: #e5e5e5;}
+
+            /* The following style attributes are required by termtosvg and should probably
+               not be modified, except for the font name. */
+            #screen {
+                font-family: DejaVu Sans Mono, monospace;
+                font-style: normal;
+                font-size: 14px;
+            }
+
+            text {
+                dominant-baseline: text-before-edge;
+            }]]>
         </style>
     </defs>
     <svg id="screen" width="656" viewBox="0 0 656 323" preserveAspectRatio="xMidYMin meet">

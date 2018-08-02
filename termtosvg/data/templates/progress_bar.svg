@@ -34,6 +34,7 @@ must be specified in user units (e.g width="123") -->
             .color13 {fill: #833c9f;}
             .color14 {fill: #0ac1cd;}
             .color15 {fill: #e5e5e5;}
+
             @keyframes progress-bar-animation {
                 from {
                     transform: translate(0px, calc(100% - 5px)) scale(0, 1);
@@ -48,6 +49,19 @@ must be specified in user units (e.g width="123") -->
                 animation-name: progress-bar-animation;
                 animation-timing-function: linear;
                 transform-origin: left;
+            }
+
+            /* The following style attributes are required by termtosvg and should probably
+               not be modified, except for the font name. */
+            #screen {
+                font-family: DejaVu Sans Mono, monospace;
+                font-style: normal;
+                font-size: 14px;
+            }
+
+            text {
+                font-size: 32px;
+                dominant-baseline: text-before-edge;
             }]]>
         </style>
     </defs>

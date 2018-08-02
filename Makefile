@@ -47,6 +47,6 @@ examples:
 	$(VENV_ACTIVATE) && \
 	    for cast_file in $$(find $(CASTS_DIR) -name '*.cast'); do \
 	    	svg_file="$(EXAMPLES_DIR)/$$(basename --suffix=.cast $$cast_file).svg" && \
-		termtosvg render "$$cast_file" "$$svg_file" --font 'DejaVu Sans Mono' --theme solarized-dark; \
+		termtosvg render "$$cast_file" "$$svg_file" --template carbon; \
 	    done
 

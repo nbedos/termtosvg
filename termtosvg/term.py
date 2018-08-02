@@ -15,7 +15,7 @@ import pyte
 import pyte.screens
 
 from termtosvg.anim import CharacterCellConfig, CharacterCellLineEvent, CharacterCellRecord
-from termtosvg.asciicast import AsciiCastV2Event, AsciiCastV2Header, AsciiCastV2Theme
+from termtosvg.asciicast import AsciiCastV2Event, AsciiCastV2Header
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -232,18 +232,7 @@ def replay(records, from_pyte_char, min_frame_duration=0.001, last_frame_duratio
     screen = pyte.Screen(header.width, header.height)
     stream = pyte.ByteStream(screen)
 
-    config = CharacterCellConfig(width=header.width,
-                                 height=header.height,
-                                 text_color=header.theme.fg,
-                                 background_color=header.theme.bg,
-                                 palette=header.theme.palette.split(':'))
-    yield config
-
-    palette = {
-        'foreground': header.theme.fg,
-        'background': header.theme.bg
-    }
-    palette.update(enumerate(header.theme.palette.split(':')))
+    yield CharacterCellConfig(header.width, header.height)
 
     pending_lines = {}
     current_time = 0
@@ -320,12 +309,3 @@ def get_terminal_size(fileno):
 
     return columns, lines
 
-
-def update_header(asciicast_records, theme):
-    # type: (Iterable[Union[AsciiCastV2Header, AsciiCastV2Event]], AsciiCastV2Theme) -> Iterable[Union[AsciiCastV2Header, AsciiCastV2Event]]
-    for rec in asciicast_records:
-        if isinstance(rec, AsciiCastV2Header):
-            # Override header attributes with values from the configuration or CLI
-            header_theme = theme or rec.theme
-            rec = AsciiCastV2Header(rec.version, rec.width, rec.height, header_theme)
-        yield rec

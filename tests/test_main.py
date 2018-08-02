@@ -22,41 +22,28 @@ SHELL_COMMANDS = [
 
 
 class TestMain(unittest.TestCase):
-    def test_parse(self):
-        test_cases = [
-            [],
-            ['--theme', 'solarized-light'],
-            ['--verbose'],
-            ['--screen-geometry', '82x19'],
-            ['--template', 'carbon'],
-            ['--theme', 'solarized-light', '--verbose'],
-            ['--theme', 'solarized-light'],
-            ['--theme', 'solarized-light', '--verbose', '--screen-geometry', '82x19', '--template', 'carbon'],
-            ['record'],
-            ['record', 'output_filename'],
-            ['record', 'output_filename', '--verbose', '--screen-geometry', '82x19'],
-            ['record', '--verbose', '--screen-geometry', '82x19'],
-            ['render', 'input_filename'],
-            ['render', 'input_filename', '--verbose'],
-            ['render', 'input_filename', '--verbose', '--theme', 'solarized-light'],
-            ['render', 'input_filename', '--verbose', '--theme', 'solarized-light', '--template', 'carbon'],
-            ['render', 'input_filename', '--theme', 'solarized-light'],
-            ['render', 'input_filename', 'output_filename'],
-            ['render', 'input_filename', 'output_filename', '--verbose'],
-            ['render', 'input_filename', 'output_filename', '--verbose', '--theme', 'solarized-light'],
-            ['render', 'input_filename', 'output_filename', '--theme', 'solarized-light'],
-            ['render', 'input_filename', 'output_filename', '--verbose', '--theme', 'solarized-light', '--template', 'carbon'],
-        ]
+    test_cases = [
+        [],
+        ['--verbose'],
+        ['--screen-geometry', '82x19'],
+        ['--template', 'carbon'],
+        ['--verbose', '--screen-geometry', '82x19', '--template', 'carbon'],
+        ['record'],
+        ['record', 'output_filename'],
+        ['record', 'output_filename', '--verbose', '--screen-geometry', '82x19'],
+        ['record', '--verbose', '--screen-geometry', '82x19'],
+        ['render', 'input_filename'],
+        ['render', 'input_filename', '--verbose'],
+        ['render', 'input_filename', '--verbose', '--template', 'carbon'],
+        ['render', 'input_filename', 'output_filename'],
+        ['render', 'input_filename', 'output_filename', '--verbose'],
+        ['render', 'input_filename', 'output_filename', '--verbose', '--template', 'carbon'],
+    ]
 
-        defaults = {
-            'font': 'xxx',
-            'theme': 'yyy',
-            'template': 'zzz',
-            'screen-geometry': '82x94'
-        }
-        for args in test_cases:
+    def test_parse(self):
+        for args in self.test_cases:
             with self.subTest(case=args):
-                cmd, parsed_args = termtosvg.main.parse(args, ['solarized-light', 'solarized-dark'], ['carbon'], defaults)
+                cmd, parsed_args = termtosvg.main.parse(args, ['carbon'], 'plain', '48x95')
 
     @staticmethod
     def run_main(shell_commands, args):
@@ -110,20 +97,12 @@ class TestMain(unittest.TestCase):
             args = ['termtosvg', 'render', cast_filename, '--template', 'carbon']
             TestMain.run_main([], args)
 
-        with self.subTest(case='render (circus theme)'):
-            args = ['termtosvg', 'render', cast_filename, '--theme', 'circus']
-            TestMain.run_main([], args)
-
-        with self.subTest(case='render (circus theme)'):
-            args = ['termtosvg', 'render', cast_filename, '--theme', 'circus', '--template', 'carbon']
-            TestMain.run_main([], args)
-
         with self.subTest(case='record and render on the fly (fallback theme)'):
             args = ['termtosvg', '--verbose', '--screen-geometry', '82x19']
             TestMain.run_main(SHELL_COMMANDS, args)
 
-        with self.subTest(case='record and render on the fly (uppercase circus theme +)'):
-            args = ['termtosvg', svg_filename, '--theme', 'CIRCUS', '--verbose']
+        with self.subTest(case='record and render on the fly (carbon template)'):
+            args = ['termtosvg', svg_filename, '--template', 'CARBON', '--verbose']
             TestMain.run_main(SHELL_COMMANDS, args)
 
         cast_v1_data = '\r\n'.join(['{',

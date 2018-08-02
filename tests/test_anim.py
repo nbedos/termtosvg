@@ -43,20 +43,6 @@ class TestAnim(unittest.TestCase):
             with self.subTest(case=pyte_char):
                 self.assertEqual(anim.CharacterCell.from_pyte(pyte_char), cell_char)
 
-    def test_serialize_css_dict(self):
-        css = {
-            'text': {
-                'font-family': 'Dejavu Sans Mono',
-                'font-style': 'normal',
-                'font-size': '14px',
-                'fill':  '#839496'
-            },
-            '.red': {
-                'fill': '#dc322f'
-            }
-        }
-        anim._serialize_css_dict(css)
-
     def test__render_line_bg_colors_xml(self):
         cell_width = 8
         screen_line = {
@@ -75,8 +61,7 @@ class TestAnim(unittest.TestCase):
         rectangles = anim._render_line_bg_colors(screen_line=screen_line,
                                                  height=0,
                                                  cell_height=1,
-                                                 cell_width=cell_width,
-                                                 default_bg_color='black')
+                                                 cell_width=cell_width)
 
         def key(r):
             return r.attrib['x']
@@ -127,9 +112,6 @@ class TestAnim(unittest.TestCase):
             self.assertEqual(text_defg.attrib['fill'], '#00FF00')
             self.assertEqual(text_defg.attrib['x'], '56')
 
-    def test_build_style_tag(self):
-        style_tag = anim.build_style_tag('Roboto', 14)
-
     def test_ConsecutiveWithSameAttributes(self):
         testClass = namedtuple('testClass', ['field1', 'field2'])
         test_cases = [
@@ -176,7 +158,6 @@ class TestAnim(unittest.TestCase):
                                                    duration=1,
                                                    cell_width=8,
                                                    cell_height=17,
-                                                   default_bg_color='black',
                                                    defs={})
 
     def test__render_animation(self):
@@ -185,7 +166,7 @@ class TestAnim(unittest.TestCase):
             return dict(enumerate(chars))
 
         records = [
-            anim.CharacterCellConfig(80, 24, 'black', 'black', ''),
+            anim.CharacterCellConfig(80, 24),
             anim.CharacterCellLineEvent(1, line(1), 0, 60),
             anim.CharacterCellLineEvent(2, line(2), 60, 60),
             anim.CharacterCellLineEvent(3, line(3), 120, 60),
@@ -196,7 +177,7 @@ class TestAnim(unittest.TestCase):
             anim.CharacterCellLineEvent(5, line(6), 300, 60),
         ]
         template = pkgutil.get_data('termtosvg', '/data/templates/progress_bar.svg')
-        svg_root = anim._render_animation(records, template, 'DejaVu Sans Mono', 14, 8, 17)
+        svg_root = anim._render_animation(records, template, 8, 17)
 
         _, filename = tempfile.mkstemp(prefix='termtosvg_', suffix='.svg')
         with open(filename, 'wb') as f:
@@ -207,7 +188,7 @@ class TestAnim(unittest.TestCase):
 
         tree = etree.parse(io.BytesIO(data))
         root = tree.getroot()
-        anim.add_css_variables(root, 'aa', 'bb', 42, ['#000000', '#111111'])
+        anim.add_css_variables(root, 42)
 
     def test_validate_svg(self):
         failure_test_cases = [

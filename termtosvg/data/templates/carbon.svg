@@ -31,6 +31,18 @@ must be specified in user units (e.g width="123") -->
             .color13 {fill: #f5f4f1}
             .color14 {fill: #cc6633}
             .color15 {fill: #f9f8f5}
+
+            /* The following style attributes are required by termtosvg and should probably
+               not be modified, except for the font name. */
+            #screen {
+                font-family: DejaVu Sans Mono, monospace;
+                font-style: normal;
+                font-size: 14px;
+            }
+
+            text {
+                dominant-baseline: text-before-edge;
+            }
             ]]>
         </style>
     </defs>

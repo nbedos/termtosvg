@@ -8,43 +8,25 @@ import termtosvg.config as config
 
 logger = logging.getLogger('termtosvg')
 
-USAGE = """termtosvg [--font FONT] [--theme THEME] [--screen-geometry COLUMNSxLINES]
-          [--verbose] [--help] [output_file]
+USAGE = """termtosvg [--screen-geometry COLUMNSxLINES] [--template TEMPLATE] [--verbose] [--help] [output_file]
 
 Record a terminal session and render an SVG animation on the fly
 """
 EPILOG = "See also 'termtosvg record --help' and 'termtosvg render --help'"
 RECORD_USAGE = "termtosvg record [--screen-geometry COLUMNSxLINES] [--verbose] [--help] " \
                "[output_file]"
-RENDER_USAGE = "termtosvg render input_file [--font FONT] [--theme THEME] " \
-               "                 [--verbose] [--help] [output_file]"
+RENDER_USAGE = "termtosvg render input_file [--template TEMPLATE] [--verbose] " \
+               "[--help] [output_file]"
 
 
-def parse(args, themes, templates, defaults):
-    # type: (List, Iterable, Iterable, dict) -> Tuple[Union[None, str], argparse.Namespace]
-    font_parser = argparse.ArgumentParser(add_help=False)
-    font_parser.add_argument(
-        '--font',
-        help="font to specify in the CSS portion of the SVG animation (DejaVu Sans Mono, "
-             "Monaco...). If the font is not installed on the viewer's machine, the browser will"
-             " display a default monospaced font instead.",
-        default=defaults['font'],
-        metavar='FONT'
-    )
-    theme_parser = argparse.ArgumentParser(add_help=False)
-    theme_parser.add_argument(
-        '--theme',
-        help='color theme used to render the terminal session ({})'.format(', '.join(themes)),
-        choices=themes,
-        default=defaults['theme'],
-        metavar='THEME'
-    )
+def parse(args, templates, default_template, default_geometry):
+    # type: (List, Iterable, str, Union[None, str]) -> Tuple[Union[None, str], argparse.Namespace]
     template_parser = argparse.ArgumentParser(add_help=False)
     template_parser.add_argument(
         '--template',
         help='SVG template used to render the terminal session ({})'.format(', '.join(templates)),
         choices=templates,
-        default=defaults['template'],
+        default=default_template,
         metavar='TEMPLATE'
     )
     geometry_parser = argparse.ArgumentParser(add_help=False)
@@ -54,7 +36,7 @@ def parse(args, themes, templates, defaults):
         'be given as the number of columns and the number of rows on the screen separated by the '
         'character "x". For example "82x19" for an 82 columns by 19 rows screen',
         metavar='COLUMNSxLINES',
-        default=defaults['screen-geometry'],
+        default=default_geometry,
         type=config.validate_geometry
     )
     verbose_parser = argparse.ArgumentParser(add_help=False)
@@ -65,7 +47,7 @@ def parse(args, themes, templates, defaults):
     )
     parser = argparse.ArgumentParser(
         prog='termtosvg',
-        parents=[font_parser, geometry_parser, template_parser, theme_parser, verbose_parser],
+        parents=[geometry_parser, template_parser, verbose_parser],
         usage=USAGE,
         epilog=EPILOG
     )
@@ -93,7 +75,7 @@ def parse(args, themes, templates, defaults):
         elif args[0] == 'render':
             parser = argparse.ArgumentParser(
                 description='render an asciicast recording as an SVG animation',
-                parents=[font_parser, template_parser, theme_parser, verbose_parser],
+                parents=[template_parser, verbose_parser],
                 usage=RENDER_USAGE
             )
             parser.add_argument(
@@ -127,7 +109,7 @@ def record_subcommand(geometry, input_fileno, output_fileno, cast_filename):
     logger.info('Recording ended, cast file is {}'.format(cast_filename))
 
 
-def render_subcommand(theme, template, font, cast_filename, svg_filename):
+def render_subcommand(template, cast_filename, svg_filename):
     """Render the animation from an asciicast recording"""
     import termtosvg.anim as anim
     import termtosvg.asciicast as asciicast
@@ -135,17 +117,13 @@ def render_subcommand(theme, template, font, cast_filename, svg_filename):
 
     logger.info('Rendering started')
     asciicast_records = asciicast.read_records(cast_filename)
-    records_with_theme = term.update_header(asciicast_records, theme)
-    replayed_records = term.replay(records=records_with_theme,
+    replayed_records = term.replay(records=asciicast_records,
                                    from_pyte_char=anim.CharacterCell.from_pyte)
-    anim.render_animation(records=replayed_records,
-                          filename=svg_filename,
-                          template=template,
-                          font=font)
+    anim.render_animation(records=replayed_records, filename=svg_filename, template=template)
     logger.info('Rendering ended, SVG animation is {}'.format(svg_filename))
 
 
-def record_render_subcommand(theme, template, font, geometry, input_fileno, output_fileno, svg_filename):
+def record_render_subcommand(template, geometry, input_fileno, output_fileno, svg_filename):
     """Record and render the animation on the fly"""
     import termtosvg.anim as anim
     import termtosvg.term as term
@@ -157,13 +135,9 @@ def record_render_subcommand(theme, template, font, geometry, input_fileno, outp
         columns, lines = geometry
     with term.TerminalMode(input_fileno):
         asciicast_records = term.record(columns, lines, input_fileno, output_fileno)
-        records_with_theme = term.update_header(asciicast_records, theme)
-        replayed_records = term.replay(records=records_with_theme,
+        replayed_records = term.replay(records=asciicast_records,
                                        from_pyte_char=anim.CharacterCell.from_pyte)
-        anim.render_animation(records=replayed_records,
-                              filename=svg_filename,
-                              template=template,
-                              font=font)
+        anim.render_animation(records=replayed_records, filename=svg_filename, template=template)
     logger.info('Recording ended, SVG animation is {}'.format(svg_filename))
 
 
@@ -183,21 +157,10 @@ def main(args=None, input_fileno=None, output_fileno=None):
     logger.handlers = [console_handler]
     logger.setLevel(logging.INFO)
 
-    configuration, templates = config.init_read_conf()
-    themes = config.CaseInsensitiveDict(**configuration)
-    del themes['global']
+    templates = config.default_templates()
+    default_template = 'plain' if 'plain' in templates else sorted(templates)[0]
 
-    defaults = {
-        'font': 'DejaVu Sans Mono',
-        'theme': 'gjm8' if 'gjm8' in themes else sorted(themes)[0],
-        'template': 'plain' if 'plain' in templates else sorted(templates)[0],
-        'screen-geometry': None
-    }
-
-    # Override defaults with static configuration
-    defaults.update(configuration['global'])
-
-    command, args = parse(args[1:], themes, templates, defaults)
+    command, args = parse(args[1:], templates, default_template, None)
 
     if args.verbose:
         _, log_filename = tempfile.mkstemp(prefix='termtosvg_', suffix='.log')
@@ -219,17 +182,16 @@ def main(args=None, input_fileno=None, output_fileno=None):
         if svg_filename is None:
             _, svg_filename = tempfile.mkstemp(prefix='termtosvg_', suffix='.svg')
 
-        theme = themes[args.theme]
         template = templates[args.template]
-        render_subcommand(theme, template, args.font, args.input_file, svg_filename)
+        render_subcommand(template, args.input_file, svg_filename)
     else:
         svg_filename = args.output_file
         if svg_filename is None:
             _, svg_filename = tempfile.mkstemp(prefix='termtosvg_', suffix='.svg')
 
-        theme = themes[args.theme]
         template = templates[args.template]
-        record_render_subcommand(theme, template, args.font, args.screen_geometry, input_fileno, output_fileno, svg_filename)
+        record_render_subcommand(template, args.screen_geometry, input_fileno, output_fileno,
+                                 svg_filename)
 
     for handler in logger.handlers:
         handler.close()

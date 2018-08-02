@@ -1,6 +1,5 @@
 import io
 import logging
-import os
 import pkgutil
 from collections import namedtuple
 from itertools import groupby
@@ -84,8 +83,7 @@ class CharacterCell(_CharacterCell):
         return CharacterCell(char.data, text_color, background_color, char.bold)
 
 
-CharacterCellConfig = namedtuple('CharacterCellConfig', ['width', 'height', 'text_color',
-                                                         'background_color', 'palette'])
+CharacterCellConfig = namedtuple('CharacterCellConfig', ['width', 'height'])
 CharacterCellLineEvent = namedtuple('CharacterCellLineEvent', ['row', 'line', 'time', 'duration'])
 CharacterCellRecord = Union[CharacterCellConfig, CharacterCellLineEvent]
 
@@ -126,8 +124,8 @@ def make_rect_tag(column, length, height, cell_width, cell_height, background_co
     return rect_tag
 
 
-def _render_line_bg_colors(screen_line, height, cell_height, cell_width, default_bg_color):
-    # type: (Dict[int, CharacterCell], int, int, int, str) -> List[etree.ElementBase]
+def _render_line_bg_colors(screen_line, height, cell_height, cell_width):
+    # type: (Dict[int, CharacterCell], int, int, int) -> List[etree.ElementBase]
     """Return a list of 'rect' tags representing the background of 'screen_line'
 
     If consecutive cells have the same background color, a single 'rect' tag is returned for all
@@ -139,10 +137,9 @@ def _render_line_bg_colors(screen_line, height, cell_height, cell_width, default
     :param height: Vertical position of the line on the screen in pixels
     :param cell_height: Height of the a character cell in pixels
     :param cell_width: Width of a character cell in pixels
-    :param default_bg_color: Default background color
     """
     non_default_bg_cells = [(column, cell) for (column, cell) in sorted(screen_line.items())
-                            if cell.background_color != default_bg_color]
+                            if cell.background_color != 'background']
 
     key = ConsecutiveWithSameAttributes(['background_color'])
     rect_tags = [make_rect_tag(column, len(list(group)), height, cell_width, cell_height,
@@ -192,29 +189,6 @@ def _render_characters(screen_line, cell_width):
     return text_tags
 
 
-def build_style_tag(font, font_size):
-    # type: (str, int) -> etree.ElementBase
-    css = {
-        # Apply this style to each and every element since we are using coordinates that
-        # depend on the size of the font
-        '*': {
-            'font-family': '"{}", monospace'.format(font),
-            'font-style': 'normal',
-            'font-size': '{}px'.format(font_size),
-        },
-        'text': {
-            'dominant-baseline': 'text-before-edge',
-        }
-    }
-
-    style_attributes = {
-        'type': "text/css"
-    }
-    style_tag = etree.Element('style', style_attributes)
-    style_tag.text = etree.CDATA(_serialize_css_dict(css))
-    return style_tag
-
-
 _BG_RECT_TAG_ATTRIBUTES = {
     'class': 'background',
     'height': '100%',
@@ -242,8 +216,8 @@ def validate_svg(svg_file):
         raise ValueError('Invalid SVG file: {}'.format(reason))
 
 
-def make_animated_group(records, time, duration, cell_height, cell_width, default_bg_color, defs):
-    # type: (Iterable[CharacterCellLineEvent], int, int, int, int, str, Dict[str, etree.ElementBase]) -> Tuple[etree.ElementBase, Dict[str, etree.ElementBase]]
+def make_animated_group(records, time, duration, cell_height, cell_width, defs):
+    # type: (Iterable[CharacterCellLineEvent], int, int, int, int, Dict[str, etree.ElementBase]) -> Tuple[etree.ElementBase, Dict[str, etree.ElementBase]]
     """Return a group element containing an SVG version of the provided records. This group is
     animated, that is to say displayed then removed according to the timing arguments.
 
@@ -252,7 +226,6 @@ def make_animated_group(records, time, duration, cell_height, cell_width, defaul
     :param duration: Duration of the appearance on the screen (milliseconds)
     :param cell_height: Height of a character cell in pixels
     :param cell_width: Width of a character cell in pixels
-    :param default_bg_color: Default background color
     :param defs: Existing definitions
     :return: A tuple consisting of the animated group and the new definitions
     """
@@ -263,8 +236,7 @@ def make_animated_group(records, time, duration, cell_height, cell_width, defaul
         rect_tags = _render_line_bg_colors(screen_line=event_record.line,
                                            height=event_record.row * cell_height,
                                            cell_height=cell_height,
-                                           cell_width=cell_width,
-                                           default_bg_color=default_bg_color)
+                                           cell_width=cell_width)
         for tag in rect_tags:
             animation_group_tag.append(tag)
 
@@ -315,8 +287,8 @@ def make_animated_group(records, time, duration, cell_height, cell_width, defaul
     return animation_group_tag, new_definitions
 
 
-def render_animation(records, filename, template, font, font_size=14, cell_width=8, cell_height=17):
-    root = _render_animation(records, template, font, font_size, cell_width, cell_height)
+def render_animation(records, filename, template, cell_width=8, cell_height=17):
+    root = _render_animation(records, template, cell_width, cell_height)
     with open(filename, 'wb') as output_file:
         output_file.write(etree.tostring(root))
 
@@ -390,8 +362,8 @@ def resize_template(template, columns, rows, cell_width, cell_height):
     return root
 
 
-def _render_animation(records, template, font, font_size, cell_width, cell_height):
-    # type: (Iterable[CharacterCellRecord], bytes, str, int, int, int) -> etree.ElementBase
+def _render_animation(records, template, cell_width, cell_height):
+    # type: (Iterable[CharacterCellRecord], bytes, int, int) -> etree.ElementBase
     # Read header record and add the corresponding information to the SVG
     if not isinstance(records, Iterator):
         records = iter(records)
@@ -407,8 +379,6 @@ def _render_animation(records, template, font, font_size, cell_width, cell_heigh
         svg_screen_tag.remove(child)
 
     def_tag = etree.SubElement(svg_screen_tag, 'defs')
-    style_tag = build_style_tag(font, font_size)
-    def_tag.append(style_tag)
     svg_screen_tag.append(BG_RECT_TAG)
 
     # Process event records
@@ -424,7 +394,6 @@ def _render_animation(records, template, font, font_size, cell_width, cell_heigh
                                                        duration=line_duration,
                                                        cell_height=cell_height,
                                                        cell_width=cell_width,
-                                                       default_bg_color=header.background_color,
                                                        defs=definitions)
         definitions.update(new_defs)
         for definition in new_defs.values():
@@ -441,17 +410,12 @@ def _render_animation(records, template, font, font_size, cell_width, cell_heigh
         assert len(animate_tags) == 1
         animate_tags.pop().attrib['id'] = LAST_ANIMATION_ID
 
-    add_css_variables(root=root,
-                      foreground_color=header.text_color,
-                      background_color=header.background_color,
-                      animation_duration=animation_duration,
-                      palette=header.palette)
-
+    add_css_variables(root=root, animation_duration=animation_duration)
     return root
 
 
-def add_css_variables(root, foreground_color, background_color, animation_duration, palette):
-    # type: (etree.ElementBase, str, str, int, List[str]) -> etree.ElementBase
+def add_css_variables(root, animation_duration):
+    # type: (etree.ElementBase, int) -> etree.ElementBase
     try:
         style = root.find('.//{{{namespace}}}defs/{{{namespace}}}style[@id="generated"]'
                           .format(namespace=SVG_NS))
@@ -461,30 +425,13 @@ def add_css_variables(root, foreground_color, background_color, animation_durati
     if style is None:
         raise TemplateError('Missing <style id="generated" ...> element in "defs"')
 
-    css = {
-        ':root': {
-            '--foreground-color':  foreground_color,
-            '--background-color':  background_color,
-            '--animation-duration': '{}ms'.format(animation_duration)
-        }
-    }
+    css = """{{
+        :root: {{
+            --animation-duration: {animation_duration}ms;
+        }}
+    }}""".format(animation_duration=animation_duration)
 
-    for index, color in enumerate(palette):
-        css_variable = '--color{}'.format(index)
-        css[':root'][css_variable] = color
-
-    style.text = etree.CDATA(_serialize_css_dict(css))
+    style.text = etree.CDATA(css)
     return root
 
 
-def _serialize_css_dict(css):
-    # type: (Dict[str, Dict[str, str]]) -> str
-    def serialize(properties):
-        return '; '.join('{property}: {value}'.format(property=_property, value=value)
-                         for _property, value in properties.items())
-
-    items = [('{selector} {{{properties}}}'
-              .format(selector=selector, properties=serialize(properties)))
-             for selector, properties in css.items()]
-
-    return os.linesep.join(items)
