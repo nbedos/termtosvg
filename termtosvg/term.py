@@ -9,7 +9,7 @@ import termios
 import tty
 from copy import copy
 from functools import partial
-from typing import Any, Callable, Dict, Generator, Iterable, Iterator, Tuple, Union
+from typing import Any, Callable, Generator, Iterable, Iterator, Tuple, Union
 
 import pyte
 import pyte.screens
@@ -199,7 +199,7 @@ def _group_by_time(event_records, min_rec_duration, last_rec_duration):
 
 
 def replay(records, from_pyte_char, min_frame_duration=0.001, last_frame_duration=1):
-    # type: (Iterable[Union[AsciiCastV2Header, AsciiCastV2Event]], Callable[[pyte.screens.Char, Dict[Any, str]], Any], float, float) -> Generator[CharacterCellRecord, None, None]
+    # type: (Iterable[Union[AsciiCastV2Header, AsciiCastV2Event]], Callable[[pyte.screens.Char], Any], float, float) -> Generator[CharacterCellRecord, None, None]
     """Read the records of a terminal sessions, render the corresponding screens and return lines
     of the screen that need updating.
 
@@ -265,7 +265,7 @@ def replay(records, from_pyte_char, min_frame_duration=0.001, last_frame_duratio
         for row in dirty_lines:
             redraw_buffer[row] = {}
             for column in screen.buffer[row]:
-                redraw_buffer[row][column] = from_pyte_char(screen.buffer[row][column], palette)
+                redraw_buffer[row][column] = from_pyte_char(screen.buffer[row][column])
 
         if screen.cursor != last_cursor and not screen.cursor.hidden:
             try:
@@ -277,7 +277,7 @@ def replay(records, from_pyte_char, min_frame_duration=0.001, last_frame_duratio
                                             fg=screen.cursor.attrs.fg,
                                             bg=screen.cursor.attrs.bg,
                                             reverse=True)
-            redraw_buffer[screen.cursor.y][screen.cursor.x] = from_pyte_char(cursor_char, palette)
+            redraw_buffer[screen.cursor.y][screen.cursor.x] = from_pyte_char(cursor_char)
 
         last_cursor = copy(screen.cursor)
         screen.dirty.clear()

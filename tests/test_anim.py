@@ -21,19 +21,12 @@ class TestAnim(unittest.TestCase):
             pyte.screens.Char('C', 'red', 'blue', bold=True),
             # Bold and reverse
             pyte.screens.Char('D', 'red', 'blue', bold=True, reverse=True),
-            # Bold with no matching bright color
-            pyte.screens.Char('E', 'blue', 'blue', bold=True),
             # Defaults
-            pyte.screens.Char('F', 'default', 'default'),
+            pyte.screens.Char('E', 'default', 'default'),
             # Hexadecimal
-            pyte.screens.Char('G', '008700', 'ABCDEF'),
+            pyte.screens.Char('F', '008700', 'ABCDEF'),
             # Bright and bold
-            pyte.screens.Char('H', 'brightgreen', 'ABCDEF', bold=True),
-            # Bright but not in the palette --> fallback to the non bright color
-            # for compatibility with an 8-color palette (issue #1)
-            pyte.screens.Char('I', 'brown', 'ABCDEF', bold=True),
-            # Bright + bold and fallback to non bright
-            pyte.screens.Char('J', 'brightbrown', 'ABCDEF', bold=True),
+            pyte.screens.Char('G', 'brightgreen', 'ABCDEF', bold=True),
         ]
 
         char_cells = [
@@ -41,27 +34,14 @@ class TestAnim(unittest.TestCase):
             anim.CharacterCell('B', 'color4', 'color1', False),
             anim.CharacterCell('C', 'color9', 'color4', True),
             anim.CharacterCell('D', 'color4', 'color9', True),
-            anim.CharacterCell('E', 'color12', 'color4', True),
-            anim.CharacterCell('F', 'foreground', 'background', False),
-            anim.CharacterCell('G', '#008700', '#ABCDEF', False),
-            anim.CharacterCell('H', 'color10', '#ABCDEF', True),
-            anim.CharacterCell('I', 'color3', '#ABCDEF', True),
-            anim.CharacterCell('J', 'color3', '#ABCDEF', True),
+            anim.CharacterCell('E', 'foreground', 'background', False),
+            anim.CharacterCell('F', '#008700', '#ABCDEF', False),
+            anim.CharacterCell('G', 'color10', '#ABCDEF', True),
         ]
 
-        palette = {
-            'foreground': 'foreground',
-            'background': 'background',
-            1: 'color1',
-            3: 'color3',
-            4: 'color4',
-            9: 'color9',
-            10: 'color10',
-            12: 'color12',
-        }
         for pyte_char, cell_char in zip(pyte_chars, char_cells):
             with self.subTest(case=pyte_char):
-                self.assertEqual(anim.CharacterCell.from_pyte(pyte_char, palette), cell_char)
+                self.assertEqual(anim.CharacterCell.from_pyte(pyte_char), cell_char)
 
     def test_serialize_css_dict(self):
         css = {
@@ -89,43 +69,44 @@ class TestAnim(unittest.TestCase):
             8: anim.CharacterCell('A', 'black', 'green', False),
             9: anim.CharacterCell('A', 'black', 'red', False),
             10: anim.CharacterCell('A', 'black', 'red', False),
-            99: anim.CharacterCell('A', 'black', 'black', False),
+            11: anim.CharacterCell('A', 'black', '#123456', False),
         }
 
         rectangles = anim._render_line_bg_colors(screen_line=screen_line,
-                                                     height=0,
-                                                     cell_height=1,
-                                                     cell_width=cell_width,
-                                                     default_bg_color='black')
+                                                 height=0,
+                                                 cell_height=1,
+                                                 cell_width=cell_width,
+                                                 default_bg_color='black')
 
         def key(r):
             return r.attrib['x']
 
-        rect_0, rect_3, rect_4, rect_6, rect_8, rect_9 = sorted(rectangles, key=key)
+        rect_0, rect_3, rect_4, rect_6, rect_8, rect_9, rect_11 = sorted(rectangles, key=key)
 
         self.assertEqual(rect_0.attrib['x'], '0')
         self.assertEqual(rect_0.attrib['width'], '16')
         self.assertEqual(rect_0.attrib['height'], '1')
-        self.assertEqual(rect_0.attrib['fill'], 'red')
+        self.assertEqual(rect_0.attrib['class'], 'red')
         self.assertEqual(rect_3.attrib['x'], '24')
         self.assertEqual(rect_3.attrib['width'], '8')
         self.assertEqual(rect_4.attrib['x'], '32')
         self.assertEqual(rect_6.attrib['x'], '48')
         self.assertEqual(rect_6.attrib['width'], '16')
-        self.assertEqual(rect_6.attrib['fill'], 'blue')
+        self.assertEqual(rect_6.attrib['class'], 'blue')
         self.assertEqual(rect_8.attrib['x'], '64')
-        self.assertEqual(rect_8.attrib['fill'], 'green')
+        self.assertEqual(rect_8.attrib['class'], 'green')
         self.assertEqual(rect_9.attrib['x'], '72')
+        self.assertEqual(rect_11.attrib['fill'], '#123456')
 
     def test__render_characters(self):
         screen_line = {
             0: anim.CharacterCell('A', 'red', 'white', False),
             1: anim.CharacterCell('B', 'blue', 'white', False),
             2: anim.CharacterCell('C', 'blue', 'white', False),
-            7: anim.CharacterCell('D', 'green', 'white', False),
-            8: anim.CharacterCell('E', 'green', 'white', False),
-            9: anim.CharacterCell('F', 'green', 'white', False),
-            10: anim.CharacterCell('G', 'green', 'white', False),
+            7: anim.CharacterCell('D', '#00FF00', 'white', False),
+            8: anim.CharacterCell('E', '#00FF00', 'white', False),
+            9: anim.CharacterCell('F', '#00FF00', 'white', False),
+            10: anim.CharacterCell('G', '#00FF00', 'white', False),
             11: anim.CharacterCell('H', 'red', 'white', False),
             20: anim.CharacterCell(' ', 'black', 'black', False)
         }
@@ -137,17 +118,17 @@ class TestAnim(unittest.TestCase):
             sorted_texts = sorted(texts, key=lambda x: x.text)
             [text_a, text_bc, text_defg, text_h, text_space] = sorted_texts
             self.assertEqual(text_a.text, 'A')
-            self.assertEqual(text_a.attrib['fill'], 'red')
+            self.assertEqual(text_a.attrib['class'], 'red')
             self.assertEqual(text_a.attrib['x'], '0')
             self.assertEqual(text_bc.text, 'BC')
-            self.assertEqual(text_bc.attrib['fill'], 'blue')
+            self.assertEqual(text_bc.attrib['class'], 'blue')
             self.assertEqual(text_bc.attrib['x'], '8')
             self.assertEqual(text_defg.text, 'DEFG')
-            self.assertEqual(text_defg.attrib['fill'], 'green')
+            self.assertEqual(text_defg.attrib['fill'], '#00FF00')
             self.assertEqual(text_defg.attrib['x'], '56')
 
     def test_build_style_tag(self):
-        style_tag = anim.build_style_tag('Roboto', 14, 'blue')
+        style_tag = anim.build_style_tag('Roboto', 14)
 
     def test_ConsecutiveWithSameAttributes(self):
         testClass = namedtuple('testClass', ['field1', 'field2'])

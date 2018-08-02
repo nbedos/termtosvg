@@ -73,9 +73,6 @@ class TestTerm(unittest.TestCase):
             os.close(fd)
 
     def test_replay(self):
-        def pyte_to_str(x, _):
-            return x.data
-
         theme = AsciiCastV2Theme('#000000', '#FFFFFF', ':'.join(['#123456'] * 16))
 
         with self.subTest(case='One shell command per event'):
@@ -88,7 +85,7 @@ class TestTerm(unittest.TestCase):
                                         duration=None)
                        for i in range(1, nbr_records)]
 
-            records = term.replay(records, pyte_to_str, 50, 1000)
+            records = term.replay(records, lambda x: x.data, 50, 1000)
             # Last blank line is the cursor
             lines = [str(i) for i in range(nbr_records)] + [' ']
             for i, record in enumerate(records):
@@ -107,7 +104,7 @@ class TestTerm(unittest.TestCase):
                        for i, data in enumerate(commands)]
 
             screen = {}
-            for record in term.replay(records, pyte_to_str, 50, 1000):
+            for record in term.replay(records, lambda x: x.data, 50, 1000):
                 if hasattr(record, 'line'):
                     screen[record.row] = ''.join(record.line[i] for i in sorted(record.line))
 
@@ -131,8 +128,8 @@ class TestTerm(unittest.TestCase):
 
             # Event #0: First line - cursor displayed after 'aaaa'
             self.assertEqual(events[0].row, 0)
-            self.assertEqual(events[0].line[4].color, theme.bg)
-            self.assertEqual(events[0].line[4].background_color, theme.fg)
+            self.assertEqual(events[0].line[4].color, 'background')
+            self.assertEqual(events[0].line[4].background_color, 'foreground')
 
             # Event #1: First line - cursor removed at position 4
             self.assertEqual(events[1].row, 0)
@@ -144,8 +141,8 @@ class TestTerm(unittest.TestCase):
 
             # Event #3: Third line - cursor displayed after 'cccc'
             self.assertEqual(events[3].row, 2)
-            self.assertEqual(events[3].line[4].color, theme.bg)
-            self.assertEqual(events[3].line[4].background_color, theme.fg)
+            self.assertEqual(events[3].line[4].color, 'background')
+            self.assertEqual(events[3].line[4].background_color, 'foreground')
 
     def test_get_terminal_size(self):
         with self.subTest(case='Successful get_terminal_size call'):

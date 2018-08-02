@@ -4,7 +4,7 @@ import os
 import pkgutil
 from collections import namedtuple
 from itertools import groupby
-from typing import Dict, List, Iterable, Iterator, Union, Tuple, Any
+from typing import Dict, List, Iterable, Iterator, Union, Tuple
 
 import pyte.graphics
 import pyte.screens
@@ -15,8 +15,8 @@ from lxml import etree
 # from FG_BG_256[16] (which is also black #000000 but should be displayed as is).
 _COLORS = ['black', 'red', 'green', 'brown', 'blue', 'magenta', 'cyan', 'white']
 _BRIGHTCOLORS = ['bright{}'.format(color) for color in _COLORS]
-ALL_COLORS = _COLORS + _BRIGHTCOLORS
-pyte.graphics.FG_BG_256 = ALL_COLORS + pyte.graphics.FG_BG_256[16:]
+NAMED_COLORS = _COLORS + _BRIGHTCOLORS
+pyte.graphics.FG_BG_256 = NAMED_COLORS + pyte.graphics.FG_BG_256[16:]
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
@@ -45,29 +45,19 @@ _CharacterCell.background_color.__doc__ = 'Background color of the cell'
 
 class CharacterCell(_CharacterCell):
     @classmethod
-    def from_pyte(cls, char, palette):
-        # type: (pyte.screens.Char, Dict[Any, str]) -> CharacterCell
+    def from_pyte(cls, char):
+        # type: (pyte.screens.Char) -> CharacterCell
         """Create a CharacterCell from a pyte character"""
-        # Map named colors to their respective number
-        color_numbers = dict(zip(ALL_COLORS, range(len(ALL_COLORS))))
         if char.fg == 'default':
-            text_color = palette['foreground']
+            text_color = 'foreground'
         else:
             if char.bold and not str(char.fg).startswith('bright'):
-                search_color = 'bright{}'.format(char.fg)
+                named_color = 'bright{}'.format(char.fg)
             else:
-                search_color = char.fg
-
-            if search_color in color_numbers:
-                # NAMED COLORS
-                if color_numbers[search_color] in palette:
-                    # Case for color numbers < 8 (since the palette has at least the first 8 colors)
-                    # or for 16-color palette (all named colors in the palette)
-                    color_number = color_numbers[search_color]
-                else:
-                    # Case for color numbers >= 8 and 8-color palette: fallback to non bright color
-                    color_number = color_numbers[search_color] % 8
-                text_color = palette[color_number]
+                named_color = char.fg
+            
+            if named_color in NAMED_COLORS:
+                text_color = 'color{}'.format(NAMED_COLORS.index(named_color))
             elif len(char.fg) == 6:
                 # HEXADECIMAL COLORS
                 # raise ValueError if char.fg is not an hexadecimal number
@@ -77,10 +67,9 @@ class CharacterCell(_CharacterCell):
                 raise ValueError('Invalid foreground color: {}'.format(char.fg))
 
         if char.bg == 'default':
-            background_color = palette['background']
-        elif char.bg in color_numbers:
-            # Named colors
-            background_color = palette[color_numbers[char.bg]]
+            background_color = 'background'
+        elif char.bg in NAMED_COLORS:
+            background_color = 'color{}'.format(NAMED_COLORS.index(char.bg))
         elif len(char.bg) == 6:
             # Hexadecimal colors
             # raise ValueError if char.bg is not an hexadecimal number
@@ -126,9 +115,13 @@ def make_rect_tag(column, length, height, cell_width, cell_height, background_co
         'x': str(column * cell_width),
         'y': str(height),
         'width': str(length * cell_width),
-        'height': str(cell_height),
-        'fill': background_color
+        'height': str(cell_height)
     }
+
+    if background_color.startswith('#'):
+        attributes['fill'] = background_color
+    else:
+        attributes['class'] = background_color
     rect_tag = etree.Element('rect', attributes)
     return rect_tag
 
@@ -164,11 +157,15 @@ def make_text_tag(column, attributes, text, cell_width):
     text_tag_attributes = {
         'x': str(column * cell_width),
         'textLength': str(len(text) * cell_width),
-        'lengthAdjust': 'spacingAndGlyphs',
-        'fill': attributes['color']
+        'lengthAdjust': 'spacingAndGlyphs'
     }
     if attributes['bold']:
         text_tag_attributes['font-weight'] = 'bold'
+
+    if attributes['color'].startswith('#'):
+        text_tag_attributes['fill'] = attributes['color']
+    else:
+        text_tag_attributes['class'] = attributes['color']
 
     text_tag = etree.Element('text', text_tag_attributes)
     # Replace usual spaces with unbreakable spaces so that indenting the SVG does not mess up
@@ -195,8 +192,8 @@ def _render_characters(screen_line, cell_width):
     return text_tags
 
 
-def build_style_tag(font, font_size, background_color):
-    # type: (str, int, str) -> etree.ElementBase
+def build_style_tag(font, font_size):
+    # type: (str, int) -> etree.ElementBase
     css = {
         # Apply this style to each and every element since we are using coordinates that
         # depend on the size of the font
@@ -207,10 +204,7 @@ def build_style_tag(font, font_size, background_color):
         },
         'text': {
             'dominant-baseline': 'text-before-edge',
-        },
-        '.background': {
-            'fill': background_color,
-        },
+        }
     }
 
     style_attributes = {
@@ -413,7 +407,7 @@ def _render_animation(records, template, font, font_size, cell_width, cell_heigh
         svg_screen_tag.remove(child)
 
     def_tag = etree.SubElement(svg_screen_tag, 'defs')
-    style_tag = build_style_tag(font, font_size, header.background_color)
+    style_tag = build_style_tag(font, font_size)
     def_tag.append(style_tag)
     svg_screen_tag.append(BG_RECT_TAG)
 
