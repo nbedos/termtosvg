@@ -73,8 +73,8 @@ var terminal   = document.getElementById('terminal');
 var screen = terminal.getElementById('screen');
 var slider_1  = terminal.getElementById('slider_1');
 var anim_slider_button = document.getElementById('anim_slider_button');
-var style = getComputedStyle(terminal);
-var animation_duration = parseInt(style.getPropertyValue('--animation-duration')) / 1000;
+var dur = window.getComputedStyle(terminal).getPropertyValue('--animation-duration');
+var animation_duration = parseInt(dur) / 1000;
 
 function getTranslateX(elem) {
   var style = window.getComputedStyle(elem);
@@ -82,7 +82,7 @@ function getTranslateX(elem) {
   return parseInt(matrix.m41)
 }
 
-track_begin = getTranslateX(terminal.getElementById('track'))
+var track_begin = getTranslateX(terminal.getElementById('track'))
 anim_slider_button.setAttribute('from', track_begin);
 
 var track_width = terminal.getElementById('track').getBoundingClientRect().width;
@@ -92,22 +92,22 @@ var play_button = terminal.getElementById('play-button');
 var pause_button = terminal.getElementById('pause-button');
 
 // Set slider button animation duration
-anim_slider_button.setAttribute('dur', style.getPropertyValue('--animation-duration'));
+anim_slider_button.setAttribute('dur', dur);
 
-play_button.setAttribute('display', 'none');
-pause_button.setAttribute('display', 'inline');
+play_button.style.display = 'none';
+pause_button.style.display = 'inline';
 
 function togglePlayPause() {
     if (terminal.animationsPaused() || screen.animationsPaused()) {
         terminal.unpauseAnimations()
         screen.unpauseAnimations()
-        play_button.setAttribute('display', 'none')
-        pause_button.setAttribute('display', 'inline')
+        play_button.style.display = 'none';
+        pause_button.style.display = 'inline';
     } else {
         terminal.pauseAnimations()
         screen.pauseAnimations()
-        play_button.setAttribute('display', 'inline')
-        pause_button.setAttribute('display', 'none')
+        play_button.style.display = 'inline';
+        pause_button.style.display = 'none';
     }
 };
 
@@ -122,8 +122,8 @@ var limitUpper = parseInt(anim_slider_button.getAttribute('to')) - 8;
 var timer = terminal.getElementById('timer')
 
 function timer_from_ms(t) {
-    minutes = Math.floor(t / 60);
-    seconds = Math.floor(t % 60);
+    var minutes = Math.floor(t / 60);
+    var seconds = Math.floor(t % 60);
     return minutes + ':' + ("0" + seconds).slice(-2)
 }
 
@@ -132,7 +132,7 @@ function update_timer(){
     timer.textContent =  timer_from_ms(current_time) + "/" + timer_from_ms(animation_duration)
 }
 
-setInterval(update_timer, "100ms")
+setInterval(update_timer, 100)
 
 // Return X position for an event
 function mx(evt){
