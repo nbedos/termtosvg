@@ -3,7 +3,7 @@ import tempfile
 import time
 import unittest
 
-import termtosvg.__main__ as __main__
+import termtosvg.main
 
 SHELL_COMMANDS = [
     'echo $SHELL && sleep 0.1;\r\n',
@@ -21,32 +21,29 @@ SHELL_COMMANDS = [
 ]
 
 
-# TODO: Replace os.pipe + fork by Popen ?
 class TestMain(unittest.TestCase):
-    def test_parse(self):
-        test_cases = [
-            [],
-            ['--theme', 'solarized-light'],
-            ['--verbose'],
-            ['--theme', 'solarized-light', '--verbose'],
-            ['--theme', 'solarized-light'],
-            ['record'],
-            ['record', 'output_filename'],
-            ['record', 'output_filename', '--verbose'],
-            ['record', '--verbose'],
-            ['render', 'input_filename'],
-            ['render', 'input_filename', '--verbose'],
-            ['render', 'input_filename', '--verbose', '--theme', 'solarized-light'],
-            ['render', 'input_filename', '--theme', 'solarized-light'],
-            ['render', 'input_filename', 'output_filename'],
-            ['render', 'input_filename', 'output_filename', '--verbose'],
-            ['render', 'input_filename', 'output_filename', '--verbose', '--theme', 'solarized-light'],
-            ['render', 'input_filename', 'output_filename', '--theme', 'solarized-light'],
-        ]
+    test_cases = [
+        [],
+        ['--verbose'],
+        ['--screen-geometry', '82x19'],
+        ['--template', 'carbon'],
+        ['--verbose', '--screen-geometry', '82x19', '--template', 'carbon'],
+        ['record'],
+        ['record', 'output_filename'],
+        ['record', 'output_filename', '--verbose', '--screen-geometry', '82x19'],
+        ['record', '--verbose', '--screen-geometry', '82x19'],
+        ['render', 'input_filename'],
+        ['render', 'input_filename', '--verbose'],
+        ['render', 'input_filename', '--verbose', '--template', 'carbon'],
+        ['render', 'input_filename', 'output_filename'],
+        ['render', 'input_filename', 'output_filename', '--verbose'],
+        ['render', 'input_filename', 'output_filename', '--verbose', '--template', 'carbon'],
+    ]
 
-        for args in test_cases:
+    def test_parse(self):
+        for args in self.test_cases:
             with self.subTest(case=args):
-                __main__.parse(args, ['solarized-light', 'solarized-dark'])
+                cmd, parsed_args = termtosvg.main.parse(args, ['carbon'], 'plain', '48x95')
 
     @staticmethod
     def run_main(shell_commands, args):
@@ -62,7 +59,7 @@ class TestMain(unittest.TestCase):
                 time.sleep(0.060)
             os._exit(0)
 
-        __main__.main(args, fd_in_read, fd_out_write)
+        termtosvg.main.main(args, fd_in_read, fd_out_write)
 
         os.waitpid(pid, 0)
         for fd in fd_in_read, fd_in_write, fd_out_read, fd_out_write:
@@ -80,6 +77,10 @@ class TestMain(unittest.TestCase):
             args = ['termtosvg', 'record', cast_filename]
             TestMain.run_main(SHELL_COMMANDS, args)
 
+        with self.subTest(case='record (with geometry)'):
+            args = ['termtosvg', 'record', '--screen-geometry', '82x19']
+            TestMain.run_main(SHELL_COMMANDS, args)
+
         with self.subTest(case='render (no output filename)'):
             args = ['termtosvg', 'render', cast_filename]
             TestMain.run_main([], args)
@@ -88,16 +89,20 @@ class TestMain(unittest.TestCase):
             args = ['termtosvg', 'render', cast_filename, svg_filename]
             TestMain.run_main([], args)
 
-        with self.subTest(case='render (circus theme)'):
-            args = ['termtosvg', 'render', cast_filename, '--theme', 'circus']
+        with self.subTest(case='render (with geometry)'):
+            args = ['termtosvg', 'render', cast_filename]
+            TestMain.run_main([], args)
+
+        with self.subTest(case='render (with template)'):
+            args = ['termtosvg', 'render', cast_filename, '--template', 'carbon']
             TestMain.run_main([], args)
 
         with self.subTest(case='record and render on the fly (fallback theme)'):
-            args = ['termtosvg', '--verbose']
+            args = ['termtosvg', '--verbose', '--screen-geometry', '82x19']
             TestMain.run_main(SHELL_COMMANDS, args)
 
-        with self.subTest(case='record and render on the fly (uppercase circus theme +)'):
-            args = ['termtosvg', svg_filename, '--theme', 'CIRCUS', '--verbose']
+        with self.subTest(case='record and render on the fly (carbon template)'):
+            args = ['termtosvg', svg_filename, '--template', 'CARBON', '--verbose']
             TestMain.run_main(SHELL_COMMANDS, args)
 
         cast_v1_data = '\r\n'.join(['{',

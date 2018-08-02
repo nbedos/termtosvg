@@ -9,32 +9,43 @@ import termios
 import tty
 from copy import copy
 from functools import partial
-from typing import Any, Callable, Dict, Generator, Iterable, Iterator, Tuple, Union
+from typing import Any, Callable, Generator, Iterable, Iterator, Tuple, Union
 
 import pyte
 import pyte.screens
 
 from termtosvg.anim import CharacterCellConfig, CharacterCellLineEvent, CharacterCellRecord
-from termtosvg.asciicast import AsciiCastV2Event, AsciiCastV2Header, AsciiCastV2Theme
+from termtosvg.asciicast import AsciiCastV2Event, AsciiCastV2Header
 
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.NullHandler())
 
 
 class TerminalMode:
-    """Save terminal state on entry, restore it on exit"""
+    """Save terminal mode and size on entry, restore them on exit"""
     def __init__(self, fileno: int):
         self.fileno = fileno
         self.mode = None
+        self.ttysize = None
 
     def __enter__(self):
         try:
             self.mode = tty.tcgetattr(self.fileno)
-        except tty.error:
-            pass
-        return self.mode
+        except tty.error as exc:
+            logger.debug('Terminal mode could not be saved: {}'.format(exc))
+
+        try:
+            columns, lines = os.get_terminal_size(self.fileno)
+            self.ttysize = struct.pack("HHHH", lines, columns, 0, 0)
+        except OSError as exc:
+            logger.debug('Terminal size could not be saved: {}'.format(exc))
+
+        return self.mode, self.ttysize
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.ttysize is not None:
+            fcntl.ioctl(self.fileno, termios.TIOCSWINSZ, self.ttysize)
+
         if self.mode is not None:
             tty.tcsetattr(self.fileno, tty.TCSAFLUSH, self.mode)
 
@@ -187,8 +198,8 @@ def _group_by_time(event_records, min_rec_duration, last_rec_duration):
         yield accumulator_event
 
 
-def replay(records, from_pyte_char, override_theme, fallback_theme, min_frame_duration=0.001, last_frame_duration=1):
-    # type: (Iterable[Union[AsciiCastV2Header, AsciiCastV2Event]], Callable[[pyte.screen.Char, Dict[Any, str]], Any], Union[None, AsciiCastV2Theme], AsciiCastV2Theme, float, float) -> Generator[CharacterCellRecord, None, None]
+def replay(records, from_pyte_char, min_frame_duration=0.001, last_frame_duration=1):
+    # type: (Iterable[Union[AsciiCastV2Header, AsciiCastV2Event]], Callable[[pyte.screens.Char], Any], float, float) -> Generator[CharacterCellRecord, None, None]
     """Read the records of a terminal sessions, render the corresponding screens and return lines
     of the screen that need updating.
 
@@ -202,9 +213,6 @@ def replay(records, from_pyte_char, override_theme, fallback_theme, min_frame_du
     :param records: Records of the terminal session in asciicast v2 format. The first record must
     be a header, which must be followed by event records.
     :param from_pyte_char: Conversion function from pyte.screen.Char to any other format
-    :param override_theme: Color theme. If present, overrides the theme include in asciicast header
-    :param fallback_theme: Color theme. Used as a fallback override_theme is missing and no
-    theme is included in asciicast header
     :param min_frame_duration: Minimum frame duration in seconds. SVG animations break when an
     animation is 0s so setting this to at least 1ms is recommended.
     :param last_frame_duration: Last frame duration in seconds
@@ -220,27 +228,11 @@ def replay(records, from_pyte_char, override_theme, fallback_theme, min_frame_du
         records = iter(records)
 
     header = next(records)
+    
     screen = pyte.Screen(header.width, header.height)
     stream = pyte.ByteStream(screen)
 
-    if override_theme is not None:
-        theme = override_theme
-    elif header.theme is not None:
-        theme = header.theme
-    else:
-        theme = fallback_theme
-
-    config = CharacterCellConfig(width=header.width,
-                                 height=header.height,
-                                 text_color=theme.fg,
-                                 background_color=theme.bg)
-    yield config
-
-    palette = {
-        'foreground': theme.fg,
-        'background': theme.bg
-    }
-    palette.update(enumerate(theme.palette.split(':')))
+    yield CharacterCellConfig(header.width, header.height)
 
     pending_lines = {}
     current_time = 0
@@ -262,7 +254,7 @@ def replay(records, from_pyte_char, override_theme, fallback_theme, min_frame_du
         for row in dirty_lines:
             redraw_buffer[row] = {}
             for column in screen.buffer[row]:
-                redraw_buffer[row][column] = from_pyte_char(screen.buffer[row][column], palette)
+                redraw_buffer[row][column] = from_pyte_char(screen.buffer[row][column])
 
         if screen.cursor != last_cursor and not screen.cursor.hidden:
             try:
@@ -274,7 +266,7 @@ def replay(records, from_pyte_char, override_theme, fallback_theme, min_frame_du
                                             fg=screen.cursor.attrs.fg,
                                             bg=screen.cursor.attrs.bg,
                                             reverse=True)
-            redraw_buffer[screen.cursor.y][screen.cursor.x] = from_pyte_char(cursor_char, palette)
+            redraw_buffer[screen.cursor.y][screen.cursor.x] = from_pyte_char(cursor_char)
 
         last_cursor = copy(screen.cursor)
         screen.dirty.clear()
@@ -311,9 +303,9 @@ def get_terminal_size(fileno):
     try:
         columns, lines = os.get_terminal_size(fileno)
     except OSError as e:
-        lines = 24
-        columns = 80
+        columns, lines = 80, 24
         logger.debug('Failed to get terminal size ({}), using default values '
                      'instead ({}x{})'.format(e, columns, lines))
 
     return columns, lines
+

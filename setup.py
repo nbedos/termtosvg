@@ -5,8 +5,9 @@ from setuptools import setup
 setup(
     name='termtosvg',
     version='0.4.0',
-    licence='BSD 3-clause license',
+    license='BSD 3-clause license',
     author='Nicolas Bedos',
+    author_email='nicolas.bedos@gmail.com',
     description='Record terminal sessions as SVG animations',
     long_description='A Linux terminal recorder written in Python '
                      'which renders your command line sessions as '
@@ -26,34 +27,23 @@ setup(
     ],
     python_requires='>=3.5',
     packages=['termtosvg'],
-    package_data={
-        '': [
-            'LICENSE'
-        ],
-        'termtosvg': [
-            'data/LICENSE.md',
-            'data/termtosvg.ini',
-        ]
-    },
     py_modules=[
         'termtosvg.anim',
         'termtosvg.asciicast',
         'termtosvg.config',
+        'termtosvg.main',
         'termtosvg.term',
     ],
-    entry_points={
-        'console_scripts': [
-            'termtosvg=termtosvg.__main__:main'
-        ]
-    },
+    scripts=['scripts/termtosvg'],
+    include_package_data=True,
     install_requires=[
+        'lxml',
         'pyte',
-        'setuptools',
-        'svgwrite'
     ],
     extras_require={
         'dev': [
             'coverage',
+            'pylint',
             'twine',
             'wheel',
         ]

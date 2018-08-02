@@ -73,10 +73,6 @@ class TestTerm(unittest.TestCase):
             os.close(fd)
 
     def test_replay(self):
-        def pyte_to_str(x, _):
-            return x.data
-
-        fallback_theme = AsciiCastV2Theme('#000000', '#000000', ':'.join(['#000000'] * 16))
         theme = AsciiCastV2Theme('#000000', '#FFFFFF', ':'.join(['#123456'] * 16))
 
         with self.subTest(case='One shell command per event'):
@@ -89,7 +85,7 @@ class TestTerm(unittest.TestCase):
                                         duration=None)
                        for i in range(1, nbr_records)]
 
-            records = term.replay(records, pyte_to_str, None, fallback_theme, 50, 1000)
+            records = term.replay(records, lambda x: x.data, 50, 1000)
             # Last blank line is the cursor
             lines = [str(i) for i in range(nbr_records)] + [' ']
             for i, record in enumerate(records):
@@ -99,8 +95,8 @@ class TestTerm(unittest.TestCase):
                 else:
                     self.assertEqual(record.line[0], lines[i])
 
-        with self.subTest(case='Shell command spread over multiple lines, no theme'):
-            records = [AsciiCastV2Header(version=2, width=80, height=24, theme=None)] + \
+        with self.subTest(case='Shell command spread over multiple lines'):
+            records = [AsciiCastV2Header(version=2, width=80, height=24, theme=theme)] + \
                       [AsciiCastV2Event(time=i * 60,
                                         event_type='o',
                                         event_data=data.encode('utf-8'),
@@ -108,7 +104,7 @@ class TestTerm(unittest.TestCase):
                        for i, data in enumerate(commands)]
 
             screen = {}
-            for record in term.replay(records, pyte_to_str, None, theme, 50, 1000):
+            for record in term.replay(records, lambda x: x.data, 50, 1000):
                 if hasattr(record, 'line'):
                     screen[record.row] = ''.join(record.line[i] for i in sorted(record.line))
 
@@ -120,20 +116,20 @@ class TestTerm(unittest.TestCase):
         with self.subTest(case='Hidden cursor'):
             # '\u001b[?25h' : display cursor
             # '\u001b[?25l' : hide cursor
-            records = [AsciiCastV2Header(version=2, width=80, height=24, theme=None)] + \
+            records = [AsciiCastV2Header(version=2, width=80, height=24, theme=theme)] + \
                       [
                           AsciiCastV2Event(0, 'o', '\u001b[?25haaaa'.encode('utf-8'), None),
                           AsciiCastV2Event(100, 'o', '\r\n\u001b[?25lbbbb'.encode('utf-8'), None),
                           AsciiCastV2Event(200, 'o', '\r\n\u001b[?25hcccc'.encode('utf-8'), None),
                       ]
 
-            gen = term.replay(records, anim.CharacterCell.from_pyte, None, theme, 50, 1000)
+            gen = term.replay(records, anim.CharacterCell.from_pyte, 50, 1000)
             header, *events = list(gen)
 
             # Event #0: First line - cursor displayed after 'aaaa'
             self.assertEqual(events[0].row, 0)
-            self.assertEqual(events[0].line[4].color, theme.bg)
-            self.assertEqual(events[0].line[4].background_color, theme.fg)
+            self.assertEqual(events[0].line[4].color, 'background')
+            self.assertEqual(events[0].line[4].background_color, 'foreground')
 
             # Event #1: First line - cursor removed at position 4
             self.assertEqual(events[1].row, 0)
@@ -145,8 +141,8 @@ class TestTerm(unittest.TestCase):
 
             # Event #3: Third line - cursor displayed after 'cccc'
             self.assertEqual(events[3].row, 2)
-            self.assertEqual(events[3].line[4].color, theme.bg)
-            self.assertEqual(events[3].line[4].background_color, theme.fg)
+            self.assertEqual(events[3].line[4].color, 'background')
+            self.assertEqual(events[3].line[4].background_color, 'foreground')
 
     def test_get_terminal_size(self):
         with self.subTest(case='Successful get_terminal_size call'):
