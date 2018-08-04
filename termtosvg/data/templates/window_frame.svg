@@ -1,6 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The viewBox attribute must be set for the root svg element. 'width' and 'height' attributes
-must be specified in user units (e.g width="123") -->
 <svg id="terminal" baseProfile="full" viewBox="0 0 703 285" width="703" version="1.1"
      xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
     <defs>
@@ -13,6 +11,7 @@ must be specified in user units (e.g width="123") -->
         }]]>
         </style>
         <style type="text/css"><![CDATA[
+            /* gjm8 color theme (source: https://terminal.sexy/) */
             .foreground {fill: #f8f8f2}
             .background {fill: #272822}
             .color0 {fill: #272822}
@@ -32,10 +31,8 @@ must be specified in user units (e.g width="123") -->
             .color14 {fill: #cc6633}
             .color15 {fill: #f9f8f5}
 
-            /* The following style attributes are required by termtosvg and should probably
-               not be modified, except for the font name. */
             #screen {
-                font-family: DejaVu Sans Mono, monospace;
+                font-family: 'DejaVu Sans Mono', monospace;
                 font-style: normal;
                 font-size: 14px;
             }

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<svg id="terminal" baseProfile="full" viewBox="0 0 656 328" width="656" version="1.1"
+<svg id="terminal" baseProfile="full" viewBox="0 0 656 325" width="656" version="1.1"
      xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
     <defs>
         <termtosvg:template_settings xmlns:termtosvg="https://github.com/nbedos/termtosvg">
@@ -11,41 +11,25 @@
             }]]>
         </style>
         <style type="text/css"><![CDATA[
-            /* gjm8 color theme (source: https://terminal.sexy/) */
-            .foreground {fill: #c5c5c5;}
-            .background {fill: #1c1c1c;}
-            .color0 {fill: #1c1c1c;}
-            .color1 {fill: #ff005b;}
-            .color2 {fill: #cee318;}
-            .color3 {fill: #ffe755;}
-            .color4 {fill: #048ac7;}
-            .color5 {fill: #833c9f;}
-            .color6 {fill: #0ac1cd;}
-            .color7 {fill: #e5e5e5;}
-            .color8 {fill: #1c1c1c;}
-            .color9 {fill: #ff005b;}
-            .color10 {fill: #cee318;}
-            .color11 {fill: #ffe755;}
-            .color12 {fill: #048ac7;}
-            .color13 {fill: #833c9f;}
-            .color14 {fill: #0ac1cd;}
-            .color15 {fill: #e5e5e5;}
-
-            @keyframes progress-bar-animation {
-                from {
-                    transform: translate(0px, calc(100% - 5px)) scale(0, 1);
-                }
-                to {
-                    transform: translate(0px, calc(100% - 5px)) scale(1, 1);
-                }
-            }
-            #progress-bar {
-                animation-duration: var(--animation-duration);
-                animation-iteration-count: infinite;
-                animation-name: progress-bar-animation;
-                animation-timing-function: linear;
-                transform-origin: left;
-            }
+            /* Solarized dark color theme (http://ethanschoonover.com/solarized) */
+            .foreground {fill: #93a1a1;}
+            .background {fill: #002b36;}
+            .color0 {fill: #002b36;}
+            .color1 {fill: #dc322f;}
+            .color2 {fill: #859900;}
+            .color3 {fill: #b58900;}
+            .color4 {fill: #268bd2;}
+            .color5 {fill: #6c71c4;}
+            .color6 {fill: #2aa198;}
+            .color7 {fill: #93a1a1;}
+            .color8 {fill: #657b83;}
+            .color9 {fill: #cb4b16;}
+            .color10 {fill: #073642;}
+            .color11 {fill: #586e75;}
+            .color12 {fill: #839496;}
+            .color13 {fill: #eee8d5;}
+            .color14 {fill: #d33682;}
+            .color15 {fill: #fdf6e3;}
 
             #screen {
                 font-family: 'DejaVu Sans Mono', monospace;
@@ -58,7 +42,6 @@
             }]]>
         </style>
     </defs>
-    <rect width="100%" height="100%" class="background"/>
     <svg id="screen" width="656" viewBox="0 0 656 323" preserveAspectRatio="xMidYMin meet">
         <defs>
             <text id="awesome" class="foreground" lengthAdjust="spacingAndGlyphs" textLength="168">
@@ -86,5 +69,4 @@
         <use xlink:href="#awesome" x="136" y="289"/>
         <use xlink:href="#awesome" x="144" y="306"/>
     </svg>
-    <rect id="progress-bar" width="100%" height="5" class="color1"/>
 </svg>

@@ -5,7 +5,15 @@ PKG_TEMPLATE_PATH = 'data/templates'
 # Listing templates here is not ideal but importing pkg_resources to get resource_listdir
 # does not seem worth it: it adds a dependency and slows down the invocation of termtosvg
 # by 150ms ('time termtosvg --help' execution time goes from 200ms to 350ms)
-DEFAULT_TEMPLATES_NAMES = ['plain.svg', 'carbon.svg', 'progress_bar.svg', 'carbon_js.svg']
+DEFAULT_TEMPLATES_NAMES = [
+    'plain.svg',
+    'plain_dracula.svg',
+    'plain_solarized_dark.svg',
+    'plain_solarized_light.svg',
+    'progress_bar.svg',
+    'window_frame.svg',
+    'window_frame_js.svg'
+]
 
 
 class CaseInsensitiveDict(dict):
@@ -58,8 +66,7 @@ def validate_geometry(screen_geometry):
     # or if the values can't be turned into integers
     columns, rows = [int(value) for value in screen_geometry.lower().split('x')]
     if columns <= 0 or rows <= 0:
-        raise ValueError('Invalid value for screen-geometry option: "{}"'
-                         .format(screen_geometry))
+        raise ValueError('Invalid value for screen-geometry option: "{}"'.format(screen_geometry))
     return columns, rows
 
 

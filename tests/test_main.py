@@ -26,24 +26,27 @@ class TestMain(unittest.TestCase):
         [],
         ['--verbose'],
         ['--screen-geometry', '82x19'],
-        ['--template', 'carbon'],
-        ['--verbose', '--screen-geometry', '82x19', '--template', 'carbon'],
+        ['-g', '82x19'],
+        ['--template', 'plain'],
+        ['-t', 'plain'],
+        ['--verbose', '--screen-geometry', '82x19', '--template', 'plain'],
+        ['-v', '-g', '82x19', '-t', 'plain'],
         ['record'],
         ['record', 'output_filename'],
         ['record', 'output_filename', '--verbose', '--screen-geometry', '82x19'],
         ['record', '--verbose', '--screen-geometry', '82x19'],
         ['render', 'input_filename'],
         ['render', 'input_filename', '--verbose'],
-        ['render', 'input_filename', '--verbose', '--template', 'carbon'],
+        ['render', 'input_filename', '--verbose', '--template', 'plain'],
         ['render', 'input_filename', 'output_filename'],
         ['render', 'input_filename', 'output_filename', '--verbose'],
-        ['render', 'input_filename', 'output_filename', '--verbose', '--template', 'carbon'],
+        ['render', 'input_filename', 'output_filename', '--verbose', '--template', 'plain'],
     ]
 
     def test_parse(self):
         for args in self.test_cases:
             with self.subTest(case=args):
-                cmd, parsed_args = termtosvg.main.parse(args, ['carbon'], 'plain', '48x95')
+                cmd, parsed_args = termtosvg.main.parse(args, {'plain': b''}, 'plain', '48x95')
 
     @staticmethod
     def run_main(shell_commands, args):
@@ -94,15 +97,15 @@ class TestMain(unittest.TestCase):
             TestMain.run_main([], args)
 
         with self.subTest(case='render (with template)'):
-            args = ['termtosvg', 'render', cast_filename, '--template', 'carbon']
+            args = ['termtosvg', 'render', cast_filename, '--template', 'WINDOW_frame']
             TestMain.run_main([], args)
 
         with self.subTest(case='record and render on the fly (fallback theme)'):
             args = ['termtosvg', '--verbose', '--screen-geometry', '82x19']
             TestMain.run_main(SHELL_COMMANDS, args)
 
-        with self.subTest(case='record and render on the fly (carbon template)'):
-            args = ['termtosvg', svg_filename, '--template', 'CARBON', '--verbose']
+        with self.subTest(case='record and render on the fly (window_frame template)'):
+            args = ['termtosvg', svg_filename, '--template', 'WINDOW_frame', '--verbose']
             TestMain.run_main(SHELL_COMMANDS, args)
 
         cast_v1_data = '\r\n'.join(['{',

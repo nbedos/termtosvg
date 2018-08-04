@@ -5,6 +5,7 @@ import tempfile
 from typing import List, Tuple, Union, Iterable
 
 import termtosvg.config as config
+import termtosvg.anim as anim
 
 logger = logging.getLogger('termtosvg')
 
@@ -20,12 +21,12 @@ RENDER_USAGE = "termtosvg render input_file [--template TEMPLATE] [--verbose] " 
 
 
 def parse(args, templates, default_template, default_geometry):
-    # type: (List, Iterable, str, Union[None, str]) -> Tuple[Union[None, str], argparse.Namespace]
+    # type: (List, dict, str, Union[None, str]) -> Tuple[Union[None, str], argparse.Namespace]
     template_parser = argparse.ArgumentParser(add_help=False)
     template_parser.add_argument(
-        '--template',
+        '-t', '--template',
         help='SVG template used to render the terminal session ({})'.format(', '.join(templates)),
-        choices=templates,
+        type=lambda name: anim.validate_template(name, templates),
         default=default_template,
         metavar='TEMPLATE'
     )
@@ -111,7 +112,6 @@ def record_subcommand(geometry, input_fileno, output_fileno, cast_filename):
 
 def render_subcommand(template, cast_filename, svg_filename):
     """Render the animation from an asciicast recording"""
-    import termtosvg.anim as anim
     import termtosvg.asciicast as asciicast
     import termtosvg.term as term
 
@@ -125,7 +125,6 @@ def render_subcommand(template, cast_filename, svg_filename):
 
 def record_render_subcommand(template, geometry, input_fileno, output_fileno, svg_filename):
     """Record and render the animation on the fly"""
-    import termtosvg.anim as anim
     import termtosvg.term as term
 
     logger.info('Recording started, enter "exit" command or Control-D to end')
@@ -182,15 +181,13 @@ def main(args=None, input_fileno=None, output_fileno=None):
         if svg_filename is None:
             _, svg_filename = tempfile.mkstemp(prefix='termtosvg_', suffix='.svg')
 
-        template = templates[args.template]
-        render_subcommand(template, args.input_file, svg_filename)
+        render_subcommand(args.template, args.input_file, svg_filename)
     else:
         svg_filename = args.output_file
         if svg_filename is None:
             _, svg_filename = tempfile.mkstemp(prefix='termtosvg_', suffix='.svg')
 
-        template = templates[args.template]
-        record_render_subcommand(template, args.screen_geometry, input_fileno, output_fileno,
+        record_render_subcommand(args.template, args.screen_geometry, input_fileno, output_fileno,
                                  svg_filename)
 
     for handler in logger.handlers:

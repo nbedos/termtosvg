@@ -199,23 +199,6 @@ _BG_RECT_TAG_ATTRIBUTES = {
 BG_RECT_TAG = etree.Element('rect', _BG_RECT_TAG_ATTRIBUTES)
 
 
-def validate_svg(svg_file):
-    """Validate an SVG file against the latest version of SVG 1.1 Document Type Definition"""
-    data = pkgutil.get_data(__name__, 'data/svg11-flat-20110816.dtd')
-    dtd = etree.DTD(io.BytesIO(data))
-
-    try:
-        tree = etree.parse(svg_file)
-        root = tree.getroot()
-        is_valid = dtd.validate(root)
-    except etree.Error as exc:
-        raise ValueError('Invalid SVG file') from exc
-
-    if not is_valid:
-        reason = dtd.error_log.filter_from_errors()[0]
-        raise ValueError('Invalid SVG file: {}'.format(reason))
-
-
 def make_animated_group(records, time, duration, cell_height, cell_width, defs):
     # type: (Iterable[CharacterCellLineEvent], int, int, int, int, Dict[str, etree.ElementBase]) -> Tuple[etree.ElementBase, Dict[str, etree.ElementBase]]
     """Return a group element containing an SVG version of the provided records. This group is
@@ -343,6 +326,10 @@ def resize_template(template, columns, rows, cell_width, cell_height):
     except (KeyError, ValueError) as exc:
         raise TemplateError(attributes_err_msg) from exc
 
+    # Update settings with real columns and rows values to preserve the scale in case
+    # the animation serves as a template
+    geometry.attrib['columns'], geometry.attrib['rows'] = str(columns), str(rows)
+
     if template_rows <= 0 or template_columns <= 0:
         raise TemplateError(attributes_err_msg)
 
@@ -356,10 +343,18 @@ def resize_template(template, columns, rows, cell_width, cell_height):
         raise TemplateError('svg element with id "screen" not found')
     scale(screen, template_columns, template_rows, columns, rows)
 
-    # Remove termtosvg private data so that the template can be validated against the DTD of SVG 1.1
-    settings.getparent().remove(settings)
-
     return root
+
+
+def validate_template(name, templates):
+    if name in templates:
+        return templates[name]
+
+    try:
+        with open(name, 'rb') as template_file:
+            return template_file.read()
+    except FileNotFoundError as exc:
+        raise TemplateError('Invalid template') from exc
 
 
 def _render_animation(records, template, cell_width, cell_height):
@@ -425,11 +420,9 @@ def add_css_variables(root, animation_duration):
     if style is None:
         raise TemplateError('Missing <style id="generated" ...> element in "defs"')
 
-    css = """{{
-        :root: {{
+    css = """:root {{
             --animation-duration: {animation_duration}ms;
-        }}
-    }}""".format(animation_duration=animation_duration)
+        }}""".format(animation_duration=animation_duration)
 
     style.text = etree.CDATA(css)
     return root

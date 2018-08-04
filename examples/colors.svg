@@ -1,11 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="terminal" baseProfile="full" viewBox="0 0 703 404" width="703" version="1.1">
     <defs>
-        <style type="text/css" id="generated"><![CDATA[{
-        :root: {
+        <termtosvg:template_settings xmlns:termtosvg="https://github.com/nbedos/termtosvg">
+            <termtosvg:screen_geometry columns="82" rows="19"/>
+        </termtosvg:template_settings>
+        <style type="text/css" id="generated"><![CDATA[:root {
             --animation-duration: 26449ms;
-        }
-    }]]></style>
+        }]]></style>
         <style type="text/css">
+            /* gjm8 color theme (source: https://terminal.sexy/) */
             .foreground {fill: #f8f8f2}
             .background {fill: #272822}
             .color0 {fill: #272822}
@@ -25,10 +27,8 @@
             .color14 {fill: #cc6633}
             .color15 {fill: #f9f8f5}
 
-            /* The following style attributes are required by termtosvg and should probably
-               not be modified, except for the font name. */
             #screen {
-                font-family: DejaVu Sans Mono, monospace;
+                font-family: 'DejaVu Sans Mono', monospace;
                 font-style: normal;
                 font-size: 14px;
             }

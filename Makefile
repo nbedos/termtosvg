@@ -4,6 +4,7 @@ VENV_PATH=.venv
 VENV_ACTIVATE=. $(VENV_PATH)/bin/activate
 EXAMPLES_DIR=examples
 CASTS_DIR=$(EXAMPLES_DIR)/casts
+TEMPLATES_DIR=termtosvg/data/templates
 
 .DEFAULT: usage
 
@@ -47,6 +48,12 @@ examples:
 	$(VENV_ACTIVATE) && \
 	    for cast_file in $$(find $(CASTS_DIR) -name '*.cast'); do \
 	    	svg_file="$(EXAMPLES_DIR)/$$(basename --suffix=.cast $$cast_file).svg" && \
-		termtosvg render "$$cast_file" "$$svg_file" --template carbon; \
-	    done
+		termtosvg render "$$cast_file" "$$svg_file" --template window_frame; \
+	    done && \
+	    for template in $$(find  $(TEMPLATES_DIR) -name '*.svg'); do \
+	    	svg_file="$(EXAMPLES_DIR)/awesome_$$(basename --suffix=.svg $$template).svg" && \
+		termtosvg render examples/casts/awesome.cast "$$svg_file" -t "$$template"; \
+	    done;
+
+	    
 

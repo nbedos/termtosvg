@@ -190,17 +190,4 @@ class TestAnim(unittest.TestCase):
         root = tree.getroot()
         anim.add_css_variables(root, 42)
 
-    def test_validate_svg(self):
-        failure_test_cases = [
-            '',
-            '<svg>',
-            '</svg>',
-            '<svg></a>',
-            None,
-        ]
-        for case in failure_test_cases:
-            with self.subTest(case=case):
-                with self.assertRaises(ValueError):
-                    anim.validate_svg(io.StringIO(case))
-
 
