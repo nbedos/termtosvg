@@ -1,6 +1,5 @@
 import io
 import logging
-import pkgutil
 from collections import namedtuple
 from itertools import groupby
 from typing import Dict, List, Iterable, Iterator, Union, Tuple
@@ -412,16 +411,26 @@ def _render_animation(records, template, cell_width, cell_height):
 def add_css_variables(root, animation_duration):
     # type: (etree.ElementBase, int) -> etree.ElementBase
     try:
-        style = root.find('.//{{{namespace}}}defs/{{{namespace}}}style[@id="generated"]'
+        style = root.find('.//{{{namespace}}}defs/{{{namespace}}}style[@id="generated-style"]'
                           .format(namespace=SVG_NS))
     except etree.Error as exc:
         raise TemplateError('Invalid template') from exc
 
     if style is None:
-        raise TemplateError('Missing <style id="generated" ...> element in "defs"')
+        raise TemplateError('Missing <style id="generated-style" ...> element in "defs"')
 
     css = """:root {{
             --animation-duration: {animation_duration}ms;
+        }}
+        
+        #screen {{
+                font-family: 'DejaVu Sans Mono', monospace;
+                font-style: normal;
+                font-size: 14px;
+            }}
+
+        text {{
+            dominant-baseline: text-before-edge;
         }}""".format(animation_duration=animation_duration)
 
     style.text = etree.CDATA(css)

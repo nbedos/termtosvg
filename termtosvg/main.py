@@ -23,7 +23,9 @@ def parse(args, templates, default_template, default_geometry):
     template_parser = argparse.ArgumentParser(add_help=False)
     template_parser.add_argument(
         '-t', '--template',
-        help='SVG template used to render the terminal session ({})'.format(', '.join(templates)),
+        help=('set the SVG template used for rendering the SVG animation. '
+              'TEMPLATE may either be one of the default templates ({}) '
+              'or a path to a valid template.').format(', '.join(templates)),
         type=lambda name: anim.validate_template(name, templates),
         default=default_template,
         metavar='TEMPLATE'
@@ -33,7 +35,7 @@ def parse(args, templates, default_template, default_geometry):
         '-g', '--screen-geometry',
         help='geometry of the terminal screen used for rendering the animation. The geometry must '
         'be given as the number of columns and the number of rows on the screen separated by the '
-        'character "x". For example "82x19" for an 82 columns by 19 rows screen',
+        'character "x". For example "82x19" for an 82 columns by 19 rows screen.',
         metavar='GEOMETRY',
         default=default_geometry,
         type=config.validate_geometry

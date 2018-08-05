@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='termtosvg',
-    version='0.4.0',
+    version='0.5.0',
     license='BSD 3-clause license',
     author='Nicolas Bedos',
     author_email='nicolas.bedos@gmail.com',
@@ -17,6 +17,8 @@ setup(
         'Environment :: Console',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
+        'Operating System :: MacOS',
+        'Operating System :: POSIX :: BSD',
         'Operating System :: POSIX :: Linux',
         'Programming Language :: Python',
         'Programming Language :: Python :: 3.5',

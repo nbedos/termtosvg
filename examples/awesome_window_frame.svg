@@ -6,12 +6,12 @@
         <style type="text/css" id="generated-style"><![CDATA[:root {
             --animation-duration: 26350ms;
         }
-
+        
         #screen {
-            font-family: 'DejaVu Sans Mono', monospace;
-            font-style: normal;
-            font-size: 14px;
-        }
+                font-family: 'DejaVu Sans Mono', monospace;
+                font-style: normal;
+                font-size: 14px;
+            }
 
         text {
             dominant-baseline: text-before-edge;

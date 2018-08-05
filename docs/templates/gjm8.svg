@@ -3,10 +3,20 @@
         <termtosvg:template_settings xmlns:termtosvg="https://github.com/nbedos/termtosvg">
             <termtosvg:screen_geometry columns="82" rows="19"/>
         </termtosvg:template_settings>
-        <style type="text/css" id="generated"><![CDATA[:root {
+        <style type="text/css" id="generated-style"><![CDATA[:root {
             --animation-duration: 26350ms;
+        }
+
+        #screen {
+            font-family: 'DejaVu Sans Mono', monospace;
+            font-style: normal;
+            font-size: 14px;
+        }
+
+        text {
+            dominant-baseline: text-before-edge;
         }]]></style>
-        <style type="text/css">
+        <style type="text/css" id="user-style">
             /* gjm8 color theme (source: https://terminal.sexy/) */
             .foreground {fill: #c5c5c5;}
             .background {fill: #1c1c1c;}
@@ -26,16 +36,6 @@
             .color13 {fill: #833c9f;}
             .color14 {fill: #0ac1cd;}
             .color15 {fill: #e5e5e5;}
-
-            #screen {
-                font-family: 'DejaVu Sans Mono', monospace;
-                font-style: normal;
-                font-size: 14px;
-            }
-
-            text {
-                dominant-baseline: text-before-edge;
-            }
         </style>
     </defs>
     <svg id="screen" width="656" viewBox="0 0 656 323" preserveAspectRatio="xMidYMin meet">

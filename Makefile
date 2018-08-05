@@ -47,6 +47,7 @@ static:
 	(test -d $(VENV_PATH) || python -m venv $(VENV_PATH))
 	$(VENV_ACTIVATE) && \
 	    rm -r examples/*.svg && \
+	    termtosvg render $(CASTS_DIR)/awesome.cast $(EXAMPLES_DIR)/awesome_window_frame.svg -t window_frame && \
 	    termtosvg render $(CASTS_DIR)/awesome.cast $(EXAMPLES_DIR)/awesome_window_frame_js.svg -t window_frame_js && \
 	    termtosvg render $(CASTS_DIR)/colors.cast $(EXAMPLES_DIR)/colors_progress_bar.svg -t progress_bar && \
 	    termtosvg render $(CASTS_DIR)/htop.cast $(EXAMPLES_DIR)/htop_gjm8.svg -t gjm8 && \

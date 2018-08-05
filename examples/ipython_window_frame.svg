@@ -3,10 +3,20 @@
         <termtosvg:template_settings xmlns:termtosvg="https://github.com/nbedos/termtosvg">
             <termtosvg:screen_geometry columns="82" rows="19"/>
         </termtosvg:template_settings>
-        <style type="text/css" id="generated"><![CDATA[:root {
+        <style type="text/css" id="generated-style"><![CDATA[:root {
             --animation-duration: 36544ms;
+        }
+        
+        #screen {
+                font-family: 'DejaVu Sans Mono', monospace;
+                font-style: normal;
+                font-size: 14px;
+            }
+
+        text {
+            dominant-baseline: text-before-edge;
         }]]></style>
-        <style type="text/css">
+        <style type="text/css" id="user-style">
             /* gjm8 color theme (source: https://terminal.sexy/) */
             .foreground {fill: #f8f8f2}
             .background {fill: #272822}
@@ -26,17 +36,6 @@
             .color13 {fill: #f5f4f1}
             .color14 {fill: #cc6633}
             .color15 {fill: #f9f8f5}
-
-            #screen {
-                font-family: 'DejaVu Sans Mono', monospace;
-                font-style: normal;
-                font-size: 14px;
-            }
-
-            text {
-                dominant-baseline: text-before-edge;
-            }
-            
         </style>
     </defs>
     <rect id="terminalui" class="background" width="100%" height="100%" ry="4.5826941"/>
