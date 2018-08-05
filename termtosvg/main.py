@@ -2,22 +2,20 @@ import argparse
 import logging
 import sys
 import tempfile
-from typing import List, Tuple, Union, Iterable
+from typing import List, Tuple, Union
 
 import termtosvg.config as config
 import termtosvg.anim as anim
 
 logger = logging.getLogger('termtosvg')
 
-USAGE = """termtosvg [--screen-geometry COLUMNSxLINES] [--template TEMPLATE] [--verbose] [--help] [output_file]
+USAGE = """termtosvg [output_file] [-g GEOMETRY] [-t TEMPLATE] [-v] [-h]
 
 Record a terminal session and render an SVG animation on the fly
 """
 EPILOG = "See also 'termtosvg record --help' and 'termtosvg render --help'"
-RECORD_USAGE = "termtosvg record [--screen-geometry COLUMNSxLINES] [--verbose] [--help] " \
-               "[output_file]"
-RENDER_USAGE = "termtosvg render input_file [--template TEMPLATE] [--verbose] " \
-               "[--help] [output_file]"
+RECORD_USAGE = "termtosvg record [output_file] [-g GEOMETRY] [-v] [-h]"
+RENDER_USAGE = "termtosvg render input_file [output_file] [-t TEMPLATE] [-v] [-h]"
 
 
 def parse(args, templates, default_template, default_geometry):
@@ -36,7 +34,7 @@ def parse(args, templates, default_template, default_geometry):
         help='geometry of the terminal screen used for rendering the animation. The geometry must '
         'be given as the number of columns and the number of rows on the screen separated by the '
         'character "x". For example "82x19" for an 82 columns by 19 rows screen',
-        metavar='COLUMNSxLINES',
+        metavar='GEOMETRY',
         default=default_geometry,
         type=config.validate_geometry
     )
@@ -70,7 +68,8 @@ def parse(args, templates, default_template, default_geometry):
                 'output_file',
                 nargs='?',
                 help='optional filename for the recording; if missing, a random filename will '
-                'be automatically generated'
+                'be automatically generated',
+                metavar='output_file'
             )
             return 'record', parser.parse_args(args[1:])
         elif args[0] == 'render':
@@ -88,6 +87,7 @@ def parse(args, templates, default_template, default_geometry):
                 nargs='?',
                 help='optional filename for the SVG animation; if missing, a random filename will '
                 'be automatically generated',
+                metavar='output_file'
             )
             return 'render', parser.parse_args(args[1:])
 
@@ -157,7 +157,7 @@ def main(args=None, input_fileno=None, output_fileno=None):
     logger.setLevel(logging.INFO)
 
     templates = config.default_templates()
-    default_template = 'plain' if 'plain' in templates else sorted(templates)[0]
+    default_template = 'gjm8' if 'gjm8' in templates else sorted(templates)[0]
 
     command, args = parse(args[1:], templates, default_template, None)
 

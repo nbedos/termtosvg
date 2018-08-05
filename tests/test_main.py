@@ -30,6 +30,8 @@ class TestMain(unittest.TestCase):
         ['--template', 'plain'],
         ['-t', 'plain'],
         ['--verbose', '--screen-geometry', '82x19', '--template', 'plain'],
+        ['output_filename', '--verbose', '--screen-geometry', '82x19', '--template', 'plain'],
+        ['--verbose', '--screen-geometry', '82x19', '--template', 'plain', 'output_filename'],
         ['-v', '-g', '82x19', '-t', 'plain'],
         ['record'],
         ['record', 'output_filename'],

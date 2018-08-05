@@ -27,7 +27,7 @@
             .color14 {fill: #0ac1cd;}
             .color15 {fill: #e5e5e5;}
             #wide_track {
-                transform: translate(150px, calc(100% - 40px));
+                transform: translate(150px, calc(100% - 45px));
             }
             #track {
                 transform: translate(150px, calc(100% - 33px));
@@ -60,13 +60,15 @@
                 dominant-baseline: text-before-edge;
             }
         </style>
-        <rect id="slider_wide_track" height="20px" width="65%"/>
+        <rect id="slider_wide_track" height="30px" width="65%"/>
         <rect id="slider_track" height="6px" width="65%"/>
         <circle id="slider_button" r="10px" class="color1"/>
         <g id="icon-play">
+            <rect x="-5" y="0" width="25" height="30" class="background"/>
             <path d="M0 4l14 11-14 11z"/>
         </g>
         <g id="icon-pause">
+            <rect x="-5" y="0" width="25" height="30" class="background"/>
             <rect x="0" y="5" width="5" height="20"/>
             <rect x="10" y="5" width="5" height="20"/>
         </g>

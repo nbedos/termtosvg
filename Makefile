@@ -1,4 +1,4 @@
-.PHONY: usage tests venv_dev xresources build deploy_test deploy_prod examples
+.PHONY: usage tests venv_dev xresources build deploy_test deploy_prod static
 
 VENV_PATH=.venv
 VENV_ACTIVATE=. $(VENV_PATH)/bin/activate
@@ -13,7 +13,7 @@ usage:
 	@echo "    make build           # Build source distribution archives"
 	@echo "    make deploy_prod     # Upload source distribution archives to pypi.org"
 	@echo "    make deploy_test     # Upload source distribution archives to test.pypi.org"
-	@echo "    make examples        # Render example SVG animations"
+	@echo "    make static        # Render example SVG animations"
 	@echo "    make tests           # Run unit tests"
 
 build: tests
@@ -43,17 +43,15 @@ venv_dev: setup.py
 	$(VENV_ACTIVATE) && \
 	    pip install -U -e .[dev]
 
-examples:
+static:
 	(test -d $(VENV_PATH) || python -m venv $(VENV_PATH))
 	$(VENV_ACTIVATE) && \
-	    for cast_file in $$(find $(CASTS_DIR) -name '*.cast'); do \
-	    	svg_file="$(EXAMPLES_DIR)/$$(basename --suffix=.cast $$cast_file).svg" && \
-		termtosvg render "$$cast_file" "$$svg_file" --template window_frame; \
-	    done && \
-	    for template in $$(find  $(TEMPLATES_DIR) -name '*.svg'); do \
-	    	svg_file="$(EXAMPLES_DIR)/awesome_$$(basename --suffix=.svg $$template).svg" && \
-		termtosvg render examples/casts/awesome.cast "$$svg_file" -t "$$template"; \
-	    done;
-
-	    
+	    rm -r examples/*.svg && \
+	    termtosvg render $(CASTS_DIR)/awesome.cast $(EXAMPLES_DIR)/awesome_window_frame_js.svg -t window_frame_js && \
+	    termtosvg render $(CASTS_DIR)/colors.cast $(EXAMPLES_DIR)/colors_progress_bar.svg -t progress_bar && \
+	    termtosvg render $(CASTS_DIR)/htop.cast $(EXAMPLES_DIR)/htop_gjm8.svg -t gjm8 && \
+	    termtosvg render $(CASTS_DIR)/ipython.cast $(EXAMPLES_DIR)/ipython_window_frame.svg -t window_frame && \
+	    termtosvg render $(CASTS_DIR)/unittest.cast $(EXAMPLES_DIR)/unittest_solarized_dark.svg -t solarized_dark
+	    rm -rf docs/examples/ && mkdir docs/examples && cp examples/*.svg docs/examples/
+	    rm -rf docs/templates/ && cp -r termtosvg/data/templates docs/
 

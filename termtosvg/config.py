@@ -6,10 +6,10 @@ PKG_TEMPLATE_PATH = 'data/templates'
 # does not seem worth it: it adds a dependency and slows down the invocation of termtosvg
 # by 150ms ('time termtosvg --help' execution time goes from 200ms to 350ms)
 DEFAULT_TEMPLATES_NAMES = [
-    'plain.svg',
-    'plain_dracula.svg',
-    'plain_solarized_dark.svg',
-    'plain_solarized_light.svg',
+    'gjm8.svg',
+    'dracula.svg',
+    'solarized_dark.svg',
+    'solarized_light.svg',
     'progress_bar.svg',
     'window_frame.svg',
     'window_frame_js.svg'
