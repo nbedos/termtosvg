@@ -23,8 +23,7 @@ termtosvg is compatible with Linux, Mac OS and BSD OSes, requires Python >= 3.5 
 pip3 install --user termtosvg
 ```
 
-## Usage
-### Basic usage
+## Basic usage
 Start recording with:
 
 ```
