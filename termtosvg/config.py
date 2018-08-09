@@ -10,7 +10,7 @@ DEFAULT_TEMPLATES_NAMES = [
     'dracula.svg',
     'solarized_dark.svg',
     'solarized_light.svg',
-    'base16-default-dark.svg',
+    'base16_default_dark.svg',
     'progress_bar.svg',
     'window_frame.svg',
     'window_frame_js.svg'
