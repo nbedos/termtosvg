@@ -13,7 +13,7 @@ usage:
 	@echo "    make build           # Build source distribution archives"
 	@echo "    make deploy_prod     # Upload source distribution archives to pypi.org"
 	@echo "    make deploy_test     # Upload source distribution archives to test.pypi.org"
-	@echo "    make static        # Render example SVG animations"
+	@echo "    make static          # Render example SVG animations"
 	@echo "    make tests           # Run unit tests"
 
 build: tests
@@ -46,7 +46,8 @@ venv_dev: setup.py
 static:
 	(test -d $(VENV_PATH) || python -m venv $(VENV_PATH))
 	$(VENV_ACTIVATE) && \
-	    rm -r examples/*.svg && \
+	    pip install . -U && \
+	    rm -rf examples/*.svg && \
 	    termtosvg render $(CASTS_DIR)/awesome.cast $(EXAMPLES_DIR)/awesome_window_frame.svg -t window_frame && \
 	    termtosvg render $(CASTS_DIR)/awesome.cast $(EXAMPLES_DIR)/awesome_window_frame_js.svg -t window_frame_js && \
 	    termtosvg render $(CASTS_DIR)/colors.cast $(EXAMPLES_DIR)/colors_progress_bar.svg -t progress_bar && \
