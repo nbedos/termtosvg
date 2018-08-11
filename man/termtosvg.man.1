@@ -1,0 +1,136 @@
+.TH TERMTOSVG 1 2018-08-05
+.SH NAME
+termtosvg \- record terminal sessions as svg animations
+.SH SYNOPSIS
+.SY termtosvg
+.RB [ "-h, --help" ]
+.RB [ "-v, --verbose" ]
+.RB [ "-g, --screen-geometry"\c
+.RI = geometry ]
+.RB [ "-t, --template"\c
+.RI = template ]
+.I outfile
+.YS
+.SY "termtosvg record"
+.RB [ "-h, --help" ]
+.RB [ "-v, --verbose" ]
+.RB [ "-g, --screen-geometry"\c
+.RI = geometry ]
+.I outfile
+.YS
+.SY "termtosvg render"
+.RB [ "-h, --help" ]
+.RB [ "-v, --verbose" ]
+.RB [ "-g, --screen-geometry"\c
+.RI = geometry ]
+.RB [ "-t, --template"\c
+.RI = template ]
+.I infile
+.RI [ outfile ]
+.SH DESCRIPTION
+.B termtosvg
+makes recordings of terminal sessions in animated SVG format. If no
+.I outfile
+filename is provided, a random temporary filename will be automatically
+generated.
+.SS Commands
+The default behavior of
+.B termtosvg
+is to render an SVG animation.
+.TP
+.B termtosvg record
+Record a terminal session in asciicast v2 format. The recording is a text file
+which contains timing information as well as what was displayed on the screen
+during the terminal session. It may be edited to alter the timing of the
+recording or the information displayed on the screen of the terminal.
+.TP
+.B termtosvg render
+Render an animated SVG from a recording in asciicast v1 or v2 format. This
+allows rendering in SVG format of any recording made with asciinema.
+.RE
+.SH OPTIONS
+.TP
+.B -g, --screen-geometry
+Geometry of the terminal screen used for rendering the animation. The
+.I geometry
+must be given as the number of columns and the number of rows on the screen
+separated by the character "x". For example "82x19" for an 82 columns by 19
+rows screen.
+.TP
+.B -t, --template
+Set the SVG template used for rendering the SVG animation.
+.I template
+may either be one of the default templates
+.RI ( gjm8 ,
+.IR dracula ,
+.IR solarized_dark ,
+.IR solarized_light ,
+.IR progress_bar ,
+.IR window_frame ,
+.IR window_frame_js )
+or a path to a valid template.
+.TP
+.B -h, --help
+Print usage and exit.
+.TP
+.B -v, --verbose
+Increase log message verbosity.
+.SS SVG Templates
+Templates make it possible to customize the SVG animation produced by
+.B termtosvg
+in a number of ways including, but not limited to:
+.IP *
+Specifying the color theme and font used for rendering the terminal session.
+.IP *
+Adding a custom terminal window frame to the animation to make it look like a
+real terminal.
+.IP *
+Adding JavaScript code to pause the animation, seek to a specific frame, etc.
+.P
+See
+.BR termtosvg-template (5)
+for more details.
+.SH ENVIRONMENT
+.TP
+.B SHELL
+.B termtosvg
+will spawn the shell specified by the
+.B SHELL
+environment variable, or
+.I /bin/sh
+if the variable does not exist. Spawning a new shell is necessary so that
+.B termtosvg
+can act as an intermediary between the shell and the pseudo terminal and
+capture all the data sent to the terminal.
+.SH EXAMPLES
+.TP
+.B Record a terminal session and produce an SVG animation named animation.svg:
+.IP
+.EX
+termtosvg animation.svg
+.EE
+.RE
+.TP
+.B Record a terminal session and render it using a specific template:
+.IP
+.EX
+termtosvg \-t ~/templates/my_template.svg
+.EE
+.TP
+.B Record a terminal session with a specific screen geometry:
+.IP
+.EX
+termtosvg \-g 80x24 animation.svg
+.EE
+.TP
+.B Record a terminal session in asciicast v2 format:
+.IP
+.EX
+termtosvg record recording.cast
+.EE
+.TP
+.B Render an SVG animation from a recording in asciicast format
+.IP
+.EX
+termtosvg render recording.cast animation.svg
+.EE
