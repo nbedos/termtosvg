@@ -20,6 +20,7 @@ SHELL_COMMANDS = [
     'echo -e "\\033[1mbold\\033[0m"\r\n',
     'echo -e "\\033[3mitalics\\033[0m"\r\n',
     'echo -e "\\033[4munderscore\\033[0m"\r\n',
+    'echo -e "\\033[4mstrikethrough\\033[0m"\r\n',
     'exit;\r\n'
 ]
 
