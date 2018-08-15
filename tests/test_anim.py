@@ -27,8 +27,10 @@ class TestAnim(unittest.TestCase):
             pyte.screens.Char('F', '008700', 'ABCDEF'),
             # Bright and bold
             pyte.screens.Char('G', 'brightgreen', 'ABCDEF', bold=True),
+            # Italics
+            pyte.screens.Char('H', 'red', 'blue', italics=True),
             # Underscore
-            pyte.screens.Char('H', 'red', 'blue', underscore=True),
+            pyte.screens.Char('I', 'red', 'blue', underscore=True),
         ]
 
         char_cells = [

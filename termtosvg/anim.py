@@ -33,10 +33,11 @@ class TemplateError(Exception):
     pass
 
 
-_CharacterCell = namedtuple('_CharacterCell', ['text', 'color', 'background_color', 'bold', 'underscore'])
+_CharacterCell = namedtuple('_CharacterCell', ['text', 'color', 'background_color', 'bold', 'italics', 'underscore'])
 _CharacterCell.__doc__ = 'Representation of a character cell'
 _CharacterCell.text.__doc__ = 'Text content of the cell'
 _CharacterCell.bold.__doc__ = 'Bold modificator flag'
+_CharacterCell.italics.__doc__ = 'Italics modificator flag'
 _CharacterCell.underscore.__doc__ = 'Underscore modificator flag'
 _CharacterCell.color.__doc__ = 'Color of the text'
 _CharacterCell.background_color.__doc__ = 'Background color of the cell'
@@ -80,7 +81,7 @@ class CharacterCell(_CharacterCell):
         if char.reverse:
             text_color, background_color = background_color, text_color
 
-        return CharacterCell(char.data, text_color, background_color, char.bold, char.underscore)
+        return CharacterCell(char.data, text_color, background_color, char.bold, char.italics, char.underscore)
 
 
 CharacterCellConfig = namedtuple('CharacterCellConfig', ['width', 'height'])
@@ -158,6 +159,9 @@ def make_text_tag(column, attributes, text, cell_width):
     }
     if attributes['bold']:
         text_tag_attributes['font-weight'] = 'bold'
+    
+    if attributes['italics']:
+        text_tag_attributes['font-style'] = 'italic'
 
     if attributes['underscore']:
         text_tag_attributes['text-decoration'] = 'underline'
@@ -184,8 +188,8 @@ def _render_characters(screen_line, cell_width):
     :param screen_line: Mapping between column numbers and characters
     :param cell_width: Width of a character cell in pixels
     """
-    line = [(col, char) for (col, char) in sorted(screen_line.items())]
-    key = ConsecutiveWithSameAttributes(['color', 'bold', 'underscore'])
+    line = sorted(screen_line.items())
+    key = ConsecutiveWithSameAttributes(['color', 'bold', 'italics', 'underscore'])
     text_tags = [make_text_tag(column, attributes, ''.join(c.text for _, c in group), cell_width)
                  for (column, attributes), group in groupby(line, key)]
 
