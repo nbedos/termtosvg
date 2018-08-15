@@ -27,16 +27,19 @@ class TestAnim(unittest.TestCase):
             pyte.screens.Char('F', '008700', 'ABCDEF'),
             # Bright and bold
             pyte.screens.Char('G', 'brightgreen', 'ABCDEF', bold=True),
+            # Underscore
+            pyte.screens.Char('H', 'red', 'blue', underscore=True),
         ]
 
         char_cells = [
-            anim.CharacterCell('A', 'color1', 'color4', False),
-            anim.CharacterCell('B', 'color4', 'color1', False),
-            anim.CharacterCell('C', 'color9', 'color4', True),
-            anim.CharacterCell('D', 'color4', 'color9', True),
-            anim.CharacterCell('E', 'foreground', 'background', False),
-            anim.CharacterCell('F', '#008700', '#ABCDEF', False),
-            anim.CharacterCell('G', 'color10', '#ABCDEF', True),
+            anim.CharacterCell('A', 'color1', 'color4', False, False),
+            anim.CharacterCell('B', 'color4', 'color1', False, False),
+            anim.CharacterCell('C', 'color9', 'color4', True, False),
+            anim.CharacterCell('D', 'color4', 'color9', True, False),
+            anim.CharacterCell('E', 'foreground', 'background', False, False),
+            anim.CharacterCell('F', '#008700', '#ABCDEF', False, False),
+            anim.CharacterCell('G', 'color10', '#ABCDEF', True, False),
+            anim.CharacterCell('H', 'color1', 'color4', False, True),
         ]
 
         for pyte_char, cell_char in zip(pyte_chars, char_cells):
@@ -46,16 +49,16 @@ class TestAnim(unittest.TestCase):
     def test__render_line_bg_colors_xml(self):
         cell_width = 8
         screen_line = {
-            0: anim.CharacterCell('A', 'black', 'red', False),
-            1: anim.CharacterCell('A', 'black', 'red', False),
-            3: anim.CharacterCell('A', 'black', 'red', False),
-            4: anim.CharacterCell('A', 'black', 'blue', False),
-            6: anim.CharacterCell('A', 'black', 'blue', False),
-            7: anim.CharacterCell('A', 'black', 'blue', False),
-            8: anim.CharacterCell('A', 'black', 'green', False),
-            9: anim.CharacterCell('A', 'black', 'red', False),
-            10: anim.CharacterCell('A', 'black', 'red', False),
-            11: anim.CharacterCell('A', 'black', '#123456', False),
+            0: anim.CharacterCell('A', 'black', 'red', False, False),
+            1: anim.CharacterCell('A', 'black', 'red', False, False),
+            3: anim.CharacterCell('A', 'black', 'red', False, False),
+            4: anim.CharacterCell('A', 'black', 'blue', False, False),
+            6: anim.CharacterCell('A', 'black', 'blue', False, False),
+            7: anim.CharacterCell('A', 'black', 'blue', False, False),
+            8: anim.CharacterCell('A', 'black', 'green', False, False),
+            9: anim.CharacterCell('A', 'black', 'red', False, False),
+            10: anim.CharacterCell('A', 'black', 'red', False, False),
+            11: anim.CharacterCell('A', 'black', '#123456', False, False),
         }
 
         rectangles = anim._render_line_bg_colors(screen_line=screen_line,
@@ -85,15 +88,15 @@ class TestAnim(unittest.TestCase):
 
     def test__render_characters(self):
         screen_line = {
-            0: anim.CharacterCell('A', 'red', 'white', False),
-            1: anim.CharacterCell('B', 'blue', 'white', False),
-            2: anim.CharacterCell('C', 'blue', 'white', False),
-            7: anim.CharacterCell('D', '#00FF00', 'white', False),
-            8: anim.CharacterCell('E', '#00FF00', 'white', False),
-            9: anim.CharacterCell('F', '#00FF00', 'white', False),
-            10: anim.CharacterCell('G', '#00FF00', 'white', False),
-            11: anim.CharacterCell('H', 'red', 'white', False),
-            20: anim.CharacterCell(' ', 'black', 'black', False)
+            0: anim.CharacterCell('A', 'red', 'white', False, False),
+            1: anim.CharacterCell('B', 'blue', 'white', False, False),
+            2: anim.CharacterCell('C', 'blue', 'white', False, False),
+            7: anim.CharacterCell('D', '#00FF00', 'white', False, False),
+            8: anim.CharacterCell('E', '#00FF00', 'white', False, False),
+            9: anim.CharacterCell('F', '#00FF00', 'white', False, False),
+            10: anim.CharacterCell('G', '#00FF00', 'white', False, False),
+            11: anim.CharacterCell('H', 'red', 'white', False, False),
+            20: anim.CharacterCell(' ', 'black', 'black', False, False)
         }
 
         with self.subTest(case='Content'):
@@ -141,7 +144,7 @@ class TestAnim(unittest.TestCase):
 
     def test_make_animated_group(self):
         def line(i):
-            chars = [anim.CharacterCell(c, '#123456', '#789012', False) for c in 'line{}'.format(i)]
+            chars = [anim.CharacterCell(c, '#123456', '#789012', False, False) for c in 'line{}'.format(i)]
             return dict(enumerate(chars))
 
         records = [
@@ -162,7 +165,7 @@ class TestAnim(unittest.TestCase):
 
     def test__render_animation(self):
         def line(i):
-            chars = [anim.CharacterCell(c, '#123456', '#789012', False) for c in 'line{}'.format(i)]
+            chars = [anim.CharacterCell(c, '#123456', '#789012', False, False) for c in 'line{}'.format(i)]
             return dict(enumerate(chars))
 
         records = [
