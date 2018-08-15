@@ -33,7 +33,10 @@ class TemplateError(Exception):
     pass
 
 
-_CharacterCell = namedtuple('_CharacterCell', ['text', 'color', 'background_color', 'bold', 'italics', 'underscore', 'strikethrough'])
+_CharacterCell = namedtuple('_CharacterCell', ['text', 'color',
+                                               'background_color', 'bold',
+                                               'italics', 'underscore',
+                                               'strikethrough'])
 _CharacterCell.__doc__ = 'Representation of a character cell'
 _CharacterCell.text.__doc__ = 'Text content of the cell'
 _CharacterCell.bold.__doc__ = 'Bold modificator flag'
@@ -82,7 +85,9 @@ class CharacterCell(_CharacterCell):
         if char.reverse:
             text_color, background_color = background_color, text_color
 
-        return CharacterCell(char.data, text_color, background_color, char.bold, char.italics, char.underscore, char.strikethrough)
+        return CharacterCell(char.data, text_color, background_color,
+                             char.bold, char.italics, char.underscore,
+                             char.strikethrough)
 
 
 CharacterCellConfig = namedtuple('CharacterCellConfig', ['width', 'height'])
