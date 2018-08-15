@@ -15,8 +15,10 @@ SHELL_COMMANDS = [
     'a',
     'm',
     'i\r\n',
-    "\033[1;31mbright red fg\033[0m\r\n",
-    "\033[1;41mbright red bg\033[0m\r\n",
+    'echo -e "\\033[1;31mbright red fg\\033[0m"\r\n',
+    'echo -e "\\033[1;41mbright red bg\\033[0m"\r\n',
+    'echo -e "\\033[1mbold\\033[0m"\r\n',
+    'echo -e "\\033[3mitalics\\033[0m"\r\n',
     'exit;\r\n'
 ]
 

@@ -37,7 +37,7 @@ _CharacterCell = namedtuple('_CharacterCell', ['text', 'color', 'background_colo
 _CharacterCell.__doc__ = 'Representation of a character cell'
 _CharacterCell.text.__doc__ = 'Text content of the cell'
 _CharacterCell.bold.__doc__ = 'Bold modificator flag'
-_CharacterCell.italics.__doc__ = 'Itaics modificator flag'
+_CharacterCell.italics.__doc__ = 'Italics modificator flag'
 _CharacterCell.color.__doc__ = 'Color of the text'
 _CharacterCell.background_color.__doc__ = 'Background color of the cell'
 
@@ -184,7 +184,7 @@ def _render_characters(screen_line, cell_width):
     :param screen_line: Mapping between column numbers and characters
     :param cell_width: Width of a character cell in pixels
     """
-    line = [(col, char) for (col, char) in sorted(screen_line.items())]
+    line = sorted(screen_line.items())
     key = ConsecutiveWithSameAttributes(['color', 'bold', 'italics'])
     text_tags = [make_text_tag(column, attributes, ''.join(c.text for _, c in group), cell_width)
                  for (column, attributes), group in groupby(line, key)]
