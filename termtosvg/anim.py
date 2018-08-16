@@ -272,9 +272,25 @@ def make_animated_group(records, time, duration, cell_height, cell_width, defs):
 
     return animation_group_tag, new_definitions
 
+def indent(elem, level=0):
+    # From http://effbot.org/zone/element-lib.htm#prettyprint
+    i = "\n" + level*"    "
+    if len(elem):
+        if not elem.text or not elem.text.strip():
+            elem.text = i + "    "
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+        for elem in elem:
+            indent(elem, level+1)
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+    else:
+        if level and (not elem.tail or not elem.tail.strip()):
+            elem.tail = i
 
 def render_animation(records, filename, template, cell_width=8, cell_height=17):
     root = _render_animation(records, template, cell_width, cell_height)
+    indent(root)
     with open(filename, 'wb') as output_file:
         output_file.write(etree.tostring(root))
 
