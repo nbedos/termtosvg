@@ -37,6 +37,9 @@ _CharacterCell = namedtuple('_CharacterCell', ['text', 'color',
                                                'background_color', 'bold',
                                                'italics', 'underscore',
                                                'strikethrough'])
+# Make Last four arguments of _CharacterCell constructor default to False (bold, italics,
+# underscore and strikethrough)
+_CharacterCell.__new__.__defaults__ = (False,) * 4
 _CharacterCell.__doc__ = 'Representation of a character cell'
 _CharacterCell.text.__doc__ = 'Text content of the cell'
 _CharacterCell.bold.__doc__ = 'Bold modificator flag'
@@ -192,7 +195,7 @@ def _render_characters(screen_line, cell_width):
     # type: (Dict[int, CharacterCell], int) -> List[etree.ElementBase]
     """Return a list of 'text' elements representing the line of the screen
 
-    Consecutive characters with the same styling attributes (text color and font weight) are
+    Consecutive characters with the same styling attributes (text color, font weight...) are
     grouped together in a single text element.
 
     :param screen_line: Mapping between column numbers and characters
