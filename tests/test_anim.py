@@ -29,17 +29,23 @@ class TestAnim(unittest.TestCase):
             pyte.screens.Char('G', 'brightgreen', 'ABCDEF', bold=True),
             # Italics
             pyte.screens.Char('H', 'red', 'blue', italics=True),
+            # Underscore
+            pyte.screens.Char('I', 'red', 'blue', underscore=True),
+            # Strikethrough
+            pyte.screens.Char('J', 'red', 'blue', strikethrough=True),
         ]
 
         char_cells = [
-            anim.CharacterCell('A', 'color1', 'color4', False, False),
-            anim.CharacterCell('B', 'color4', 'color1', False, False),
-            anim.CharacterCell('C', 'color9', 'color4', True, False),
-            anim.CharacterCell('D', 'color4', 'color9', True, False),
-            anim.CharacterCell('E', 'foreground', 'background', False, False),
-            anim.CharacterCell('F', '#008700', '#ABCDEF', False, False),
-            anim.CharacterCell('G', 'color10', '#ABCDEF', True, False),
-            anim.CharacterCell('H', 'color1', 'color4', False, True),
+            anim.CharacterCell('A', 'color1', 'color4'),
+            anim.CharacterCell('B', 'color4', 'color1'),
+            anim.CharacterCell('C', 'color9', 'color4', bold=True),
+            anim.CharacterCell('D', 'color4', 'color9', bold=True),
+            anim.CharacterCell('E', 'foreground', 'background'),
+            anim.CharacterCell('F', '#008700', '#ABCDEF'),
+            anim.CharacterCell('G', 'color10', '#ABCDEF', bold=True),
+            anim.CharacterCell('H', 'color1', 'color4', italics=True),
+            anim.CharacterCell('I', 'color1', 'color4', underscore=True),
+            anim.CharacterCell('J', 'color1', 'color4', strikethrough=True),
         ]
 
         for pyte_char, cell_char in zip(pyte_chars, char_cells):
@@ -49,16 +55,16 @@ class TestAnim(unittest.TestCase):
     def test__render_line_bg_colors_xml(self):
         cell_width = 8
         screen_line = {
-            0: anim.CharacterCell('A', 'black', 'red', False, False),
-            1: anim.CharacterCell('A', 'black', 'red', False, False),
-            3: anim.CharacterCell('A', 'black', 'red', False, False),
-            4: anim.CharacterCell('A', 'black', 'blue', False, False),
-            6: anim.CharacterCell('A', 'black', 'blue', False, False),
-            7: anim.CharacterCell('A', 'black', 'blue', False, False),
-            8: anim.CharacterCell('A', 'black', 'green', False, False),
-            9: anim.CharacterCell('A', 'black', 'red', False, False),
-            10: anim.CharacterCell('A', 'black', 'red', False, False),
-            11: anim.CharacterCell('A', 'black', '#123456', False, False),
+            0: anim.CharacterCell('A', 'black', 'red'),
+            1: anim.CharacterCell('A', 'black', 'red'),
+            3: anim.CharacterCell('A', 'black', 'red'),
+            4: anim.CharacterCell('A', 'black', 'blue'),
+            6: anim.CharacterCell('A', 'black', 'blue'),
+            7: anim.CharacterCell('A', 'black', 'blue'),
+            8: anim.CharacterCell('A', 'black', 'green'),
+            9: anim.CharacterCell('A', 'black', 'red'),
+            10: anim.CharacterCell('A', 'black', 'red'),
+            11: anim.CharacterCell('A', 'black', '#123456'),
         }
 
         rectangles = anim._render_line_bg_colors(screen_line=screen_line,
@@ -88,32 +94,36 @@ class TestAnim(unittest.TestCase):
 
     def test__render_characters(self):
         screen_line = {
-            0: anim.CharacterCell('A', 'red', 'white', False, False),
-            1: anim.CharacterCell('B', 'blue', 'white', False, False),
-            2: anim.CharacterCell('C', 'blue', 'white', False, False),
-            7: anim.CharacterCell('D', '#00FF00', 'white', False, False),
-            8: anim.CharacterCell('E', '#00FF00', 'white', False, False),
-            9: anim.CharacterCell('F', '#00FF00', 'white', False, False),
-            10: anim.CharacterCell('G', '#00FF00', 'white', False, False),
-            11: anim.CharacterCell('H', 'red', 'white', False, False),
-            20: anim.CharacterCell(' ', 'black', 'black', False, False)
+            0: anim.CharacterCell('A', 'red', 'white'),
+            1: anim.CharacterCell('B', 'blue', 'white'),
+            2: anim.CharacterCell('C', 'blue', 'white'),
+            7: anim.CharacterCell('D', '#00FF00', 'white'),
+            8: anim.CharacterCell('E', '#00FF00', 'white'),
+            9: anim.CharacterCell('F', '#00FF00', 'white'),
+            10: anim.CharacterCell('G', '#00FF00', 'white'),
+            20: anim.CharacterCell('H', 'black', 'black', bold=True),
+            30: anim.CharacterCell('I', 'black', 'black', italics=True),
+            40: anim.CharacterCell('J', 'black', 'black', underscore=True),
+            50: anim.CharacterCell('K', 'black', 'black', strikethrough=True),
+            60: anim.CharacterCell('L', 'black', 'black', underscore=True, strikethrough=True),
         }
 
         with self.subTest(case='Content'):
             cell_width = 8
-            texts = anim._render_characters(screen_line, cell_width)
+            texts = {t.text: t for t in anim._render_characters(screen_line, cell_width)}
 
-            sorted_texts = sorted(texts, key=lambda x: x.text)
-            [text_a, text_bc, text_defg, text_h, text_space] = sorted_texts
-            self.assertEqual(text_a.text, 'A')
-            self.assertEqual(text_a.attrib['class'], 'red')
-            self.assertEqual(text_a.attrib['x'], '0')
-            self.assertEqual(text_bc.text, 'BC')
-            self.assertEqual(text_bc.attrib['class'], 'blue')
-            self.assertEqual(text_bc.attrib['x'], '8')
-            self.assertEqual(text_defg.text, 'DEFG')
-            self.assertEqual(text_defg.attrib['fill'], '#00FF00')
-            self.assertEqual(text_defg.attrib['x'], '56')
+            self.assertEqual(texts['A'].attrib['class'], 'red')
+            self.assertEqual(texts['A'].attrib['x'], '0')
+            self.assertEqual(texts['BC'].attrib['class'], 'blue')
+            self.assertEqual(texts['BC'].attrib['x'], '8')
+            self.assertEqual(texts['DEFG'].attrib['fill'], '#00FF00')
+            self.assertEqual(texts['DEFG'].attrib['x'], '56')
+            self.assertEqual(texts['H'].attrib['font-weight'], 'bold')
+            self.assertEqual(texts['I'].attrib['font-style'], 'italic')
+            self.assertIn('underline', texts['J'].attrib['text-decoration'].split())
+            self.assertIn('line-through', texts['K'].attrib['text-decoration'].split())
+            self.assertIn('underline', texts['L'].attrib['text-decoration'].split())
+            self.assertIn('line-through', texts['L'].attrib['text-decoration'].split())
 
     def test_ConsecutiveWithSameAttributes(self):
         testClass = namedtuple('testClass', ['field1', 'field2'])
@@ -144,7 +154,10 @@ class TestAnim(unittest.TestCase):
 
     def test_make_animated_group(self):
         def line(i):
-            chars = [anim.CharacterCell(c, '#123456', '#789012', False, False) for c in 'line{}'.format(i)]
+            chars = []
+            for c in 'line{}'.format(i):
+                chars.append(anim.CharacterCell(c, '#123456', '#789012',
+                                                False, False, False, False))
             return dict(enumerate(chars))
 
         records = [
@@ -165,7 +178,10 @@ class TestAnim(unittest.TestCase):
 
     def test__render_animation(self):
         def line(i):
-            chars = [anim.CharacterCell(c, '#123456', '#789012', False, False) for c in 'line{}'.format(i)]
+            chars = []
+            for c in 'line{}'.format(i):
+                chars.append(anim.CharacterCell(c, '#123456', '#789012',
+                                                False, False, False, False))
             return dict(enumerate(chars))
 
         records = [

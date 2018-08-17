@@ -33,11 +33,19 @@ class TemplateError(Exception):
     pass
 
 
-_CharacterCell = namedtuple('_CharacterCell', ['text', 'color', 'background_color', 'bold', 'italics'])
+_CharacterCell = namedtuple('_CharacterCell', ['text', 'color',
+                                               'background_color', 'bold',
+                                               'italics', 'underscore',
+                                               'strikethrough'])
+# Make Last four arguments of _CharacterCell constructor default to False (bold, italics,
+# underscore and strikethrough)
+_CharacterCell.__new__.__defaults__ = (False,) * 4
 _CharacterCell.__doc__ = 'Representation of a character cell'
 _CharacterCell.text.__doc__ = 'Text content of the cell'
 _CharacterCell.bold.__doc__ = 'Bold modificator flag'
 _CharacterCell.italics.__doc__ = 'Italics modificator flag'
+_CharacterCell.underscore.__doc__ = 'Underscore modificator flag'
+_CharacterCell.strikethrough.__doc__ = 'Strikethrough modificator flag'
 _CharacterCell.color.__doc__ = 'Color of the text'
 _CharacterCell.background_color.__doc__ = 'Background color of the cell'
 
@@ -80,7 +88,9 @@ class CharacterCell(_CharacterCell):
         if char.reverse:
             text_color, background_color = background_color, text_color
 
-        return CharacterCell(char.data, text_color, background_color, char.bold, char.italics)
+        return CharacterCell(char.data, text_color, background_color,
+                             char.bold, char.italics, char.underscore,
+                             char.strikethrough)
 
 
 CharacterCellConfig = namedtuple('CharacterCellConfig', ['width', 'height'])
@@ -162,6 +172,13 @@ def make_text_tag(column, attributes, text, cell_width):
     if attributes['italics']:
         text_tag_attributes['font-style'] = 'italic'
 
+    decoration = ''
+    if attributes['underscore']:
+        decoration = 'underline'
+    if attributes['strikethrough']:
+        decoration += ' line-through'
+    text_tag_attributes['text-decoration'] = decoration
+
     if attributes['color'].startswith('#'):
         text_tag_attributes['fill'] = attributes['color']
     else:
@@ -178,14 +195,14 @@ def _render_characters(screen_line, cell_width):
     # type: (Dict[int, CharacterCell], int) -> List[etree.ElementBase]
     """Return a list of 'text' elements representing the line of the screen
 
-    Consecutive characters with the same styling attributes (text color and font weight) are
+    Consecutive characters with the same styling attributes (text color, font weight...) are
     grouped together in a single text element.
 
     :param screen_line: Mapping between column numbers and characters
     :param cell_width: Width of a character cell in pixels
     """
     line = sorted(screen_line.items())
-    key = ConsecutiveWithSameAttributes(['color', 'bold', 'italics'])
+    key = ConsecutiveWithSameAttributes(['color', 'bold', 'italics', 'underscore', 'strikethrough'])
     text_tags = [make_text_tag(column, attributes, ''.join(c.text for _, c in group), cell_width)
                  for (column, attributes), group in groupby(line, key)]
 
