@@ -164,7 +164,6 @@ def make_text_tag(column, attributes, text, cell_width):
     text_tag_attributes = {
         'x': str(column * cell_width),
         'textLength': str(len(text) * cell_width),
-        'lengthAdjust': 'spacingAndGlyphs'
     }
     if attributes['bold']:
         text_tag_attributes['font-weight'] = 'bold'
@@ -177,7 +176,8 @@ def make_text_tag(column, attributes, text, cell_width):
         decoration = 'underline'
     if attributes['strikethrough']:
         decoration += ' line-through'
-    text_tag_attributes['text-decoration'] = decoration
+    if decoration:
+        text_tag_attributes['text-decoration'] = decoration
 
     if attributes['color'].startswith('#'):
         text_tag_attributes['fill'] = attributes['color']
@@ -185,9 +185,7 @@ def make_text_tag(column, attributes, text, cell_width):
         text_tag_attributes['class'] = attributes['color']
 
     text_tag = etree.Element('text', text_tag_attributes)
-    # Replace usual spaces with unbreakable spaces so that indenting the SVG does not mess up
-    # the whole animation; this is somewhat better than the 'white-space: pre' CSS option
-    text_tag.text = text.replace(' ', '\u00A0')
+    text_tag.text = text
     return text_tag
 
 
@@ -452,6 +450,7 @@ def add_css_variables(root, animation_duration):
 
         text {{
             dominant-baseline: text-before-edge;
+            white-space: pre;
         }}""".format(animation_duration=animation_duration)
 
     style.text = etree.CDATA(css)

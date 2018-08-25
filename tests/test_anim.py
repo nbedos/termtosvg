@@ -114,6 +114,10 @@ class TestAnim(unittest.TestCase):
 
             self.assertEqual(texts['A'].attrib['class'], 'red')
             self.assertEqual(texts['A'].attrib['x'], '0')
+            # Style attributes should not appear for normal text
+            self.assertNotIn('font-weight', texts['A'].attrib)
+            self.assertNotIn('font-style', texts['A'].attrib)
+            self.assertNotIn('text-decoration', texts['A'].attrib)
             self.assertEqual(texts['BC'].attrib['class'], 'blue')
             self.assertEqual(texts['BC'].attrib['x'], '8')
             self.assertEqual(texts['DEFG'].attrib['fill'], '#00FF00')
