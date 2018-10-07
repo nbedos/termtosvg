@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="terminal" baseProfile="full" viewBox="0 0 976 1039" width="976" version="1.1">
+    <defs>
+        <termtosvg:template_settings xmlns:termtosvg="https://github.com/nbedos/termtosvg">
+            <termtosvg:screen_geometry columns="122" rows="61"/>
+        </termtosvg:template_settings>
+        <style type="text/css" id="generated-style"><![CDATA[:root {
+            --animation-duration: 4558ms;
+        }
+        
+        #screen {
+                font-family: 'DejaVu Sans Mono', monospace;
+                font-style: normal;
+                font-size: 14px;
+            }
+
+        text {
+            dominant-baseline: text-before-edge;
+        }]]></style>
+        <style type="text/css" id="user-style">
+            /* gjm8 color theme (source: https://terminal.sexy/) */
+            .foreground {fill: #c5c5c5;}
+            .background {fill: #1c1c1c;}
+            .color0 {fill: #1c1c1c;}
+            .color1 {fill: #ff005b;}
+            .color2 {fill: #cee318;}
+            .color3 {fill: #ffe755;}
+            .color4 {fill: #048ac7;}
+            .color5 {fill: #833c9f;}
+            .color6 {fill: #0ac1cd;}
+            .color7 {fill: #e5e5e5;}
+            .color8 {fill: #1c1c1c;}
+            .color9 {fill: #ff005b;}
+            .color10 {fill: #cee318;}
+            .color11 {fill: #ffe755;}
+            .color12 {fill: #048ac7;}
+            .color13 {fill: #833c9f;}
+            .color14 {fill: #0ac1cd;}
+            .color15 {fill: #e5e5e5;}
+        </style>
+    </defs>
+    <svg id="screen" width="976" viewBox="0 0 976 1037" preserveAspectRatio="xMidYMin meet">
+        <defs><g id="g1"><text class="foreground" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="240" x="0">[alfredo@DARTHNET&#160;termtosvg]$&#160;</text><text class="background" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="8" x="240">&#160;</text></g><g id="g2"><text class="foreground" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="248" x="0">[alfredo@DARTHNET&#160;termtosvg]$&#160;1</text><text class="background" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="8" x="248">&#160;</text></g><g id="g3"><text class="foreground" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="256" x="0">[alfredo@DARTHNET&#160;termtosvg]$&#160;12</text><text class="background" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="8" x="256">&#160;</text></g><g id="g4"><text class="foreground" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="264" x="0">[alfredo@DARTHNET&#160;termtosvg]$&#160;129</text><text class="background" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="8" x="264">&#160;</text></g><g id="g5"><text class="foreground" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="272" x="0">[alfredo@DARTHNET&#160;termtosvg]$&#160;1293</text><text class="background" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="8" x="272">&#160;</text></g><g id="g6"><text class="foreground" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="280" x="0">[alfredo@DARTHNET&#160;termtosvg]$&#160;12939</text><text class="background" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="8" x="280">&#160;</text></g><g id="g7"><text class="foreground" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="288" x="0">[alfredo@DARTHNET&#160;termtosvg]$&#160;129391</text><text class="background" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="8" x="288">&#160;</text></g><g id="g8"><text class="foreground" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="248" x="0">[alfredo@DARTHNET&#160;termtosvg]$&#160;e</text><text class="background" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="8" x="248">&#160;</text></g><g id="g9"><text class="foreground" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="256" x="0">[alfredo@DARTHNET&#160;termtosvg]$&#160;ex</text><text class="background" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="8" x="256">&#160;</text></g><g id="g10"><text class="foreground" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="264" x="0">[alfredo@DARTHNET&#160;termtosvg]$&#160;exi</text><text class="background" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="8" x="264">&#160;</text></g><g id="g11"><text class="foreground" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="272" x="0">[alfredo@DARTHNET&#160;termtosvg]$&#160;exit</text><text class="background" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="8" x="272">&#160;</text></g><g id="g12"><text class="foreground" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="288" x="0">[alfredo@DARTHNET&#160;termtosvg]$&#160;129391</text></g><g id="g13"><text class="foreground" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="248" x="0">bash:&#160;129391:&#160;command&#160;not&#160;found</text></g><g id="g14"><text class="foreground" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="272" x="0">[alfredo@DARTHNET&#160;termtosvg]$&#160;exit</text></g><g id="g15"><text class="foreground" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="32" x="0">exit</text></g><g id="g16"><text class="background" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="8" x="0">&#160;</text></g></defs><rect class="background" height="100%" width="100%" x="0" y="0"/><g display="none"><rect class="foreground" height="17" width="8" x="240" y="0"/><use y="0" xlink:href="#g1"/><animate attributeName="display" begin="0ms; anim_last.end" dur="1451ms" from="inline" to="inline"/></g><g display="none"><rect class="foreground" height="17" width="8" x="248" y="0"/><use y="0" xlink:href="#g2"/><animate attributeName="display" begin="1451ms; anim_last.end+1451ms" dur="246ms" from="inline" to="inline"/></g><g display="none"><rect class="foreground" height="17" width="8" x="256" y="0"/><use y="0" xlink:href="#g3"/><animate attributeName="display" begin="1697ms; anim_last.end+1697ms" dur="100ms" from="inline" to="inline"/></g><g display="none"><rect class="foreground" height="17" width="8" x="264" y="0"/><use y="0" xlink:href="#g4"/><animate attributeName="display" begin="1797ms; anim_last.end+1797ms" dur="110ms" from="inline" to="inline"/></g><g display="none"><rect class="foreground" height="17" width="8" x="272" y="0"/><use y="0" xlink:href="#g5"/><animate attributeName="display" begin="1907ms; anim_last.end+1907ms" dur="48ms" from="inline" to="inline"/></g><g display="none"><rect class="foreground" height="17" width="8" x="280" y="0"/><use y="0" xlink:href="#g6"/><animate attributeName="display" begin="1955ms; anim_last.end+1955ms" dur="154ms" from="inline" to="inline"/></g><g display="none"><rect class="foreground" height="17" width="8" x="288" y="0"/><use y="0" xlink:href="#g7"/><animate attributeName="display" begin="2109ms; anim_last.end+2109ms" dur="409ms" from="inline" to="inline"/></g><g display="none"><rect class="foreground" height="17" width="8" x="240" y="34"/><use y="34" xlink:href="#g1"/><animate attributeName="display" begin="2518ms; anim_last.end+2518ms" dur="328ms" from="inline" to="inline"/></g><g display="none"><rect class="foreground" height="17" width="8" x="248" y="34"/><use y="34" xlink:href="#g8"/><animate attributeName="display" begin="2846ms; anim_last.end+2846ms" dur="90ms" from="inline" to="inline"/></g><g display="none"><rect class="foreground" height="17" width="8" x="256" y="34"/><use y="34" xlink:href="#g9"/><animate attributeName="display" begin="2936ms; anim_last.end+2936ms" dur="78ms" from="inline" to="inline"/></g><g display="none"><rect class="foreground" height="17" width="8" x="264" y="34"/><use y="34" xlink:href="#g10"/><animate attributeName="display" begin="3014ms; anim_last.end+3014ms" dur="222ms" from="inline" to="inline"/></g><g display="none"><rect class="foreground" height="17" width="8" x="272" y="34"/><use y="34" xlink:href="#g11"/><animate attributeName="display" begin="3236ms; anim_last.end+3236ms" dur="322ms" from="inline" to="inline"/></g><g display="none"><use y="0" xlink:href="#g12"/><use y="17" xlink:href="#g13"/><animate attributeName="display" begin="2518ms; anim_last.end+2518ms" dur="2040ms" from="inline" to="inline"/></g><g display="none"><use y="34" xlink:href="#g14"/><use y="51" xlink:href="#g15"/><rect class="foreground" height="17" width="8" x="0" y="68"/><use y="68" xlink:href="#g16"/><animate attributeName="display" begin="3558ms; anim_last.end+3558ms" dur="1000ms" from="inline" to="inline" id="anim_last"/></g></svg>
+</svg>

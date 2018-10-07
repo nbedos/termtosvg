@@ -1,0 +1,2 @@
+#ignore virtual enviroment for development
+env/

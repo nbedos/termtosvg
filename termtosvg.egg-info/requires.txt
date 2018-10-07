@@ -1,0 +1,8 @@
+lxml
+pyte
+
+[dev]
+coverage
+pylint
+twine
+wheel

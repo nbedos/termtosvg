@@ -289,9 +289,64 @@ def make_animated_group(records, time, duration, cell_height, cell_width, defs):
 
     return animation_group_tag, new_definitions
 
+"""
+This fucntion is simar to the make_animated_group function, however, it ommits
+time and rectags as they are not needed for a still frame
+"""
+def make_group(records, cell_height, cell_width, defs):
+    animation_group_tag = etree.Element('g', attrib={'display': 'none'})
+    new_definitions = {}
+    for event_record in records:
+        # Group text elements for the current line into text_group_tag
+        text_group_tag = etree.Element('g')
+        text_tags = _render_characters(event_record.line, cell_width)
+        for tag in text_tags:
+            text_group_tag.append(tag)
+
+        # Find or create a definition for text_group_tag
+        text_group_tag_str = etree.tostring(text_group_tag)
+        if text_group_tag_str in defs:
+            group_id = defs[text_group_tag_str].attrib['id']
+        elif text_group_tag_str in new_definitions:
+            group_id = new_definitions[text_group_tag_str].attrib['id']
+        else:
+            group_id = 'g{}'.format(len(defs) + len(new_definitions) + 1)
+            assert group_id not in defs.values() and group_id not in new_definitions.values()
+            text_group_tag.attrib['id'] = group_id
+            new_definitions[text_group_tag_str] = text_group_tag
+
+        # Add a reference to the definition of text_group_tag with a 'use' tag
+        use_attributes = {
+            '{{{namespace}}}href'.format(namespace=XLINK_NS): '#{_id}'.format(_id=group_id),
+            'y': str(event_record.row * cell_height),
+        }
+        use_tag = etree.Element('use', use_attributes)
+        animation_group_tag.append(use_tag)
+
+    attributes = {
+        'attributeName': 'display',
+        'from': 'inline',
+        'to': 'inline',
+    }
+
+    animation = etree.Element('animate', attributes)
+    animation_group_tag.append(animation)
+
+    return animation_group_tag, new_definitions
+
+
 
 def render_animation(records, filename, template, cell_width=8, cell_height=17):
     root = _render_animation(records, template, cell_width, cell_height)
+    with open(filename, 'wb') as output_file:
+        output_file.write(etree.tostring(root))
+
+
+"""
+Rendering the last frame of the animation as svg
+"""
+def render_still(records, filename, template, cell_width=8, cell_height=17):
+    root = _render_still(records, template, cell_width, cell_height)
     with open(filename, 'wb') as output_file:
         output_file.write(etree.tostring(root))
 
@@ -426,6 +481,48 @@ def _render_animation(records, template, cell_width, cell_height):
         animate_tags.pop().attrib['id'] = LAST_ANIMATION_ID
 
     add_css_variables(root=root, animation_duration=animation_duration)
+    return root
+
+
+
+
+"""
+rendering the last frame of the animation as a still frame
+:param - records the records to use for converting to still frame
+:param - teplate - template used for styling
+:param cell_width - x size value of final output svg
+:param cell_height - y size value of final output svg
+"""
+def _render_still(records, template, cell_width, cell_height):
+    header = next(records)
+
+    root = resize_template(template, header.width, header.height, cell_width, cell_height)
+
+    svg_screen_tag = root.find('.//{{{namespace}}}svg[@id="screen"]'.format(namespace=SVG_NS))
+    if svg_screen_tag is None:
+        raise ValueError('Missing tag: <svg id="screen" ...>...</svg>')
+
+    for child in svg_screen_tag.getchildren():
+        svg_screen_tag.remove(child)
+
+    def_tag = etree.SubElement(svg_screen_tag, 'defs')
+    svg_screen_tag.append(BG_RECT_TAG)
+
+    definitions = {}
+
+    still_group, new_defs = make_group(records,cell_height=cell_height,
+                                          cell_width=cell_width,
+                                          defs=definitions)
+
+    #getting text until the last input text - since we only want the
+    #last frame
+    definitions.update(new_defs)
+    for definition in new_defs.values():
+        def_tag.append(definition)
+
+    #appending last frame 
+    svg_screen_tag.append(still_group)
+
     return root
 
 

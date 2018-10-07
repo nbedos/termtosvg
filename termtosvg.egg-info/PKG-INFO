@@ -1,0 +1,24 @@
+Metadata-Version: 2.1
+Name: termtosvg
+Version: 0.5.0
+Summary: Record terminal sessions as SVG animations
+Home-page: https://github.com/nbedos/termtosvg
+Author: Nicolas Bedos
+Author-email: nicolas.bedos@gmail.com
+License: BSD 3-clause license
+Description: A Linux terminal recorder written in Python which renders your command line sessions as standalone SVG animations.
+Platform: UNKNOWN
+Classifier: Environment :: Console
+Classifier: Intended Audience :: Developers
+Classifier: License :: OSI Approved :: BSD License
+Classifier: Operating System :: MacOS
+Classifier: Operating System :: POSIX :: BSD
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Programming Language :: Python
+Classifier: Programming Language :: Python :: 3.5
+Classifier: Programming Language :: Python :: 3.6
+Classifier: Programming Language :: Python :: 3.7
+Classifier: Topic :: System :: Shells
+Classifier: Topic :: Terminals
+Requires-Python: >=3.5
+Provides-Extra: dev

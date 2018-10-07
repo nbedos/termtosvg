@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="terminal" baseProfile="full" viewBox="0 0 976 1039" width="976" version="1.1">
+    <defs>
+        <termtosvg:template_settings xmlns:termtosvg="https://github.com/nbedos/termtosvg">
+            <termtosvg:screen_geometry columns="122" rows="61"/>
+        </termtosvg:template_settings>
+        <style type="text/css" id="generated-style">:root {
+            --animation-duration: 26350ms;
+        }
+
+        #screen {
+            font-family: 'DejaVu Sans Mono', monospace;
+            font-style: normal;
+            font-size: 14px;
+        }
+
+        text {
+            dominant-baseline: text-before-edge;
+        }</style>
+        <style type="text/css" id="user-style">
+            /* gjm8 color theme (source: https://terminal.sexy/) */
+            .foreground {fill: #c5c5c5;}
+            .background {fill: #1c1c1c;}
+            .color0 {fill: #1c1c1c;}
+            .color1 {fill: #ff005b;}
+            .color2 {fill: #cee318;}
+            .color3 {fill: #ffe755;}
+            .color4 {fill: #048ac7;}
+            .color5 {fill: #833c9f;}
+            .color6 {fill: #0ac1cd;}
+            .color7 {fill: #e5e5e5;}
+            .color8 {fill: #1c1c1c;}
+            .color9 {fill: #ff005b;}
+            .color10 {fill: #cee318;}
+            .color11 {fill: #ffe755;}
+            .color12 {fill: #048ac7;}
+            .color13 {fill: #833c9f;}
+            .color14 {fill: #0ac1cd;}
+            .color15 {fill: #e5e5e5;}
+        </style>
+    </defs>
+    <svg id="screen" width="976" viewBox="0 0 976 1037" preserveAspectRatio="xMidYMin meet">
+        <defs><g id="g1"><text class="foreground" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="240" x="0">[alfredo@DARTHNET&#160;termtosvg]$&#160;</text><text class="background" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="8" x="240">&#160;</text></g><g id="g2"><text class="foreground" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="248" x="0">[alfredo@DARTHNET&#160;termtosvg]$&#160;1</text><text class="background" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="8" x="248">&#160;</text></g><g id="g3"><text class="foreground" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="256" x="0">[alfredo@DARTHNET&#160;termtosvg]$&#160;12</text><text class="background" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="8" x="256">&#160;</text></g><g id="g4"><text class="foreground" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="264" x="0">[alfredo@DARTHNET&#160;termtosvg]$&#160;129</text><text class="background" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="8" x="264">&#160;</text></g><g id="g5"><text class="foreground" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="272" x="0">[alfredo@DARTHNET&#160;termtosvg]$&#160;1293</text><text class="background" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="8" x="272">&#160;</text></g><g id="g6"><text class="foreground" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="280" x="0">[alfredo@DARTHNET&#160;termtosvg]$&#160;12939</text><text class="background" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="8" x="280">&#160;</text></g><g id="g7"><text class="foreground" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="288" x="0">[alfredo@DARTHNET&#160;termtosvg]$&#160;129391</text><text class="background" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="8" x="288">&#160;</text></g><g id="g8"><text class="foreground" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="248" x="0">[alfredo@DARTHNET&#160;termtosvg]$&#160;e</text><text class="background" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="8" x="248">&#160;</text></g><g id="g9"><text class="foreground" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="256" x="0">[alfredo@DARTHNET&#160;termtosvg]$&#160;ex</text><text class="background" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="8" x="256">&#160;</text></g><g id="g10"><text class="foreground" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="264" x="0">[alfredo@DARTHNET&#160;termtosvg]$&#160;exi</text><text class="background" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="8" x="264">&#160;</text></g><g id="g11"><text class="foreground" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="272" x="0">[alfredo@DARTHNET&#160;termtosvg]$&#160;exit</text><text class="background" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="8" x="272">&#160;</text></g><g id="g12"><text class="foreground" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="288" x="0">[alfredo@DARTHNET&#160;termtosvg]$&#160;129391</text></g><g id="g13"><text class="foreground" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="248" x="0">bash:&#160;129391:&#160;command&#160;not&#160;found</text></g><g id="g14"><text class="foreground" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="272" x="0">[alfredo@DARTHNET&#160;termtosvg]$&#160;exit</text></g><g id="g15"><text class="foreground" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="32" x="0">exit</text></g><g id="g16"><text class="background" lengthAdjust="spacingAndGlyphs" text-decoration="" textLength="8" x="0">&#160;</text></g></defs><rect class="background" height="100%" width="100%" x="0" y="0"/><g display="none"><use y="0" xlink:href="#g1"/><use y="0" xlink:href="#g2"/><use y="0" xlink:href="#g3"/><use y="0" xlink:href="#g4"/><use y="0" xlink:href="#g5"/><use y="0" xlink:href="#g6"/><use y="0" xlink:href="#g7"/><use y="34" xlink:href="#g1"/><use y="34" xlink:href="#g8"/><use y="34" xlink:href="#g9"/><use y="34" xlink:href="#g10"/><use y="34" xlink:href="#g11"/><use y="0" xlink:href="#g12"/><use y="17" xlink:href="#g13"/><use y="34" xlink:href="#g14"/><use y="51" xlink:href="#g15"/><use y="68" xlink:href="#g16"/><animate attributeName="display" from="inline" to="inline"/></g></svg>
+</svg>
