@@ -7,7 +7,7 @@
 
 <b>termtosvg record</b> [-g GEOMETRY] [--verbose] [--help] [output_file]
 
-<b>termtosvg render</b> [-s STILL-FRAME] [-g GEOMETRY] [-t TEMPLATE] [--verbose] [--help] <i>input_file</i> [output_file]
+<b>termtosvg render</b> [-s STILL--FRAME] [-g GEOMETRY] [-t TEMPLATE] [--verbose] [--help] <i>input_file</i> [output_file]
 </pre>
 
 ### DESCRIPTION
