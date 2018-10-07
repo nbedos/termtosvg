@@ -39,6 +39,9 @@ Set the SVG template used for rendering the SVG animation. TEMPLATE may either b
 one of the default templates (gjm8, dracula, solarized_dark, solarized_light,
  progress_bar, window_frame, window_frame_js) or a path to a valid template.
 
+##### -s, --still-frame
+Create a still frame of the last frame in the animation when rendering. The 
+still frame is saved in the same location as the animation in svg format.                                                                                                                                                                                  
 ##### -h, --help
 Print usage and exit
 
