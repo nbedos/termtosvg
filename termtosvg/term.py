@@ -214,7 +214,7 @@ def replay(records, from_pyte_char, min_frame_duration=1, last_frame_duration=10
         (CharacterCellLineEvent)
     """
     def sort_by_time(d, row):
-        row_line, row_line_time, row_line_duration = d[row]
+        _, row_line_time, row_line_duration = d[row]
         return row_line_time + row_line_duration, row
 
     if not isinstance(records, Iterator):

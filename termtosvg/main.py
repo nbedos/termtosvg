@@ -5,8 +5,8 @@ import logging
 import sys
 import tempfile
 
-import termtosvg.config as config
-import termtosvg.anim as anim
+import termtosvg.config
+import termtosvg.anim
 
 logger = logging.getLogger('termtosvg')
 
@@ -46,7 +46,7 @@ def parse(args, templates, default_template, default_geometry, default_min_dur, 
         help=('set the SVG template used for rendering the SVG animation. '
               'TEMPLATE may either be one of the default templates ({}) '
               'or a path to a valid template.').format(', '.join(templates)),
-        type=lambda name: anim.validate_template(name, templates),
+        type=lambda name: termtosvg.anim.validate_template(name, templates),
         default=default_template,
         metavar='TEMPLATE'
     )
@@ -58,7 +58,7 @@ def parse(args, templates, default_template, default_geometry, default_min_dur, 
         'character "x". For example "82x19" for an 82 columns by 19 rows screen.',
         metavar='GEOMETRY',
         default=default_geometry,
-        type=config.validate_geometry
+        type=termtosvg.config.validate_geometry
     )
     min_duration_parser = argparse.ArgumentParser(add_help=False)
     min_duration_parser.add_argument(
@@ -128,14 +128,14 @@ def parse(args, templates, default_template, default_geometry, default_min_dur, 
 
 def record_subcommand(geometry, input_fileno, output_fileno, cast_filename):
     """Save a terminal session as an asciicast recording"""
-    import termtosvg.term as term
+    import termtosvg.term
     logger.info('Recording started, enter "exit" command or Control-D to end')
     if geometry is None:
-        columns, lines = term.get_terminal_size(output_fileno)
+        columns, lines = termtosvg.term.get_terminal_size(output_fileno)
     else:
         columns, lines = geometry
-    with term.TerminalMode(input_fileno):
-        records = term.record(columns, lines, input_fileno, output_fileno)
+    with termtosvg.term.TerminalMode(input_fileno):
+        records = termtosvg.term.record(columns, lines, input_fileno, output_fileno)
         with open(cast_filename, 'w') as cast_file:
             for record in records:
                 print(record.to_json_line(), file=cast_file)
@@ -144,31 +144,35 @@ def record_subcommand(geometry, input_fileno, output_fileno, cast_filename):
 
 def render_subcommand(template, cast_filename, svg_filename):
     """Render the animation from an asciicast recording"""
-    import termtosvg.asciicast as asciicast
-    import termtosvg.term as term
+    import termtosvg.asciicast
+    import termtosvg.term
 
     logger.info('Rendering started')
-    asciicast_records = asciicast.read_records(cast_filename)
-    replayed_records = term.replay(records=asciicast_records,
-                                   from_pyte_char=anim.CharacterCell.from_pyte)
-    anim.render_animation(records=replayed_records, filename=svg_filename, template=template)
+    asciicast_records = termtosvg.asciicast.read_records(cast_filename)
+    replayed_records = termtosvg.term.replay(records=asciicast_records,
+                                             from_pyte_char=termtosvg.anim.CharacterCell.from_pyte)
+    termtosvg.anim.render_animation(records=replayed_records,
+                                    filename=svg_filename,
+                                    template=template)
     logger.info('Rendering ended, SVG animation is {}'.format(svg_filename))
 
 
 def record_render_subcommand(template, geometry, input_fileno, output_fileno, svg_filename):
     """Record and render the animation on the fly"""
-    import termtosvg.term as term
+    import termtosvg.term
 
     logger.info('Recording started, enter "exit" command or Control-D to end')
     if geometry is None:
-        columns, lines = term.get_terminal_size(output_fileno)
+        columns, lines = termtosvg.term.get_terminal_size(output_fileno)
     else:
         columns, lines = geometry
-    with term.TerminalMode(input_fileno):
-        asciicast_records = term.record(columns, lines, input_fileno, output_fileno)
-        replayed_records = term.replay(records=asciicast_records,
-                                       from_pyte_char=anim.CharacterCell.from_pyte)
-        anim.render_animation(records=replayed_records, filename=svg_filename, template=template)
+    with termtosvg.term.TerminalMode(input_fileno):
+        asciicast_records = termtosvg.term.record(columns, lines, input_fileno, output_fileno)
+        replayed_records = termtosvg.term.replay(records=asciicast_records,
+                                                 from_pyte_char=termtosvg.anim.CharacterCell.from_pyte)
+        termtosvg.anim.render_animation(records=replayed_records,
+                                        filename=svg_filename,
+                                        template=template)
     logger.info('Recording ended, SVG animation is {}'.format(svg_filename))
 
 
@@ -187,7 +191,7 @@ def main(args=None, input_fileno=None, output_fileno=None):
     logger.handlers = [console_handler]
     logger.setLevel(logging.INFO)
 
-    templates = config.default_templates()
+    templates = termtosvg.config.default_templates()
     default_template = 'gjm8' if 'gjm8' in templates else sorted(templates)[0]
 
     command, args = parse(args[1:], templates, default_template, None, 1, None)

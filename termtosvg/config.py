@@ -18,8 +18,7 @@ DEFAULT_TEMPLATES_NAMES = [
 
 
 def validate_geometry(screen_geometry):
-    # Will raise ValueError if the right hand side is made of more or less than two values,
-    # or if the values can't be turned into integers
+    """Raise ValueError if 'screen_geometry' does not conform to <integer>x<integer> format"""
     columns, rows = [int(value) for value in screen_geometry.lower().split('x')]
     if columns <= 0 or rows <= 0:
         raise ValueError('Invalid value for screen-geometry option: "{}"'.format(screen_geometry))
@@ -27,6 +26,7 @@ def validate_geometry(screen_geometry):
 
 
 def default_templates():
+    """Return mapping between the name of a template and the SVG template itself"""
     templates = {}
     for template_name in DEFAULT_TEMPLATES_NAMES:
         pkg_template_path = '{}/{}'.format(PKG_TEMPLATE_PATH, template_name)

@@ -1,7 +1,7 @@
 import io
 from collections import namedtuple
 from itertools import groupby
-from typing import Iterator, Tuple
+from typing import Iterator
 
 import pyte.graphics
 import pyte.screens
@@ -29,10 +29,8 @@ class TemplateError(Exception):
     pass
 
 
-_CharacterCell = namedtuple('_CharacterCell', ['text', 'color',
-                                               'background_color', 'bold',
-                                               'italics', 'underscore',
-                                               'strikethrough'])
+_CharacterCell = namedtuple('_CharacterCell', ['text', 'color', 'background_color', 'bold',
+                                               'italics', 'underscore', 'strikethrough'])
 # Make Last four arguments of _CharacterCell constructor default to False (bold, italics,
 # underscore and strikethrough)
 _CharacterCell.__new__.__defaults__ = (False,) * 4
@@ -152,13 +150,14 @@ def _render_line_bg_colors(screen_line, height, cell_height, cell_width):
 
 
 def make_text_tag(column, attributes, text, cell_width):
+    """Build SVG text element based on content and style attributes"""
     text_tag_attributes = {
         'x': str(column * cell_width),
         'textLength': str(len(text) * cell_width),
     }
     if attributes['bold']:
         text_tag_attributes['font-weight'] = 'bold'
-    
+
     if attributes['italics']:
         text_tag_attributes['font-style'] = 'italic'
 
@@ -284,7 +283,9 @@ def render_animation(records, filename, template, cell_width=8, cell_height=17):
 
 
 def resize_template(template, columns, rows, cell_width, cell_height):
+    """Resize template based on the number of rows and columns of the terminal"""
     def scale(element, template_columns, template_rows, columns, rows):
+        """Resize viewbox based on the number of rows and columns of the terminal"""
         try:
             viewbox = element.attrib['viewBox'].replace(',', ' ').split()
         except KeyError:
@@ -293,7 +294,7 @@ def resize_template(template, columns, rows, cell_width, cell_height):
         vb_min_x, vb_min_y, vb_width, vb_height = [int(n) for n in viewbox]
         vb_width += cell_width * (columns - template_columns)
         vb_height += cell_height * (rows - template_rows)
-        element.attrib['viewBox'] = ' '.join([str(n) for n in (vb_min_x, vb_min_y, vb_width, vb_height)])
+        element.attrib['viewBox'] = ' '.join(map(str, (vb_min_x, vb_min_y, vb_width, vb_height)))
 
         scalable_attributes = {
             'width': cell_width * (columns - template_columns),
@@ -378,11 +379,10 @@ def _render_animation(records, template, cell_width, cell_height):
     for child in svg_screen_tag.getchildren():
         svg_screen_tag.remove(child)
 
-    def_tag = etree.SubElement(svg_screen_tag, 'defs')
     svg_screen_tag.append(BG_RECT_TAG)
 
     # Process event records
-    def by_time(record: CharacterCellRecord) -> Tuple[int, int]:
+    def by_time(record):
         return record.time, record.duration
 
     definitions = {}
@@ -397,7 +397,7 @@ def _render_animation(records, template, cell_width, cell_height):
                                                        defs=definitions)
         definitions.update(new_defs)
         for definition in new_defs.values():
-            def_tag.append(definition)
+            etree.SubElement(svg_screen_tag, 'defs').append(definition)
 
         svg_screen_tag.append(animated_group)
         last_animated_group = animated_group
@@ -410,11 +410,12 @@ def _render_animation(records, template, cell_width, cell_height):
         assert len(animate_tags) == 1
         animate_tags.pop().attrib['id'] = LAST_ANIMATION_ID
 
-    add_css_variables(root=root, animation_duration=animation_duration)
+    generate_css(root=root, animation_duration=animation_duration)
     return root
 
 
-def add_css_variables(root, animation_duration):
+def generate_css(root, animation_duration):
+    """Build and embed CSS in SVG animation"""
     try:
         style = root.find('.//{{{namespace}}}defs/{{{namespace}}}style[@id="generated-style"]'
                           .format(namespace=SVG_NS))

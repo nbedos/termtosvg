@@ -132,7 +132,8 @@ class AsciiCastV2Theme(_AsciiCastV2Theme):
         return False
 
 
-_AsciiCastV2Header = namedtuple('AsciiCastV2Header', ['version', 'width', 'height', 'theme', 'idle_time_limit'])
+_AsciiCastV2Header = namedtuple('AsciiCastV2Header', ['version', 'width', 'height', 'theme',
+                                                      'idle_time_limit'])
 
 
 class AsciiCastV2Header(AsciiCastV2Record, _AsciiCastV2Header):

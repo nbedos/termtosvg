@@ -211,6 +211,6 @@ class TestAnim(unittest.TestCase):
 
         tree = etree.parse(io.BytesIO(data))
         root = tree.getroot()
-        anim.add_css_variables(root, 42)
+        anim.generate_css(root, 42)
 
 
