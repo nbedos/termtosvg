@@ -9,17 +9,26 @@ import termtosvg.anim as anim
 
 logger = logging.getLogger('termtosvg')
 
-USAGE = """termtosvg [output_file] [-g GEOMETRY] [-t TEMPLATE] [-v] [-h]
+USAGE = """termtosvg [output_file] [-g GEOMETRY] [-m MIN_DURATION] [-M MAX_DURATION]
+                 [-t TEMPLATE] [-h]
 
 Record a terminal session and render an SVG animation on the fly
 """
 EPILOG = "See also 'termtosvg record --help' and 'termtosvg render --help'"
-RECORD_USAGE = "termtosvg record [output_file] [-g GEOMETRY] [-v] [-h]"
-RENDER_USAGE = "termtosvg render input_file [output_file] [-t TEMPLATE] [-v] [-h]"
+RECORD_USAGE = """termtosvg record [output_file] [-g GEOMETRY] [-m MIN_DURATION]
+                 [-M MAX_DURATION] [-h]"""
+RENDER_USAGE = """termtosvg render input_file [output_file] [-m MIN_DURATION]
+                 [-M MAX_DURATION] [-t TEMPLATE] [-h]"""
 
 
-def parse(args, templates, default_template, default_geometry):
-    # type: (List, dict, str, Union[None, str]) -> Tuple[Union[None, str], argparse.Namespace]
+def integral_duration(duration):
+    if duration.isdigit() and int(duration) >= 1:
+        return int(duration)
+    raise ValueError('duration must be an integer greater than 0')
+
+
+def parse(args, templates, default_template, default_geometry, default_min_dur, default_max_dur):
+    # type: (List, dict, str, Union[None, str], int, Union[None, int]) -> Tuple[Union[None, str], argparse.Namespace]
     template_parser = argparse.ArgumentParser(add_help=False)
     template_parser.add_argument(
         '-t', '--template',
@@ -40,15 +49,25 @@ def parse(args, templates, default_template, default_geometry):
         default=default_geometry,
         type=config.validate_geometry
     )
-    verbose_parser = argparse.ArgumentParser(add_help=False)
-    verbose_parser.add_argument(
-        '-v', '--verbose',
-        action='store_true',
-        help='increase log messages verbosity'
+    min_duration_parser = argparse.ArgumentParser(add_help=False)
+    min_duration_parser.add_argument(
+        '-m', '--min-frame-duration',
+        type=integral_duration,
+        metavar='MIN_DURATION',
+        default=default_min_dur,
+        help='minimum duration of a frame in milliseconds'
+    )
+    max_duration_parser = argparse.ArgumentParser(add_help=False)
+    max_duration_parser.add_argument(
+        '-M', '--max-frame-duration',
+        type=integral_duration,
+        metavar='MAX_DURATION',
+        default=default_min_dur,
+        help='maximum duration of a frame in milliseconds'
     )
     parser = argparse.ArgumentParser(
         prog='termtosvg',
-        parents=[geometry_parser, template_parser, verbose_parser],
+        parents=[geometry_parser, min_duration_parser, max_duration_parser, template_parser],
         usage=USAGE,
         epilog=EPILOG
     )
@@ -63,7 +82,7 @@ def parse(args, templates, default_template, default_geometry):
         if args[0] == 'record':
             parser = argparse.ArgumentParser(
                 description='record the session to a file in asciicast v2 format',
-                parents=[geometry_parser, verbose_parser],
+                parents=[geometry_parser, min_duration_parser, max_duration_parser],
                 usage=RECORD_USAGE
             )
             parser.add_argument(
@@ -77,7 +96,7 @@ def parse(args, templates, default_template, default_geometry):
         elif args[0] == 'render':
             parser = argparse.ArgumentParser(
                 description='render an asciicast recording as an SVG animation',
-                parents=[template_parser, verbose_parser],
+                parents=[template_parser, min_duration_parser, max_duration_parser],
                 usage=RENDER_USAGE
             )
             parser.add_argument(
@@ -161,17 +180,7 @@ def main(args=None, input_fileno=None, output_fileno=None):
     templates = config.default_templates()
     default_template = 'gjm8' if 'gjm8' in templates else sorted(templates)[0]
 
-    command, args = parse(args[1:], templates, default_template, None)
-
-    if args.verbose:
-        _, log_filename = tempfile.mkstemp(prefix='termtosvg_', suffix='.log')
-        logger.setLevel(logging.DEBUG)
-        file_handler = logging.FileHandler(filename=log_filename, mode='w')
-        file_handler.setLevel(logging.DEBUG)
-        file_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-        file_handler.setFormatter(file_formatter)
-        logger.handlers.append(file_handler)
-        logger.info('Logging to {}'.format(log_filename))
+    command, args = parse(args[1:], templates, default_template, None, 1, None)
 
     if command == 'record':
         cast_filename = args.output_file

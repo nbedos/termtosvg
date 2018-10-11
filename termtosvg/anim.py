@@ -1,5 +1,4 @@
 import io
-import logging
 from collections import namedtuple
 from itertools import groupby
 from typing import Dict, List, Iterable, Iterator, Union, Tuple
@@ -15,9 +14,6 @@ _COLORS = ['black', 'red', 'green', 'brown', 'blue', 'magenta', 'cyan', 'white']
 _BRIGHTCOLORS = ['bright{}'.format(color) for color in _COLORS]
 NAMED_COLORS = _COLORS + _BRIGHTCOLORS
 pyte.graphics.FG_BG_256 = NAMED_COLORS + pyte.graphics.FG_BG_256[16:]
-
-logger = logging.getLogger(__name__)
-logger.addHandler(logging.NullHandler())
 
 # Id for the very last SVG animation. This is used to make the first animations start when the
 # last one ends (animation looping)
@@ -62,7 +58,7 @@ class CharacterCell(_CharacterCell):
                 named_color = 'bright{}'.format(char.fg)
             else:
                 named_color = char.fg
-            
+
             if named_color in NAMED_COLORS:
                 text_color = 'color{}'.format(NAMED_COLORS.index(named_color))
             elif len(char.fg) == 6:
@@ -455,5 +451,3 @@ def add_css_variables(root, animation_duration):
 
     style.text = etree.CDATA(css)
     return root
-
-

@@ -28,31 +28,38 @@ SHELL_COMMANDS = [
 class TestMain(unittest.TestCase):
     test_cases = [
         [],
-        ['--verbose'],
         ['--screen-geometry', '82x19'],
         ['-g', '82x19'],
         ['--template', 'plain'],
         ['-t', 'plain'],
-        ['--verbose', '--screen-geometry', '82x19', '--template', 'plain'],
-        ['output_filename', '--verbose', '--screen-geometry', '82x19', '--template', 'plain'],
-        ['--verbose', '--screen-geometry', '82x19', '--template', 'plain', 'output_filename'],
-        ['-v', '-g', '82x19', '-t', 'plain'],
+        ['--screen-geometry', '82x19', '--template', 'plain'],
+        ['output_filename', '--screen-geometry', '82x19', '--template', 'plain'],
+        ['--screen-geometry', '82x19', '--template', 'plain', 'output_filename'],
+        ['-g', '82x19', '-t', 'plain'],
+        ['-m', '42', '-M', '100'],
+        ['--min-frame-duration', '42', '--max-frame-duration', '100'],
         ['record'],
         ['record', 'output_filename'],
-        ['record', 'output_filename', '--verbose', '--screen-geometry', '82x19'],
-        ['record', '--verbose', '--screen-geometry', '82x19'],
+        ['record', 'output_filename', '--screen-geometry', '82x19'],
+        ['record', '--screen-geometry', '82x19'],
+        ['record', '-m', '42', '-M', '100'],
         ['render', 'input_filename'],
-        ['render', 'input_filename', '--verbose'],
-        ['render', 'input_filename', '--verbose', '--template', 'plain'],
+        ['render', 'input_filename'],
+        ['render', 'input_filename', '--template', 'plain'],
         ['render', 'input_filename', 'output_filename'],
-        ['render', 'input_filename', 'output_filename', '--verbose'],
-        ['render', 'input_filename', 'output_filename', '--verbose', '--template', 'plain'],
+        ['render', 'input_filename', 'output_filename', '--template', 'plain'],
+        ['render', 'input_filename', 'output_filename', '--template', 'plain', '-m', '42', '-M', '100'],
     ]
 
     def test_parse(self):
         for args in self.test_cases:
             with self.subTest(case=args):
-                cmd, parsed_args = termtosvg.main.parse(args, {'plain': b''}, 'plain', '48x95')
+                cmd, parsed_args = termtosvg.main.parse(args=args,
+                                                        templates={'plain': b''},
+                                                        default_template='plain',
+                                                        default_geometry='48x95',
+                                                        default_min_dur=2,
+                                                        default_max_dur=None)
 
     @staticmethod
     def run_main(shell_commands, args):
@@ -103,15 +110,15 @@ class TestMain(unittest.TestCase):
             TestMain.run_main([], args)
 
         with self.subTest(case='render (with template)'):
-            args = ['termtosvg', 'render', cast_filename, '--template', 'WINDOW_frame']
+            args = ['termtosvg', 'render', cast_filename, '--template', 'window_frame']
             TestMain.run_main([], args)
 
         with self.subTest(case='record and render on the fly (fallback theme)'):
-            args = ['termtosvg', '--verbose', '--screen-geometry', '82x19']
+            args = ['termtosvg', '--screen-geometry', '82x19']
             TestMain.run_main(SHELL_COMMANDS, args)
 
         with self.subTest(case='record and render on the fly (window_frame template)'):
-            args = ['termtosvg', svg_filename, '--template', 'WINDOW_frame', '--verbose']
+            args = ['termtosvg', svg_filename, '--template', 'window_frame']
             TestMain.run_main(SHELL_COMMANDS, args)
 
         cast_v1_data = '\r\n'.join(['{',

@@ -228,7 +228,7 @@ def replay(records, from_pyte_char, min_frame_duration=0.001, last_frame_duratio
         records = iter(records)
 
     header = next(records)
-    
+
     screen = pyte.Screen(header.width, header.height)
     stream = pyte.ByteStream(screen)
 
@@ -302,10 +302,7 @@ def get_terminal_size(fileno):
     # type: (int) -> (int, int)
     try:
         columns, lines = os.get_terminal_size(fileno)
-    except OSError as e:
+    except OSError:
         columns, lines = 80, 24
-        logger.debug('Failed to get terminal size ({}), using default values '
-                     'instead ({}x{})'.format(e, columns, lines))
 
     return columns, lines
-

@@ -34,11 +34,10 @@ class AsciiCastV2Record(abc.ABC):
             raise AsciiCastError from exc
         if isinstance(json_dict, dict):
             return AsciiCastV2Header.from_json_line(line)
-        elif isinstance(json_dict, list):
+        if isinstance(json_dict, list):
             return AsciiCastV2Event.from_json_line(line)
-        else:
-            truncated_line = line if len(line) < 20 else '{}...'.format(line[:20])
-            raise AsciiCastError('Unknown record type: "{}"'.format(truncated_line))
+        truncated_line = line if len(line) < 20 else '{}...'.format(line[:20])
+        raise AsciiCastError('Unknown record type: "{}"'.format(truncated_line))
 
 
 def _read_v1_records(data):
@@ -73,8 +72,7 @@ def _read_v1_records(data):
         except ValueError as exc:
             raise AsciiCastError from exc
 
-        if not (isinstance(time_elapsed, int) or isinstance(time_elapsed, float)) \
-                or not isinstance(event_data, str):
+        if not isinstance(time_elapsed, (int, float)) or not isinstance(event_data, str):
             raise AsciiCastError('Invalid type for event: got object "{}" but expected '
                                  'type Tuple[Union[int, float], str]'.format(event))
         time += time_elapsed
@@ -116,16 +114,13 @@ class AsciiCastV2Theme(_AsciiCastV2Theme):
                 if len(colors) >= 16 and all([cls.is_color(c) for c in colors[:16]]):
                     self = super().__new__(cls, fg, bg, palette)
                     return self
-                elif len(colors) >= 8 and all([cls.is_color(c) for c in colors[:8]]):
+                if len(colors) >= 8 and all([cls.is_color(c) for c in colors[:8]]):
                     new_palette = ':'.join(colors[:8])
                     self = super().__new__(cls, fg, bg, new_palette)
                     return self
-                else:
-                    raise AsciiCastError('Invalid palette: the first 8 or 16 colors must be valid')
-            else:
-                raise AsciiCastError('Invalid background color: {}'.format(bg))
-        else:
-            raise AsciiCastError('Invalid foreground color: {}'.format(fg))
+                raise AsciiCastError('Invalid palette: the first 8 or 16 colors must be valid')
+            raise AsciiCastError('Invalid background color: {}'.format(bg))
+        raise AsciiCastError('Invalid foreground color: {}'.format(fg))
 
     @staticmethod
     def is_color(color):
