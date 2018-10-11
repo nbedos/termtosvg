@@ -8,12 +8,12 @@ import termios
 import tty
 from copy import copy
 from functools import partial
-from typing import Any, Callable, Generator, Iterable, Iterator, Tuple, Union
+from typing import Iterator
 
 import pyte
 import pyte.screens
 
-from termtosvg.anim import CharacterCellConfig, CharacterCellLineEvent, CharacterCellRecord
+from termtosvg.anim import CharacterCellConfig, CharacterCellLineEvent
 from termtosvg.asciicast import AsciiCastV2Event, AsciiCastV2Header
 
 
@@ -48,7 +48,6 @@ class TerminalMode:
 
 
 def record(columns, lines, input_fileno, output_fileno):
-    # type: (int, int, int, int) -> Generator[Union[AsciiCastV2Header, AsciiCastV2Event], None, None]
     """Record a terminal session in asciicast v2 format
 
     The records returned are of two types:
@@ -69,7 +68,6 @@ def record(columns, lines, input_fileno, output_fileno):
 
 
 def _record(columns, lines, input_fileno, output_fileno):
-    # type: (int, int, int, int) -> Generator[Tuple[bytes, datetime.datetime], None, int]
     """Record raw input and output of a shell session
 
     This function forks the current process. The child process is a shell which is a session
@@ -116,7 +114,6 @@ def _record(columns, lines, input_fileno, output_fileno):
 
 
 def _capture_data(input_fileno, output_fileno, master_fd, buffer_size=1024):
-    # type: (int, int, int, int) -> Generator[bytes, datetime.datetime]
     """Send data from input_fileno to master_fd and send data from master_fd to output_fileno and
     also return it to the caller
 
@@ -154,7 +151,6 @@ def _capture_data(input_fileno, output_fileno, master_fd, buffer_size=1024):
 
 
 def _group_by_time(event_records, min_rec_duration, last_rec_duration):
-    # type: (Iterable[AsciiCastV2Event], int, int) -> Generator[AsciiCastV2Event, None, None]
     """Merge event records together if they are close enough and compute the duration between
     consecutive events. The duration between two consecutive event records returned by the function
     is guaranteed to be at least min_rec_duration.
@@ -196,7 +192,6 @@ def _group_by_time(event_records, min_rec_duration, last_rec_duration):
 
 
 def replay(records, from_pyte_char, min_frame_duration=1, last_frame_duration=1000):
-    # type: (Iterable[Union[AsciiCastV2Header, AsciiCastV2Event]], Callable[[pyte.screens.Char], Any], int, int) -> Generator[CharacterCellRecord, None, None]
     """Read the records of a terminal sessions, render the corresponding screens and return lines
     of the screen that need updating.
 
@@ -215,7 +210,8 @@ def replay(records, from_pyte_char, min_frame_duration=1, last_frame_duration=10
     :param last_frame_duration: Last frame duration in milliseconds
     :return: Records in the CharacterCellRecord format:
         1/ a header with configuration information (CharacterCellConfig)
-        2/ one event record for each line of the screen that need to be redrawn (CharacterCellLineEvent)
+        2/ one event record for each line of the screen that need to be redrawn
+        (CharacterCellLineEvent)
     """
     def sort_by_time(d, row):
         row_line, row_line_time, row_line_duration = d[row]
@@ -296,7 +292,6 @@ def replay(records, from_pyte_char, min_frame_duration=1, last_frame_duration=10
 
 
 def get_terminal_size(fileno):
-    # type: (int) -> (int, int)
     try:
         columns, lines = os.get_terminal_size(fileno)
     except OSError:

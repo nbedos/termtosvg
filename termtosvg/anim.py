@@ -1,7 +1,7 @@
 import io
 from collections import namedtuple
 from itertools import groupby
-from typing import Dict, List, Iterable, Iterator, Union, Tuple
+from typing import Iterator, Tuple
 
 import pyte.graphics
 import pyte.screens
@@ -49,7 +49,6 @@ _CharacterCell.background_color.__doc__ = 'Background color of the cell'
 class CharacterCell(_CharacterCell):
     @classmethod
     def from_pyte(cls, char):
-        # type: (pyte.screens.Char) -> CharacterCell
         """Create a CharacterCell from a pyte character"""
         if char.fg == 'default':
             text_color = 'foreground'
@@ -91,7 +90,6 @@ class CharacterCell(_CharacterCell):
 
 CharacterCellConfig = namedtuple('CharacterCellConfig', ['width', 'height'])
 CharacterCellLineEvent = namedtuple('CharacterCellLineEvent', ['row', 'line', 'time', 'duration'])
-CharacterCellRecord = Union[CharacterCellConfig, CharacterCellLineEvent]
 
 
 class ConsecutiveWithSameAttributes:
@@ -114,7 +112,6 @@ class ConsecutiveWithSameAttributes:
 
 
 def make_rect_tag(column, length, height, cell_width, cell_height, background_color):
-    # type: (int, int, int, int, int, str) -> etree.ElementBase
     attributes = {
         'x': str(column * cell_width),
         'y': str(height),
@@ -131,7 +128,6 @@ def make_rect_tag(column, length, height, cell_width, cell_height, background_co
 
 
 def _render_line_bg_colors(screen_line, height, cell_height, cell_width):
-    # type: (Dict[int, CharacterCell], int, int, int) -> List[etree.ElementBase]
     """Return a list of 'rect' tags representing the background of 'screen_line'
 
     If consecutive cells have the same background color, a single 'rect' tag is returned for all
@@ -156,7 +152,6 @@ def _render_line_bg_colors(screen_line, height, cell_height, cell_width):
 
 
 def make_text_tag(column, attributes, text, cell_width):
-    # type: (List[Tuple[int, CharacterCell]], Dict[str, str], str, int) -> etree.ElementBase
     text_tag_attributes = {
         'x': str(column * cell_width),
         'textLength': str(len(text) * cell_width),
@@ -186,7 +181,6 @@ def make_text_tag(column, attributes, text, cell_width):
 
 
 def _render_characters(screen_line, cell_width):
-    # type: (Dict[int, CharacterCell], int) -> List[etree.ElementBase]
     """Return a list of 'text' elements representing the line of the screen
 
     Consecutive characters with the same styling attributes (text color, font weight...) are
@@ -214,7 +208,6 @@ BG_RECT_TAG = etree.Element('rect', _BG_RECT_TAG_ATTRIBUTES)
 
 
 def make_animated_group(records, time, duration, cell_height, cell_width, defs):
-    # type: (Iterable[CharacterCellLineEvent], int, int, int, int, Dict[str, etree.ElementBase]) -> Tuple[etree.ElementBase, Dict[str, etree.ElementBase]]
     """Return a group element containing an SVG version of the provided records. This group is
     animated, that is to say displayed then removed according to the timing arguments.
 
@@ -291,7 +284,6 @@ def render_animation(records, filename, template, cell_width=8, cell_height=17):
 
 
 def resize_template(template, columns, rows, cell_width, cell_height):
-    # type: (bytes, int, int, int, int) -> etree.ElementBase
     def scale(element, template_columns, template_rows, columns, rows):
         try:
             viewbox = element.attrib['viewBox'].replace(',', ' ').split()
@@ -372,7 +364,6 @@ def validate_template(name, templates):
 
 
 def _render_animation(records, template, cell_width, cell_height):
-    # type: (Iterable[CharacterCellRecord], bytes, int, int) -> etree.ElementBase
     # Read header record and add the corresponding information to the SVG
     if not isinstance(records, Iterator):
         records = iter(records)
@@ -424,7 +415,6 @@ def _render_animation(records, template, cell_width, cell_height):
 
 
 def add_css_variables(root, animation_duration):
-    # type: (etree.ElementBase, int) -> etree.ElementBase
     try:
         style = root.find('.//{{{namespace}}}defs/{{{namespace}}}style[@id="generated-style"]'
                           .format(namespace=SVG_NS))

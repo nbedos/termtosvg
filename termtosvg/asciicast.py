@@ -10,7 +10,7 @@ import abc
 import codecs
 import json
 from collections import namedtuple
-from typing import Generator, Iterable, Union
+from typing import Iterable
 
 utf8_decoder = codecs.getincrementaldecoder('utf-8')('replace')
 
@@ -80,7 +80,6 @@ def _read_v1_records(data):
 
 
 def read_records(filename):
-    # type: (str) -> Generator[Union[AsciiCastV2Header, AsciiCastV2Event], None, None]
     """Yield asciicast v2 records from the file
 
     The records in the file may themselves be in either asciicast v1 or v2 format (although

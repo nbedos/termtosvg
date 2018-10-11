@@ -4,7 +4,6 @@ import argparse
 import logging
 import sys
 import tempfile
-from typing import List, Tuple, Union
 
 import termtosvg.config as config
 import termtosvg.anim as anim
@@ -30,7 +29,6 @@ def integral_duration(duration):
 
 
 def parse(args, templates, default_template, default_geometry, default_min_dur, default_max_dur):
-    # type: (List, dict, str, Union[None, str], int, Union[None, int]) -> Tuple[Union[None, str], argparse.Namespace]
     """Parse command line arguments
 
     :param args: Arguments to parse
@@ -175,7 +173,6 @@ def record_render_subcommand(template, geometry, input_fileno, output_fileno, sv
 
 
 def main(args=None, input_fileno=None, output_fileno=None):
-    # type: (List, Union[int, None], Union[int, None]) -> None
     if args is None:
         args = sys.argv
     if input_fileno is None:
