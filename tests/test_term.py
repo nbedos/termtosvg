@@ -85,7 +85,7 @@ class TestTerm(unittest.TestCase):
                                         duration=None)
                        for i in range(1, nbr_records)]
 
-            records = term.replay(records, lambda x: x.data, 50, 1000)
+            records = term.replay(records, lambda x: x.data, 5000, 1000)
             # Last blank line is the cursor
             lines = [str(i) for i in range(nbr_records)] + [' ']
             for i, record in enumerate(records):
@@ -155,22 +155,22 @@ class TestTerm(unittest.TestCase):
     def test__group_by_time(self):
         event_records = [
             AsciiCastV2Event(0, 'o', b'1', None),
-            AsciiCastV2Event(50, 'o', b'2', None),
-            AsciiCastV2Event(80, 'o', b'3', None),
-            AsciiCastV2Event(200, 'o', b'4', None),
-            AsciiCastV2Event(210, 'o', b'5', None),
-            AsciiCastV2Event(300, 'o', b'6', None),
-            AsciiCastV2Event(310, 'o', b'7', None),
-            AsciiCastV2Event(320, 'o', b'8', None),
-            AsciiCastV2Event(330, 'o', b'9', None)
+            AsciiCastV2Event(5, 'o', b'2', None),
+            AsciiCastV2Event(8, 'o', b'3', None),
+            AsciiCastV2Event(20, 'o', b'4', None),
+            AsciiCastV2Event(21, 'o', b'5', None),
+            AsciiCastV2Event(30, 'o', b'6', None),
+            AsciiCastV2Event(31, 'o', b'7', None),
+            AsciiCastV2Event(32, 'o', b'8', None),
+            AsciiCastV2Event(33, 'o', b'9', None)
         ]
 
         grouped_event_records = [
-            AsciiCastV2Event(0, 'o', b'1', 50),
-            AsciiCastV2Event(50, 'o', b'23', 150),
-            AsciiCastV2Event(200, 'o', b'45', 100),
-            AsciiCastV2Event(300, 'o', b'6789', 1234)
+            AsciiCastV2Event(0, 'o', b'1', 5),
+            AsciiCastV2Event(5, 'o', b'23', 15),
+            AsciiCastV2Event(20, 'o', b'45', 10),
+            AsciiCastV2Event(30, 'o', b'6789', 1.234)
         ]
 
-        result = list(term._group_by_time(event_records, 50, 1234))
+        result = list(term._group_by_time(event_records, 5000, 1234))
         self.assertEqual(grouped_event_records, result)

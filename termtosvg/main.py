@@ -1,3 +1,5 @@
+"""Command line interface of termtosvg"""
+
 import argparse
 import logging
 import sys
@@ -29,6 +31,17 @@ def integral_duration(duration):
 
 def parse(args, templates, default_template, default_geometry, default_min_dur, default_max_dur):
     # type: (List, dict, str, Union[None, str], int, Union[None, int]) -> Tuple[Union[None, str], argparse.Namespace]
+    """Parse command line arguments
+
+    :param args: Arguments to parse
+    :param templates: Mapping between template names and templates
+    :param default_template: Name of the default template
+    :param default_geometry: Default geometry of the screen
+    :param default_min_dur: Default minimal duration between frames in milliseconds
+    :param default_max_dur: Default maximal duration between frames in milliseconds
+    :return: Tuple made of the subcommand called (None, 'render' or 'record') and all parsed
+    arguments
+    """
     template_parser = argparse.ArgumentParser(add_help=False)
     template_parser.add_argument(
         '-t', '--template',
@@ -62,7 +75,7 @@ def parse(args, templates, default_template, default_geometry, default_min_dur, 
         '-M', '--max-frame-duration',
         type=integral_duration,
         metavar='MAX_DURATION',
-        default=default_min_dur,
+        default=default_max_dur,
         help='maximum duration of a frame in milliseconds'
     )
     parser = argparse.ArgumentParser(

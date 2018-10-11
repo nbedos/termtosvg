@@ -30,6 +30,8 @@ class TestAsciicast(unittest.TestCase):
         '{"version": 2, "width": 212, "height": 53, "theme": {"fg": "#000000", "bg": "#AAAAAA", "palette": "#000000:#111111:#222222:#333333:#444444:#555555:#666666:#777777:#888888:#999999:#AAAAAA:#bbbbbb:#CCCCCC:#DDDDDD:#EEEEEE:#ffffff"}}',
         # Header: additional values
         '{"version": 2, "width": 212, "height": 53, "timestamp": 123456798123}',
+        # Header: idle_time_limit
+        '{"version": 2, "width": 212, "height": 53, "timestamp": 123456798123, "idle_time_limit": 42}',
         # Event: Non printable characters
         '[0.010303, "o", "\\u001b[1;31mnico \\u001b[0;34m~\\u001b[0m"]',
         # Event: Unicode characters
@@ -48,6 +50,7 @@ class TestAsciicast(unittest.TestCase):
         AsciiCastV2Header(2, 212, 53, color_theme_8),
         AsciiCastV2Header(2, 212, 53, color_theme_16),
         AsciiCastV2Header(2, 212, 53, None),
+        AsciiCastV2Header(2, 212, 53, None, 42),
         AsciiCastV2Event(0.010303, 'o', '\u001b[1;31mnico \u001b[0;34m~\u001b[0m'.encode('utf-8'), None),
         AsciiCastV2Event(1.146397, 'o', '❤ ☀ ☆ ☂ ☻ ♞ ☯ ☭ ☢ € →'.encode('utf-8'), None),
         AsciiCastV2Event(2, 'o', b'\r\n', None),

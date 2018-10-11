@@ -16,6 +16,7 @@ DEFAULT_TEMPLATES_NAMES = [
     'window_frame_js.svg'
 ]
 
+
 def validate_geometry(screen_geometry):
     # Will raise ValueError if the right hand side is made of more or less than two values,
     # or if the values can't be turned into integers
