@@ -1,4 +1,4 @@
-.PHONY: usage tests venv_dev xresources build deploy_test deploy_prod static
+.PHONY: usage tests venv_dev build deploy_test deploy_prod static
 
 VENV_PATH=.venv
 VENV_ACTIVATE=. $(VENV_PATH)/bin/activate
@@ -13,7 +13,7 @@ usage:
 	@echo "    make build           # Build source distribution archives"
 	@echo "    make deploy_prod     # Upload source distribution archives to pypi.org"
 	@echo "    make deploy_test     # Upload source distribution archives to test.pypi.org"
-	@echo "    make static          # Render example SVG animations"
+	@echo "    make static          # Render example of SVG animations"
 	@echo "    make tests           # Run unit tests"
 
 build: tests
