@@ -1,14 +1,13 @@
-# termtosvg manual page
+% TERMTOSVG(1)
+% Nicolas Bedos
+% November 2018
 
 ## SYNOPSIS
+**termtosvg** [output_file] [-g GEOMETRY] [-t TEMPLATE] [--help]
 
-<pre>
-<b>termtosvg</b> [-g GEOMETRY] [-t TEMPLATE] [--verbose] [--help] [output_file]
+**termtosvg record** [output_file] [-g GEOMETRY] [-m MIN_DURATION] [-M MAX_DURATION] [-h]
 
-<b>termtosvg record</b> [-g GEOMETRY] [--verbose] [--help] [output_file]
-
-<b>termtosvg render</b> [-g GEOMETRY] [-t TEMPLATE] [--verbose] [--help] <i>input_file</i> [output_file]
-</pre>
+**termtosvg render** *input_file* [output_file] [-m MIN_DURATION] [-M MAX_DURATION] [-t TEMPLATE] [-h]
 
 ### DESCRIPTION
 termtosvg makes recordings of terminal sessions in animated SVG format. If no output
@@ -34,16 +33,26 @@ geometry of the terminal screen used for rendering the animation. The geometry m
 be given as the number of columns and the number of rows on the screen separated by
 the character "x". For example "82x19" for an 82 columns by 19 rows screen.
 
+##### -h, --help
+Print usage and exit
+
+##### -m, --min-frame-duration=MIN_DURATION
+Set the minimum duration of a frame in milliseconds. Frames lasting less than MIN_DURATION
+milliseconds will be merged with consecutive frames. The default behavior of termtosvg is to
+produce a frame for each update of the terminal screen, but when recording commands that update the
+screen very frequently this can cause animations filesize to blow up. Enforcing a minimum frame
+duration helps reduces the number of frame of the animations, and thus helps control the size of
+animation. MIN_DURATION defaults to 1 millisecond.
+
+##### -M, --max-frame-duration=MAX_DURATION
+Set the maximum duration of a frame to MAX_DURATION milliseconds. Frames lasting longer than MAX_DURATION
+milliseconds will simply see their duration reduced to MAX_DURATION.
+
 ##### -t, --template=TEMPLATE
 Set the SVG template used for rendering the SVG animation. TEMPLATE may either be
 one of the default templates (gjm8, dracula, solarized_dark, solarized_light,
  progress_bar, window_frame, window_frame_js) or a path to a valid template.
 
-##### -h, --help
-Print usage and exit
-
-##### -v, --verbose
-Increase log message verbosity
 
 
 ## SVG TEMPLATES
@@ -57,7 +66,6 @@ of ways including, but not limited to:
 See the [dedicated manual page](termtosvg-template.md) for more details.
 
 ## ENVIRONMENT
-##### SHELL
 termtosvg will spawn the shell specified by the SHELL environment variable, or ``/bin/sh`` if the
 variable does not exist. Spawning a new shell is necessary so that termtosvg can act
 as an intermediary between the shell and the pseudo terminal and capture all the data sent
@@ -89,4 +97,9 @@ termtosvg record recording.cast
 Render an SVG animation from a recording in asciicast format
 ```
 termtosvg render recording.cast animation.svg
+```
+
+Enforce both minimal and maximal frame durations
+```
+termtosvg -m 17 -M 2000
 ```

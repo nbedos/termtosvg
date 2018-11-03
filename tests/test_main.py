@@ -37,12 +37,13 @@ class TestMain(unittest.TestCase):
         ['--screen-geometry', '82x19', '--template', 'plain', 'output_filename'],
         ['-g', '82x19', '-t', 'plain'],
         ['-m', '42', '-M', '100'],
-        ['--min-frame-duration', '42', '--max-frame-duration', '100'],
+        ['--min-frame-duration', '42ms', '--max-frame-duration', '100'],
         ['record'],
         ['record', 'output_filename'],
         ['record', 'output_filename', '--screen-geometry', '82x19'],
         ['record', '--screen-geometry', '82x19'],
         ['record', '-m', '42', '-M', '100'],
+        ['record', '-m', '42ms', '-M', '100ms'],
         ['render', 'input_filename'],
         ['render', 'input_filename'],
         ['render', 'input_filename', '--template', 'plain'],
@@ -143,3 +144,14 @@ class TestMain(unittest.TestCase):
 
             args = ['termtosvg', 'render', cast_filename_v1, svg_filename]
             TestMain.run_main([], args)
+
+    def test_integral_duration(self):
+        test_cases = [
+            '100',
+            '100ms',
+            '100Ms',
+        ]
+        for case in test_cases:
+            with self.subTest(case=case):
+                self.assertEqual(termtosvg.main.integral_duration(case), 100)
+

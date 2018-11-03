@@ -23,6 +23,9 @@ RENDER_USAGE = """termtosvg render input_file [output_file] [-m MIN_DURATION]
 
 
 def integral_duration(duration):
+    if duration.lower().endswith('ms'):
+        duration = duration[:-len('ms')]
+
     if duration.isdigit() and int(duration) >= 1:
         return int(duration)
     raise ValueError('duration must be an integer greater than 0')
@@ -66,15 +69,21 @@ def parse(args, templates, default_template, default_geometry, default_min_dur, 
         type=integral_duration,
         metavar='MIN_DURATION',
         default=default_min_dur,
-        help='minimum duration of a frame in milliseconds'
+        help='minimum duration of a frame in milliseconds (default: {}ms)'.format(default_min_dur)
     )
+
+    if default_max_dur:
+        default_max_dur_label = '{}ms'.format(default_max_dur)
+    else:
+        default_max_dur_label = 'No maximum value'
+
     max_duration_parser = argparse.ArgumentParser(add_help=False)
     max_duration_parser.add_argument(
         '-M', '--max-frame-duration',
         type=integral_duration,
         metavar='MAX_DURATION',
         default=default_max_dur,
-        help='maximum duration of a frame in milliseconds'
+        help='maximum duration of a frame in milliseconds (default: {})'.format(default_max_dur_label)
     )
     parser = argparse.ArgumentParser(
         prog='termtosvg',
@@ -142,7 +151,7 @@ def record_subcommand(geometry, input_fileno, output_fileno, cast_filename):
     logger.info('Recording ended, cast file is {}'.format(cast_filename))
 
 
-def render_subcommand(template, cast_filename, svg_filename):
+def render_subcommand(template, cast_filename, svg_filename, min_frame_duration, max_frame_duration):
     """Render the animation from an asciicast recording"""
     import termtosvg.asciicast
     import termtosvg.term
@@ -150,14 +159,16 @@ def render_subcommand(template, cast_filename, svg_filename):
     logger.info('Rendering started')
     asciicast_records = termtosvg.asciicast.read_records(cast_filename)
     replayed_records = termtosvg.term.replay(records=asciicast_records,
-                                             from_pyte_char=termtosvg.anim.CharacterCell.from_pyte)
+                                             from_pyte_char=termtosvg.anim.CharacterCell.from_pyte,
+                                             min_frame_duration=min_frame_duration,
+                                             max_frame_duration=max_frame_duration)
     termtosvg.anim.render_animation(records=replayed_records,
                                     filename=svg_filename,
                                     template=template)
     logger.info('Rendering ended, SVG animation is {}'.format(svg_filename))
 
 
-def record_render_subcommand(template, geometry, input_fileno, output_fileno, svg_filename):
+def record_render_subcommand(template, geometry, input_fileno, output_fileno, svg_filename, min_frame_duration, max_frame_duration):
     """Record and render the animation on the fly"""
     import termtosvg.term
 
@@ -169,7 +180,9 @@ def record_render_subcommand(template, geometry, input_fileno, output_fileno, sv
     with termtosvg.term.TerminalMode(input_fileno):
         asciicast_records = termtosvg.term.record(columns, lines, input_fileno, output_fileno)
         replayed_records = termtosvg.term.replay(records=asciicast_records,
-                                                 from_pyte_char=termtosvg.anim.CharacterCell.from_pyte)
+                                                 from_pyte_char=termtosvg.anim.CharacterCell.from_pyte,
+                                                 min_frame_duration=min_frame_duration,
+                                                 max_frame_duration=max_frame_duration)
         termtosvg.anim.render_animation(records=replayed_records,
                                         filename=svg_filename,
                                         template=template)
@@ -206,14 +219,14 @@ def main(args=None, input_fileno=None, output_fileno=None):
         if svg_filename is None:
             _, svg_filename = tempfile.mkstemp(prefix='termtosvg_', suffix='.svg')
 
-        render_subcommand(args.template, args.input_file, svg_filename)
+        render_subcommand(args.template, args.input_file, svg_filename, args.min_frame_duration, args.max_frame_duration)
     else:
         svg_filename = args.output_file
         if svg_filename is None:
             _, svg_filename = tempfile.mkstemp(prefix='termtosvg_', suffix='.svg')
 
         record_render_subcommand(args.template, args.screen_geometry, input_fileno, output_fileno,
-                                 svg_filename)
+                                 svg_filename, args.min_frame_duration, args.max_frame_duration)
 
     for handler in logger.handlers:
         handler.close()

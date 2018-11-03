@@ -85,14 +85,12 @@ class TestTerm(unittest.TestCase):
                                         duration=None)
                        for i in range(1, nbr_records)]
 
-            records = term.replay(records, lambda x: x.data, 5000, 1000)
+            records = term.replay(records, lambda x: x.data, 5000, None, 1000)
             # Last blank line is the cursor
             lines = [str(i) for i in range(nbr_records)] + [' ']
             for i, record in enumerate(records):
                 # Skip header and cursor line
-                if i == 0:
-                    pass
-                else:
+                if i != 0:
                     self.assertEqual(record.line[0], lines[i])
 
         with self.subTest(case='Shell command spread over multiple lines'):
@@ -104,7 +102,7 @@ class TestTerm(unittest.TestCase):
                        for i, data in enumerate(commands)]
 
             screen = {}
-            for record in term.replay(records, lambda x: x.data, 50, 1000):
+            for record in term.replay(records, lambda x: x.data, 50, None, 1000):
                 if hasattr(record, 'line'):
                     screen[record.row] = ''.join(record.line[i] for i in sorted(record.line))
 
@@ -123,7 +121,7 @@ class TestTerm(unittest.TestCase):
                           AsciiCastV2Event(200, 'o', '\r\n\u001b[?25hcccc'.encode('utf-8'), None),
                       ]
 
-            gen = term.replay(records, anim.CharacterCell.from_pyte, 50, 1000)
+            gen = term.replay(records, anim.CharacterCell.from_pyte, 50, None, 1000)
             header, *events = list(gen)
 
             # Event #0: First line - cursor displayed after 'aaaa'
@@ -162,15 +160,28 @@ class TestTerm(unittest.TestCase):
             AsciiCastV2Event(30, 'o', b'6', None),
             AsciiCastV2Event(31, 'o', b'7', None),
             AsciiCastV2Event(32, 'o', b'8', None),
-            AsciiCastV2Event(33, 'o', b'9', None)
+            AsciiCastV2Event(33, 'o', b'9', None),
+            AsciiCastV2Event(43, 'o', b'10', None),
         ]
 
-        grouped_event_records = [
-            AsciiCastV2Event(0, 'o', b'1', 5),
-            AsciiCastV2Event(5, 'o', b'23', 15),
-            AsciiCastV2Event(20, 'o', b'45', 10),
-            AsciiCastV2Event(30, 'o', b'6789', 1.234)
-        ]
+        with self.subTest(case='maximum record duration'):
+            grouped_event_records_max = [
+                AsciiCastV2Event(0, 'o', b'1', 5),
+                AsciiCastV2Event(5, 'o', b'23', 6),
+                AsciiCastV2Event(11, 'o', b'45', 6),
+                AsciiCastV2Event(17, 'o', b'6789', 6),
+                AsciiCastV2Event(23, 'o', b'10', 1.234),
+            ]
+            result = list(term._group_by_time(event_records, 5000, 6000, 1234))
+            self.assertEqual(grouped_event_records_max, result)
 
-        result = list(term._group_by_time(event_records, 5000, 1234))
-        self.assertEqual(grouped_event_records, result)
+        with self.subTest(case='no maximum record duration'):
+            grouped_event_records_no_max = [
+                AsciiCastV2Event(0, 'o', b'1', 5),
+                AsciiCastV2Event(5, 'o', b'23', 15),
+                AsciiCastV2Event(20, 'o', b'45', 10),
+                AsciiCastV2Event(30, 'o', b'6789', 13),
+                AsciiCastV2Event(43, 'o', b'10', 1.234),
+            ]
+            result = list(term._group_by_time(event_records, 5000, None, 1234))
+            self.assertEqual(grouped_event_records_no_max, result)

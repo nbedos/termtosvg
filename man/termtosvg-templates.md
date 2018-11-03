@@ -1,7 +1,10 @@
-# termtosvg templates manual page
+% TERMTOSVG-TEMPLATES(1)
+% Nicolas Bedos
+% November 2018
 
 ## DESCRIPTION
 templates are SVG files in which termtosvg embeds animations. Using templates makes it possible to:
+
 * Have user defined terminal color themes and fonts
 * Add a terminal UI or window frame to the animation
 * Have interactive animations (for example play/pause buttons)
@@ -32,7 +35,8 @@ Here is the basic structure of a template:
 </svg>
 ```
 
-Overall one can identify:
+Overall, one can identify:
+
 * An `svg` element with id "terminal"
 * A `defs` element which includes:
     * A termtosvg specific `template_settings` element used to specify the terminal size (number of columns and rows) for which the template is made
@@ -44,6 +48,7 @@ Overall one can identify:
 ## TEMPLATE CUSTOMIZATION
 The basic idea behind template customization is that termtosvg will preserve elements of the template
 that it does not modify. Hence it is possible to
+
 * Customize the style of the animation by modifying the content of the `style` element with id "user-style"
 * Add a new `script` element to embed JavaScript code in the animation
 * Add other SVG elements, as long as they are not children of the `svg` element with id "screen"

@@ -91,14 +91,14 @@ def _record(columns, lines, input_fileno, output_fileno):
 
     pid, master_fd = pty.fork()
     if pid == 0:
-        # Child process
+        # Child process - this call never returns
         os.execlp(shell, shell)
 
+    # Parent process
     # Set the terminal size for master_fd
     ttysize = struct.pack("HHHH", lines, columns, 0, 0)
     fcntl.ioctl(master_fd, termios.TIOCSWINSZ, ttysize)
 
-    # Parent process
     try:
         tty.setraw(input_fileno)
     except tty.error:
@@ -150,7 +150,7 @@ def _capture_data(input_fileno, output_fileno, master_fd, buffer_size=1024):
                 data = data[n:]
 
 
-def _group_by_time(event_records, min_rec_duration, last_rec_duration):
+def _group_by_time(event_records, min_rec_duration, max_rec_duration, last_rec_duration):
     """Merge event records together if they are close enough and compute the duration between
     consecutive events. The duration between two consecutive event records returned by the function
     is guaranteed to be at least min_rec_duration.
@@ -158,28 +158,31 @@ def _group_by_time(event_records, min_rec_duration, last_rec_duration):
     :param event_records: Sequence of records in asciicast v2 format
     :param min_rec_duration: Minimum time between two records returned by the function in
     milliseconds. This helps avoiding 0s duration animations which break SVG animations.
+    :param max_rec_duration: Limit of the time elapsed between two records
     :param last_rec_duration: Duration of the last record in milliseconds
     :return: Sequence of records
     """
     current_string = b''
-    current_time = None
+    current_time = 0
+    dropped_time = 0
 
     for event_record in event_records:
         if event_record.event_type != 'o':
             continue
 
-        if current_time is not None:
-            time_between_events = event_record.time - current_time
-            if time_between_events * 1000 >= min_rec_duration:
-                accumulator_event = AsciiCastV2Event(time=current_time,
-                                                     event_type='o',
-                                                     event_data=current_string,
-                                                     duration=time_between_events)
-                yield accumulator_event
-                current_string = b''
-                current_time = event_record.time
-        else:
-            current_time = event_record.time
+        time_between_events = event_record.time - (current_time + dropped_time)
+        if time_between_events * 1000 >= min_rec_duration:
+            if max_rec_duration:
+                if max_rec_duration / 1000 < time_between_events:
+                    dropped_time += time_between_events - (max_rec_duration / 1000)
+                    time_between_events = max_rec_duration / 1000
+            accumulator_event = AsciiCastV2Event(time=current_time,
+                                                 event_type='o',
+                                                 event_data=current_string,
+                                                 duration=time_between_events)
+            yield accumulator_event
+            current_string = b''
+            current_time += time_between_events
 
         current_string += event_record.event_data
 
@@ -187,11 +190,11 @@ def _group_by_time(event_records, min_rec_duration, last_rec_duration):
         accumulator_event = AsciiCastV2Event(time=current_time,
                                              event_type='o',
                                              event_data=current_string,
-                                             duration=last_rec_duration/1000)
+                                             duration=last_rec_duration / 1000)
         yield accumulator_event
 
 
-def replay(records, from_pyte_char, min_frame_duration=1, last_frame_duration=1000):
+def replay(records, from_pyte_char, min_frame_duration, max_frame_duration, last_frame_duration=1000):
     """Read the records of a terminal sessions, render the corresponding screens and return lines
     of the screen that need updating.
 
@@ -207,6 +210,8 @@ def replay(records, from_pyte_char, min_frame_duration=1, last_frame_duration=10
     :param from_pyte_char: Conversion function from pyte.screen.Char to any other format
     :param min_frame_duration: Minimum frame duration in milliseconds. SVG animations break when
     an animation duration is 0ms so setting this to at least 1ms is recommended.
+    :param max_frame_duration: Maximum duration of a frame in milliseconds. This is meant to limit
+    idle time during a recording.
     :param last_frame_duration: Last frame duration in milliseconds
     :return: Records in the CharacterCellRecord format:
         1/ a header with configuration information (CharacterCellConfig)
@@ -224,13 +229,16 @@ def replay(records, from_pyte_char, min_frame_duration=1, last_frame_duration=10
 
     screen = pyte.Screen(header.width, header.height)
     stream = pyte.ByteStream(screen)
+    if not max_frame_duration and header.idle_time_limit:
+        max_frame_duration = int(header.idle_time_limit * 1000)
 
     yield CharacterCellConfig(header.width, header.height)
 
     pending_lines = {}
     current_time = 0
     last_cursor = None
-    for event_record in _group_by_time(records, min_frame_duration, last_frame_duration):
+    event_records = _group_by_time(records, min_frame_duration, max_frame_duration, last_frame_duration)
+    for event_record in event_records:
         stream.feed(event_record.event_data)
 
         # Numbers of lines that must be redrawn
@@ -265,8 +273,7 @@ def replay(records, from_pyte_char, min_frame_duration=1, last_frame_duration=10
         screen.dirty.clear()
 
         completed_lines = {}
-        # Conversion from seconds to milliseconds
-        duration = int(1000 * round(event_record.duration, 3))
+        duration = int(1000 * event_record.duration)
         for row in pending_lines:
             line, line_time, line_duration = pending_lines[row]
             if row in redraw_buffer:

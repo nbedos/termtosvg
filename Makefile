@@ -1,4 +1,4 @@
-.PHONY: usage tests venv_dev build deploy_test deploy_prod static
+.PHONY: usage tests venv_dev build deploy_test deploy_prod static man
 
 VENV_PATH=.venv
 VENV_ACTIVATE=. $(VENV_PATH)/bin/activate
@@ -13,7 +13,8 @@ usage:
 	@echo "    make build           # Build source distribution archives"
 	@echo "    make deploy_prod     # Upload source distribution archives to pypi.org"
 	@echo "    make deploy_test     # Upload source distribution archives to test.pypi.org"
-	@echo "    make static          # Render example of SVG animations"
+	@echo "    make man	        # Build manual pages"
+	@echo "    make static          # Render examples of SVG animations"
 	@echo "    make tests           # Run unit tests"
 
 build: tests
@@ -29,7 +30,7 @@ deploy_prod: build
 	$(VENV_ACTIVATE) && \
 	    twine upload -r pypi dist/*
 
-tests: venv_dev
+tests: venv_dev man
 	$(VENV_ACTIVATE) && \
 	    pip freeze && \
 	    coverage run --branch --source termtosvg -m unittest -v && \
@@ -43,7 +44,12 @@ venv_dev: setup.py
 	$(VENV_ACTIVATE) && \
 	    pip install -U -e .[dev]
 
-static:
+man: venv_dev
+	$(VENV_ACTIVATE) && \
+	    pandoc man/termtosvg.md -s -t man > man/termtosvg.man.1 && \
+	    pandoc man/termtosvg-templates.md -s -t man > man/termtosvg-templates.man.1
+
+static: man
 	(test -d $(VENV_PATH) || python -m venv $(VENV_PATH))
 	$(VENV_ACTIVATE) && \
 	    pip install . -U && \
