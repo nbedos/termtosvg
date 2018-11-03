@@ -1,0 +1,30 @@
+version: 2
+workflows:
+  version: 2
+  test:
+      jobs:
+          - Python-3.5
+          - Python-3.6
+          - Python-3.7
+jobs:
+  Python-3.7: &template
+    docker:
+      - image: circleci/python:3.7-stretch
+      
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - run:
+          name: run tests
+          command: |
+            make tests
+
+  Python-3.6:
+      <<: *template
+      docker:
+          - image: circleci/python:3.6-jessie
+
+  Python-3.5:
+      <<: *template
+      docker:
+          - image: circleci/python:3.5-jessie
