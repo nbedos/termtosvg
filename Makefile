@@ -14,7 +14,7 @@ usage:
 	@echo "    make build           # Build source distribution archives"
 	@echo "    make deploy_prod     # Upload source distribution archives to pypi.org"
 	@echo "    make deploy_test     # Upload source distribution archives to test.pypi.org"
-	@echo "    make man	        # Build manual pages"
+	@echo "    make man             # Build manual pages"
 	@echo "    make static          # Render examples of SVG animations"
 	@echo "    make tests           # Run unit tests"
 
