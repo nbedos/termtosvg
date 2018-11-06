@@ -63,7 +63,7 @@ of ways including, but not limited to:
 * Adding a custom terminal window frame to the animation to make it look like a real terminal
 * Adding JavaScript code to pause the animation, seek to a specific frame, etc
 
-See the [dedicated manual page](termtosvg-template.md) for more details.
+See the [dedicated manual page](termtosvg-templates.md) for more details.
 
 ## ENVIRONMENT
 termtosvg will spawn the shell specified by the SHELL environment variable, or ``/bin/sh`` if the
