@@ -35,7 +35,7 @@ tests: venv_dev
 	$(VENV_ACTIVATE) && \
 	    pip freeze && \
 	    coverage run --branch --source termtosvg -m unittest -v && \
-	    coverage report && \
+	    coverage report --omit 'termtosvg/tests/*' && \
 	    coverage html
 	-$(VENV_ACTIVATE) && \
 	    pylint -j 0 --extension-pkg-whitelist lxml termtosvg/*.py

@@ -2,4 +2,3 @@ include LICENSE
 include man/*.1
 include scripts/*
 recursive-include termtosvg/data *
-graft tests
