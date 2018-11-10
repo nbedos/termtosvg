@@ -7,8 +7,8 @@ import termtosvg.main
 
 SHELL_COMMANDS = [
     'echo $SHELL && sleep 0.1;\r\n',
-    'tree && 0.1;\r\n',
-    'ls && sleep 0.1;\r\n',
+    'date && sleep 0.1;\r\n',
+    'uname && sleep 0.1;\r\n',
     'w',
     'h',
     'o',
