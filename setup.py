@@ -28,13 +28,9 @@ setup(
         'Topic :: Terminals'
     ],
     python_requires='>=3.5',
-    packages=['termtosvg'],
-    py_modules=[
-        'termtosvg.anim',
-        'termtosvg.asciicast',
-        'termtosvg.config',
-        'termtosvg.main',
-        'termtosvg.term',
+    packages=[
+        'termtosvg',
+        'termtosvg.tests'
     ],
     scripts=['scripts/termtosvg'],
     include_package_data=True,
