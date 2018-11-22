@@ -25,12 +25,11 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Topic :: System :: Shells',
-        'Topic :: Terminals'
+        'Topic :: Terminals',
     ],
     python_requires='>=3.5',
     packages=[
         'termtosvg',
-        'termtosvg.tests'
     ],
     scripts=['scripts/termtosvg'],
     include_package_data=True,
