@@ -2,3 +2,4 @@ include LICENSE
 include man/*.1
 include scripts/*
 recursive-include termtosvg/data *
+global-exclude __pycache__ *.pyc
