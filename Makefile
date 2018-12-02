@@ -48,7 +48,7 @@ venv_dev: setup.py
 man: venv_dev
 	$(VENV_ACTIVATE) && \
 	    pandoc man/termtosvg.md -s -t man > man/termtosvg.man.1 && \
-	    pandoc man/termtosvg-templates.md -s -t man > man/termtosvg-templates.man.1
+	    pandoc man/termtosvg-templates.md -s -t man > man/termtosvg-templates.man.5
 
 static: man
 	(test -d $(VENV_PATH) || python -m venv $(VENV_PATH))

@@ -1,4 +1,4 @@
-% TERMTOSVG-TEMPLATES(1)
+% TERMTOSVG-TEMPLATES(5)
 % Nicolas Bedos
 % November 2018
 
