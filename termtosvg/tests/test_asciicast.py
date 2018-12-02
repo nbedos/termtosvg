@@ -70,7 +70,7 @@ class TestAsciicast(unittest.TestCase):
             ('event v2: invalid time', '["x", "o", "ls"]'),
             ('event v2: invalid event_type', '[2.0, 123, "ls"]'),
             ('event v2: invalid event_data', '[2.0, 123, 42]'),
-            ('event v2: invalid number of attribues', '[2.0, 123, "ls", "ls"]'),
+            ('event v2: invalid number of attributes', '[2.0, 123, "ls", "ls"]'),
             ('invalid record', '{"aaa": 42}'),
         ]
         for case, line in failure_test_cases:
