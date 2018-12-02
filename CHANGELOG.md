@@ -18,7 +18,7 @@
 * Add support for SVG templates (custom color themes, terminal UI, animation controls...) as
 discussed in [issue #53](https://github.com/nbedos/termtosvg/issues/53)
 * Remove --font and --theme options, as well as the termtosvg.ini configuration file
-* Fix select() deadlock on BSD and Mac OS ([issue #18](https://github.com/nbedos/termtosvg/issues/18))
+* Fix select() deadlock on BSD and macOS ([issue #18](https://github.com/nbedos/termtosvg/issues/18))
 
 
 ## Version 0.4.0 (2018-07-08)
