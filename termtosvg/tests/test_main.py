@@ -5,7 +5,7 @@ import unittest
 
 import termtosvg.main
 
-SHELL_COMMANDS = [
+SHELL_INPUT = [
     'echo $SHELL && sleep 0.1;\r\n',
     'date && sleep 0.1;\r\n',
     'uname && sleep 0.1;\r\n',
@@ -28,17 +28,19 @@ SHELL_COMMANDS = [
 class TestMain(unittest.TestCase):
     test_cases = [
         [],
+        ['-c', 'sh'],
         ['--screen-geometry', '82x19'],
         ['-g', '82x19'],
         ['--template', 'plain'],
         ['-t', 'plain'],
         ['--screen-geometry', '82x19', '--template', 'plain'],
-        ['output_filename', '--screen-geometry', '82x19', '--template', 'plain'],
+        ['output_filename', '--screen-geometry', '82x19', '--template', 'plain', '-c', 'date'],
         ['--screen-geometry', '82x19', '--template', 'plain', 'output_filename'],
         ['-g', '82x19', '-t', 'plain'],
         ['-m', '42', '-M', '100'],
         ['--min-frame-duration', '42ms', '--max-frame-duration', '100'],
         ['record'],
+        ['record', '-c', 'ls'],
         ['record', 'output_filename'],
         ['record', 'output_filename', '--screen-geometry', '82x19'],
         ['record', '--screen-geometry', '82x19'],
@@ -60,10 +62,11 @@ class TestMain(unittest.TestCase):
                                                         default_template='plain',
                                                         default_geometry='48x95',
                                                         default_min_dur=2,
-                                                        default_max_dur=None)
+                                                        default_max_dur=None,
+                                                        default_cmd='sh')
 
     @staticmethod
-    def run_main(shell_commands, args):
+    def run_main(args, process_input):
         # Use pipes in lieu of stdin and stdout
         fd_in_read, fd_in_write = os.pipe()
         fd_out_read, fd_out_write = os.pipe()
@@ -71,7 +74,7 @@ class TestMain(unittest.TestCase):
         pid = os.fork()
         if pid == 0:
             # Child process
-            for line in shell_commands:
+            for line in process_input:
                 os.write(fd_in_write, line.encode('utf-8'))
                 time.sleep(0.060)
             os._exit(0)
@@ -88,39 +91,47 @@ class TestMain(unittest.TestCase):
 
         with self.subTest(case='record (no filename)'):
             args = ['termtosvg', 'record']
-            TestMain.run_main(SHELL_COMMANDS, args)
+            TestMain.run_main(args, SHELL_INPUT)
 
         with self.subTest(case='record (with filename)'):
             args = ['termtosvg', 'record', cast_filename]
-            TestMain.run_main(SHELL_COMMANDS, args)
+            TestMain.run_main(args, SHELL_INPUT)
 
         with self.subTest(case='record (with geometry)'):
             args = ['termtosvg', 'record', '--screen-geometry', '82x19']
-            TestMain.run_main(SHELL_COMMANDS, args)
+            TestMain.run_main(args, SHELL_INPUT)
+
+        with self.subTest(case='record (with command)'):
+            args = ['termtosvg', 'record', '-c', 'date']
+            TestMain.run_main(args, [])
 
         with self.subTest(case='render (no output filename)'):
             args = ['termtosvg', 'render', cast_filename]
-            TestMain.run_main([], args)
+            TestMain.run_main(args, [])
 
         with self.subTest(case='render (with output filename)'):
             args = ['termtosvg', 'render', cast_filename, svg_filename]
-            TestMain.run_main([], args)
+            TestMain.run_main(args, [])
 
         with self.subTest(case='render (with geometry)'):
             args = ['termtosvg', 'render', cast_filename]
-            TestMain.run_main([], args)
+            TestMain.run_main(args, [])
 
         with self.subTest(case='render (with template)'):
             args = ['termtosvg', 'render', cast_filename, '--template', 'window_frame']
-            TestMain.run_main([], args)
+            TestMain.run_main(args, [])
+
+        with self.subTest(case='record and render custom command'):
+            args = ['termtosvg', '--command', 'ls']
+            TestMain.run_main(args, [])
 
         with self.subTest(case='record and render on the fly (fallback theme)'):
             args = ['termtosvg', '--screen-geometry', '82x19']
-            TestMain.run_main(SHELL_COMMANDS, args)
+            TestMain.run_main(args, SHELL_INPUT)
 
         with self.subTest(case='record and render on the fly (window_frame template)'):
             args = ['termtosvg', svg_filename, '--template', 'window_frame']
-            TestMain.run_main(SHELL_COMMANDS, args)
+            TestMain.run_main(args, SHELL_INPUT)
 
         cast_v1_data = '\r\n'.join(['{',
                                     '  "version": 1,',
@@ -143,7 +154,7 @@ class TestMain(unittest.TestCase):
                 cast_file.write(cast_v1_data)
 
             args = ['termtosvg', 'render', cast_filename_v1, svg_filename]
-            TestMain.run_main([], args)
+            TestMain.run_main(args, [])
 
     def test_integral_duration(self):
         test_cases = [

@@ -1,11 +1,11 @@
 % TERMTOSVG(1)
 % Nicolas Bedos
-% November 2018
+% December 2018
 
 ## SYNOPSIS
-**termtosvg** [output_file] [-g GEOMETRY] [-t TEMPLATE] [--help]
+**termtosvg** [output_file] [-c COMMAND] [-g GEOMETRY] [-t TEMPLATE] [--help]
 
-**termtosvg record** [output_file] [-g GEOMETRY] [-m MIN_DURATION] [-M MAX_DURATION] [-h]
+**termtosvg record** [output_file] [-c COMMAND] [-g GEOMETRY] [-m MIN_DURATION] [-M MAX_DURATION] [-h]
 
 **termtosvg render** *input_file* [output_file] [-m MIN_DURATION] [-M MAX_DURATION] [-t TEMPLATE] [-h]
 
@@ -14,19 +14,26 @@ termtosvg makes recordings of terminal sessions in animated SVG format. If no ou
 filename is provided, a random temporary filename will be automatically generated.
 
 #### COMMANDS
-The default behavior of termtosvg is to render an SVG animation 
+The default behavior of termtosvg is to render an SVG animation of a shell session
 
 ##### termtosvg record
 Record a terminal session in asciicast v2 format. The recording is a text file which
 contains timing information as well as what was displayed on the screen during the
-terminal session. It may be edited to alter the timing of
-the recording or the information displayed on the screen of the terminal.
+terminal session. It may be edited to alter the timing of the recording or the information
+displayed on the screen of the terminal.
 
 ##### termtosvg render
 Render an animated SVG from a recording in asciicast v1 or v2 format. This allows
 rendering in SVG format of any recording made with asciinema.
 
 ## OPTIONS
+
+#### -c, --command=COMMAND
+specify the program to record with optional arguments. COMMAND must be a string listing the
+program to execute together will all arguments to be made available to the program. For example
+`--command='python -h'` would make termtosvg record the usage of the Python interpreter. If this
+option is not set, termtosvg will record the program specified by the $SHELL environment variable
+or `/bin/sh`.
 
 ##### -g, --screen-geometry=GEOMETRY
 geometry of the terminal screen used for rendering the animation. The geometry must
@@ -66,11 +73,8 @@ of ways including, but not limited to:
 See the [dedicated manual page](termtosvg-templates.md) for more details.
 
 ## ENVIRONMENT
-termtosvg will spawn the shell specified by the SHELL environment variable, or ``/bin/sh`` if the
-variable does not exist. Spawning a new shell is necessary so that termtosvg can act
-as an intermediary between the shell and the pseudo terminal and capture all the data sent
-to the terminal.
-
+In case the `--command` option is not specified, termtosvg will spawn the shell specified by
+the SHELL environment variable, or `/bin/sh` if the variable is not set.
 
 ## EXAMPLES
 
@@ -82,6 +86,11 @@ termtosvg animation.svg
 Record a terminal session and render it using a specific template:
 ```
 termtosvg -t ~/templates/my_template.svg
+```
+
+Record a specific program such as IPython with the pretty printing option:
+```
+termtosvg -c 'ipython --pprint'
 ```
 
 Record a terminal session with a specific screen geometry:
