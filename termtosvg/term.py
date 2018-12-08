@@ -237,7 +237,8 @@ def replay(records, from_pyte_char, min_frame_duration, max_frame_duration, last
     pending_lines = {}
     current_time = 0
     last_cursor = None
-    event_records = _group_by_time(records, min_frame_duration, max_frame_duration, last_frame_duration)
+    event_records = _group_by_time(records, min_frame_duration, max_frame_duration,
+                                   last_frame_duration)
     for event_record in event_records:
         stream.feed(event_record.event_data)
 
