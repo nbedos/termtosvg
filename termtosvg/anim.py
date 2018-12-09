@@ -403,7 +403,7 @@ def _render_animation(records, template, cell_width, cell_height):
         last_animated_group = animated_group
         animation_duration = line_time + line_duration
 
-    # Add id attribute to the last 'animate' tag so that it can be refered to by the first
+    # Add id attribute to the last 'animate' tag so that it can be referred to by the first
     # animations (enables animation looping)
     if last_animated_group is not None:
         animate_tags = last_animated_group.findall('animate')

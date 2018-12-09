@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 0.7.0 (2018-12-09)
+
+* Add --command CLI option ([issue #83](https://github.com/nbedos/termtosvg/issues/83), [pull request #84](https://github.com/nbedos/termtosvg/pull/84))
+* Add unit tests to package ([pull request #77](https://github.com/nbedos/termtosvg/pull/77))
+* Move termtosvg-template man page from section 1 to 5 ([issue #80](https://github.com/nbedos/termtosvg/issues/80))
+
 ## Version 0.6.0 (2018-11-04)
 
 * Add base16-default-dark color theme ([pull request #57](https://github.com/nbedos/termtosvg/pull/57))
@@ -18,7 +24,7 @@
 * Add support for SVG templates (custom color themes, terminal UI, animation controls...) as
 discussed in [issue #53](https://github.com/nbedos/termtosvg/issues/53)
 * Remove --font and --theme options, as well as the termtosvg.ini configuration file
-* Fix select() deadlock on BSD and Mac OS ([issue #18](https://github.com/nbedos/termtosvg/issues/18))
+* Fix select() deadlock on BSD and macOS ([issue #18](https://github.com/nbedos/termtosvg/issues/18))
 
 
 ## Version 0.4.0 (2018-07-08)

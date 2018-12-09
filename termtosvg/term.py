@@ -47,8 +47,8 @@ class TerminalMode:
             tty.tcsetattr(self.fileno, tty.TCSAFLUSH, self.mode)
 
 
-def record(columns, lines, input_fileno, output_fileno):
-    """Record a terminal session in asciicast v2 format
+def record(process_args, columns, lines, input_fileno, output_fileno):
+    """Record a process in asciicast v2 format
 
     The records returned are of two types:
         - a single header with configuration information
@@ -57,7 +57,7 @@ def record(columns, lines, input_fileno, output_fileno):
     yield AsciiCastV2Header(version=2, width=columns, height=lines, theme=None)
 
     start = None
-    for data, time in _record(columns, lines, input_fileno, output_fileno):
+    for data, time in _record(process_args, columns, lines, input_fileno, output_fileno):
         if start is None:
             start = time
 
@@ -67,32 +67,32 @@ def record(columns, lines, input_fileno, output_fileno):
                                duration=None)
 
 
-def _record(columns, lines, input_fileno, output_fileno):
-    """Record raw input and output of a shell session
+def _record(process_args, columns, lines, input_fileno, output_fileno):
+    """Record raw input and output of a process
 
-    This function forks the current process. The child process is a shell which is a session
-    leader and has a controlling terminal and is run in the background. The parent process, which
-    runs in the foreground, transmits data between the standard input, output and the shell
-    process and logs it. From the user point of view, it appears they are communicating with
-    their shell (through their terminal emulator) when in fact they communicate with our parent
-    process which logs all the data exchanged with the shell
+    This function forks the current process. The child process runs the command specified by
+    'process_args' which is a session leader and has a controlling terminal and is run in the
+    background. The parent process, which runs in the foreground, transmits data between the
+    standard input, output and the child process and logs it. From the user point of view, it
+    appears they are communicating with the process they intend to record (through their terminal
+    emulator) when in fact they communicate with our parent process which logs all data exchanges
+    with the user
 
     The implementation of this method is mostly copied from the pty.spawn function of the
     CPython standard library. It has been modified in order to make the record function a
     generator.
     See https://github.com/python/cpython/blob/master/Lib/pty.py
 
+    :param process_args: List of arguments to run the process to be recorded
     :param columns: Initial number of columns of the terminal
     :param lines: Initial number of lines of the terminal
     :param input_fileno: File descriptor of the input data stream
     :param output_fileno: File descriptor of the output data stream
     """
-    shell = os.environ.get('SHELL', 'sh')
-
     pid, master_fd = pty.fork()
     if pid == 0:
         # Child process - this call never returns
-        os.execlp(shell, shell)
+        os.execlp(process_args[0], *process_args)
 
     # Parent process
     # Set the terminal size for master_fd
@@ -237,7 +237,8 @@ def replay(records, from_pyte_char, min_frame_duration, max_frame_duration, last
     pending_lines = {}
     current_time = 0
     last_cursor = None
-    event_records = _group_by_time(records, min_frame_duration, max_frame_duration, last_frame_duration)
+    event_records = _group_by_time(records, min_frame_duration, max_frame_duration,
+                                   last_frame_duration)
     for event_record in event_records:
         stream.feed(event_record.event_data)
 

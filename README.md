@@ -14,11 +14,11 @@ line sessions as standalone SVG animations.
 
 ## Features
 * Produce lightweight and clean looking animations embeddable on a project page
-* Custom color themes, terminal UI and animation controls via [SVG templates](man/termtosvg-template.md)
+* Custom color themes, terminal UI and animation controls via [SVG templates](man/termtosvg-templates.md)
 * Compatible with asciinema recording format
     
 ## Installation
-termtosvg is compatible with Linux, Mac OS and BSD OSes, requires Python >= 3.5 and can be installed using pip:
+termtosvg is compatible with Linux, macOS and BSD OSes, requires Python >= 3.5 and can be installed using pip:
 ```
 pip3 install --user termtosvg
 ```

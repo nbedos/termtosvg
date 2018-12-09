@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='termtosvg',
-    version='0.6.0',
+    version='0.7.0',
     license='BSD 3-clause license',
     author='Nicolas Bedos',
     author_email='nicolas.bedos@gmail.com',
@@ -28,13 +28,9 @@ setup(
         'Topic :: Terminals'
     ],
     python_requires='>=3.5',
-    packages=['termtosvg'],
-    py_modules=[
-        'termtosvg.anim',
-        'termtosvg.asciicast',
-        'termtosvg.config',
-        'termtosvg.main',
-        'termtosvg.term',
+    packages=[
+        'termtosvg',
+        'termtosvg.tests'
     ],
     scripts=['scripts/termtosvg'],
     include_package_data=True,

@@ -9,8 +9,8 @@ from termtosvg.asciicast import AsciiCastV2Header, AsciiCastV2Event, AsciiCastV2
 
 commands = [
     'echo $SHELL && sleep 0.1;\r\n',
-    'tree && 0.1;\r\n',
-    'ls && sleep 0.1;\r\n',
+    'date && sleep 0.1;\r\n',
+    'uname && sleep 0.1;\r\n',
     'w',
     'h',
     'o',
@@ -40,7 +40,7 @@ class TestTerm(unittest.TestCase):
 
         # Parent process
         with term.TerminalMode(fd_in_read):
-            for _ in term._record(columns, lines, fd_in_read, fd_out_write):
+            for _ in term._record(['sh'], columns, lines, fd_in_read, fd_out_write):
                 pass
 
         os.waitpid(pid, 0)
@@ -65,7 +65,7 @@ class TestTerm(unittest.TestCase):
 
         # Parent process
         with term.TerminalMode(fd_in_read):
-            for _ in term.record(columns, lines, fd_in_read, fd_out_write):
+            for _ in term.record(['sh'], columns, lines, fd_in_read, fd_out_write):
                 pass
 
         os.waitpid(pid, 0)
