@@ -3,11 +3,11 @@
 % December 2018
 
 ## SYNOPSIS
-**termtosvg** [output_file] [-c COMMAND] [-g GEOMETRY] [-t TEMPLATE] [--help]
+**termtosvg** [output_path] [-c COMMAND] [-g GEOMETRY] [-s] [-t TEMPLATE] [--help]
 
-**termtosvg record** [output_file] [-c COMMAND] [-g GEOMETRY] [-m MIN_DURATION] [-M MAX_DURATION] [-h]
+**termtosvg record** [output_path] [-c COMMAND] [-g GEOMETRY] [-m MIN_DURATION] [-M MAX_DURATION] [-h]
 
-**termtosvg render** *input_file* [output_file] [-m MIN_DURATION] [-M MAX_DURATION] [-t TEMPLATE] [-h]
+**termtosvg render** *input_file* [output_path] [-m MIN_DURATION] [-M MAX_DURATION] [-s] [-t TEMPLATE] [-h]
 
 ### DESCRIPTION
 termtosvg makes recordings of terminal sessions in animated SVG format. If no output
@@ -24,7 +24,8 @@ displayed on the screen of the terminal.
 
 ##### termtosvg render
 Render an animated SVG from a recording in asciicast v1 or v2 format. This allows
-rendering in SVG format of any recording made with asciinema.
+rendering in SVG format of any recording made with asciinema. Rendering of still frames
+is also possible.
 
 ## OPTIONS
 
@@ -60,6 +61,9 @@ Set the SVG template used for rendering the SVG animation. TEMPLATE may either b
 one of the default templates (gjm8, dracula, solarized_dark, solarized_light,
  progress_bar, window_frame, window_frame_js) or a path to a valid template.
 
+##### -s, --still-frames
+Output still frames in SVG format instead of an animated SVG. If this option is specified,
+output_path refers to the destination directory for the frames.
 
 
 ## SVG TEMPLATES
@@ -111,4 +115,9 @@ termtosvg render recording.cast animation.svg
 Enforce both minimal and maximal frame durations
 ```
 termtosvg -m 17 -M 2000
+```
+
+Render still frames instead of an animated SVG using a specific template
+```
+termtosvg -s -t gjm8_play
 ```

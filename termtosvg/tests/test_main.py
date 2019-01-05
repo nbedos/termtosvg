@@ -1,4 +1,5 @@
 import os
+import shutil
 import tempfile
 import time
 import unittest
@@ -33,25 +34,28 @@ class TestMain(unittest.TestCase):
         ['-g', '82x19'],
         ['--template', 'plain'],
         ['-t', 'plain'],
+        ['-s'],
+        ['--still-frames'],
         ['--screen-geometry', '82x19', '--template', 'plain'],
-        ['output_filename', '--screen-geometry', '82x19', '--template', 'plain', '-c', 'date'],
-        ['--screen-geometry', '82x19', '--template', 'plain', 'output_filename'],
+        ['output_path', '-g', '82x19', '-t', 'plain', '-c', 'date', '-s'],
+        ['--screen-geometry', '82x19', '--template', 'plain', '-s', 'output_path'],
         ['-g', '82x19', '-t', 'plain'],
         ['-m', '42', '-M', '100'],
         ['--min-frame-duration', '42ms', '--max-frame-duration', '100'],
         ['record'],
         ['record', '-c', 'ls'],
-        ['record', 'output_filename'],
-        ['record', 'output_filename', '--screen-geometry', '82x19'],
+        ['record', 'output_path'],
+        ['record', 'output_path', '--screen-geometry', '82x19'],
         ['record', '--screen-geometry', '82x19'],
         ['record', '-m', '42', '-M', '100'],
         ['record', '-m', '42ms', '-M', '100ms'],
         ['render', 'input_filename'],
         ['render', 'input_filename'],
         ['render', 'input_filename', '--template', 'plain'],
-        ['render', 'input_filename', 'output_filename'],
-        ['render', 'input_filename', 'output_filename', '--template', 'plain'],
-        ['render', 'input_filename', 'output_filename', '--template', 'plain', '-m', '42', '-M', '100'],
+        ['render', 'input_filename', 'output_path'],
+        ['render', 'input_filename', 'output_path', '--template', 'plain'],
+        ['render', 'input_filename', 'output_path', '-t', 'plain', '-m', '42', '-M', '100'],
+        ['render', 'input_filename', 'output_path', '-t', 'plain', '-m', '42', '-s', '-M', '100'],
     ]
 
     def test_parse(self):
@@ -121,6 +125,21 @@ class TestMain(unittest.TestCase):
             args = ['termtosvg', 'render', cast_filename, '--template', 'window_frame']
             TestMain.run_main(args, [])
 
+        with self.subTest(case='render (still frames)'):
+            args = ['termtosvg', 'render', cast_filename, '--still-frames']
+            TestMain.run_main(args, [])
+
+        with self.subTest(case='render (still frames with output directory)'):
+            # Existing directory
+            output_path = tempfile.mkdtemp(prefix='termtosvg')
+            args = ['termtosvg', 'render', cast_filename, output_path, '-s']
+            TestMain.run_main(args, [])
+
+            # Non existing directory
+            shutil.rmtree(output_path)
+            args = ['termtosvg', 'render', cast_filename, output_path, '-s']
+            TestMain.run_main(args, [])
+
         with self.subTest(case='record and render custom command'):
             args = ['termtosvg', '--command', 'ls']
             TestMain.run_main(args, [])
@@ -165,3 +184,4 @@ class TestMain(unittest.TestCase):
         for case in test_cases:
             with self.subTest(case=case):
                 self.assertEqual(termtosvg.main.integral_duration(case), 100)
+

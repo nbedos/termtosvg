@@ -1,4 +1,5 @@
 import io
+import itertools
 import pkgutil
 import tempfile
 import unittest
@@ -8,6 +9,18 @@ import pyte.screens
 from lxml import etree
 
 from termtosvg import anim
+from termtosvg import term
+
+
+TEMPLATE = pkgutil.get_data('termtosvg', '/data/templates/gjm8.svg')
+
+
+def line(i):
+    chars = []
+    for c in 'line{}'.format(i):
+        chars.append(anim.CharacterCell(c, '#123456', '#789012',
+                                        False, False, False, False))
+    return dict(enumerate(chars))
 
 
 class TestAnim(unittest.TestCase):
@@ -157,60 +170,112 @@ class TestAnim(unittest.TestCase):
                 self.assertEqual(key(case), result)
 
     def test_make_animated_group(self):
-        def line(i):
-            chars = []
-            for c in 'line{}'.format(i):
-                chars.append(anim.CharacterCell(c, '#123456', '#789012',
-                                                False, False, False, False))
-            return dict(enumerate(chars))
-
         records = [
-            anim.CharacterCellLineEvent(1, line(1), None, None),
-            anim.CharacterCellLineEvent(2, line(2), None, None),
-            anim.CharacterCellLineEvent(3, line(3), None, None),
-            anim.CharacterCellLineEvent(4, line(4), None, None),
+            term.DisplayLine(1, line(1), None, None),
+            term.DisplayLine(2, line(2), None, None),
+            term.DisplayLine(3, line(3), None, None),
+            term.DisplayLine(4, line(4), None, None),
             # Definition reuse
-            anim.CharacterCellLineEvent(5, line(4), None, None),
+            term.DisplayLine(5, line(4), None, None),
         ]
 
-        group, new_defs = anim.make_animated_group(records=records,
-                                                   time=10,
-                                                   duration=1,
-                                                   cell_width=8,
-                                                   cell_height=17,
-                                                   defs={})
+        for time, duration in [(10, 1), (None, None)]:
+            group, new_defs = anim._make_frame_group(records=records,
+                                                     time=time,
+                                                     duration=duration,
+                                                     cell_width=8,
+                                                     cell_height=17,
+                                                     definitions={})
 
-    def test__render_animation(self):
-        def line(i):
-            chars = []
-            for c in 'line{}'.format(i):
-                chars.append(anim.CharacterCell(c, '#123456', '#789012',
-                                                False, False, False, False))
-            return dict(enumerate(chars))
-
+    def test_render_animation(self):
         records = [
-            anim.CharacterCellConfig(80, 24),
-            anim.CharacterCellLineEvent(1, line(1), 0, 60),
-            anim.CharacterCellLineEvent(2, line(2), 60, 60),
-            anim.CharacterCellLineEvent(3, line(3), 120, 60),
-            anim.CharacterCellLineEvent(4, line(4), 180, 60),
-            # Definition reuse
-            anim.CharacterCellLineEvent(5, line(4), 240, 60),
-            # Override line for animation chaining
-            anim.CharacterCellLineEvent(5, line(6), 300, 60),
+            term.Configuration(80, 24),
+            [
+                term.DisplayLine(1, line(1), 0, None),
+            ],
+            [
+                term.DisplayLine(1, line(1), 0, 60),
+                term.DisplayLine(2, line(2), 60, None),
+            ],
+            [
+                term.DisplayLine(2, line(2), 60, 60),
+                term.DisplayLine(3, line(3), 120, None),
+            ],
         ]
-        template = pkgutil.get_data('termtosvg', '/data/templates/progress_bar.svg')
-        svg_root = anim._render_animation(records, template, 8, 17)
-
         _, filename = tempfile.mkstemp(prefix='termtosvg_', suffix='.svg')
-        with open(filename, 'wb') as f:
-            f.write(etree.tostring(svg_root))
+        anim.render_animation(records, filename, TEMPLATE)
+        with open(filename) as f:
+            anim.validate_svg(f)
 
-    def test_add_css_variables(self):
-        data = pkgutil.get_data('termtosvg', '/data/templates/progress_bar.svg')
+    def test__render_still_frames(self):
+        def line(s):
+            return dict(enumerate([anim.CharacterCell(c) for c in s]))
 
-        tree = etree.parse(io.BytesIO(data))
-        root = tree.getroot()
-        anim.generate_css(root, 42)
+        records = [
+            term.Configuration(80, 24),
+            [
+                term.DisplayLine(1, line('a'), 0, None),
+                term.DisplayLine(2, line('b'), 0, None),
+            ],
+            [
+                term.DisplayLine(1, line('a'), 0, 120),
+                term.DisplayLine(3, line('c'), 120, None),
+                term.DisplayLine(4, line('d'), 120, None),
+            ],
+            [
+                term.DisplayLine(5, line('e'), 240, None),
+            ],
+            [
+                term.DisplayLine(5, line('e'), 240, 60),
+                term.DisplayLine(5, line('f'), 300, None),
+            ],
+        ]
 
+        grouped_records, root = anim._render_preparation(records, TEMPLATE, 9, 17)
+        frame_generator = anim._render_still_frames(grouped_records, root, 9, 17)
 
+        def extract_text_content(frame):
+            svg_screen_elem = frame.find('.//{{{namespace}}}svg[@id="screen"]'
+                                         .format(namespace=anim.SVG_NS))
+            return {elem.text for elem in svg_screen_elem.findall('.//text')}
+
+        expected_texts_by_frame = [
+            {'a', 'b'},
+            {'b', 'c', 'd'},
+            {'b', 'c', 'd', 'e'},
+            {'b', 'c', 'd', 'f'},
+        ]
+
+        z = itertools.zip_longest(expected_texts_by_frame, frame_generator)
+        for count, (texts, frame) in enumerate(z):
+            with self.subTest(case='Frame #{}'.format(count)):
+                anim.validate_svg(io.BytesIO(etree.tostring(frame)))
+                self.assertEqual(texts, extract_text_content(frame))
+
+    def test__embed_css(self):
+        for animation_duration in [None, 42]:
+            with self.subTest(case=animation_duration):
+                tree = etree.parse(io.BytesIO(TEMPLATE))
+                root = tree.getroot()
+                anim._embed_css(root, animation_duration)
+                assert b'{{' not in etree.tostring(root)
+
+    def test_validate_svg(self):
+        failure_test_cases = [
+            '',
+            '<svg>',
+            '</svg>',
+            '</svg></a>',
+            None
+        ]
+        for case in failure_test_cases:
+            with self.subTest(case=case):
+                with self.assertRaises(ValueError):
+                    anim.validate_svg(io.StringIO(case))
+
+        success_test_cases = [
+            TEMPLATE,
+        ]
+        for bytes_svg in success_test_cases:
+            with io.BytesIO(bytes_svg) as bstream:
+                anim.validate_svg(bstream)

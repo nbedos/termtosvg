@@ -1,11 +1,14 @@
+import itertools
 import os
 import time
 import unittest
 from unittest.mock import MagicMock, patch
 
+import pyte
+
 import termtosvg.anim as anim
 from termtosvg import term
-from termtosvg.asciicast import AsciiCastV2Header, AsciiCastV2Event, AsciiCastV2Theme
+from termtosvg.asciicast import AsciiCastV2Event, AsciiCastV2Header, AsciiCastV2Theme
 
 commands = [
     'echo $SHELL && sleep 0.1;\r\n',
@@ -21,9 +24,14 @@ commands = [
 ]
 
 
+THEME = AsciiCastV2Theme('#000000', '#FFFFFF', ':'.join(['#123456'] * 16))
+CURSOR_CHAR = anim.CharacterCell(' ', 'background', 'foreground')
+
+unittest.TestCase.maxDiff = None
+
+
 class TestTerm(unittest.TestCase):
     def test__record(self):
-        # Use pipes in lieu of stdin and stdout
         fd_in_read, fd_in_write = os.pipe()
         fd_out_read, fd_out_write = os.pipe()
 
@@ -72,75 +80,158 @@ class TestTerm(unittest.TestCase):
         for fd in fd_in_read, fd_in_write, fd_out_read, fd_out_write:
             os.close(fd)
 
-    def test_replay(self):
-        theme = AsciiCastV2Theme('#000000', '#FFFFFF', ':'.join(['#123456'] * 16))
+    def test__buffer_simple_events(self):
+        escape_sequences = ['{}\r\n'.format(i).encode('utf-8')
+                            for i in range(5)]
 
-        with self.subTest(case='One shell command per event'):
-            nbr_records = 5
+        screen = pyte.Screen(80, 24)
+        screen.dirty.clear()
+        stream = pyte.ByteStream(screen)
+        last_cursor = None
+        for count, escape_sequence in enumerate(escape_sequences):
+            with self.subTest(case='Simple events (record #{})'.format(count)):
+                stream.feed(escape_sequence)
+                buffer, last_cursor = term._redraw_buffer(screen, last_cursor)
+                screen.dirty.clear()
+                expected_buffer = {
+                    count: {0: anim.CharacterCell(str(count))},
+                    (count+1): {0: CURSOR_CHAR},
+                }
+                self.assertEqual(expected_buffer, buffer)
 
-            records = [AsciiCastV2Header(version=2, width=80, height=24, theme=theme)] + \
-                      [AsciiCastV2Event(time=i,
-                                        event_type='o',
-                                        event_data='{}\r\n'.format(i).encode('utf-8'),
-                                        duration=None)
-                       for i in range(1, nbr_records)]
+    def test__buffer_hidden_cursor(self):
+        """Ensure hidden cursor don't appear in the buffer return by _redraw_buffer
+        Ensure that only one cursor is present in the buffer"""
+        #   '\u001b[?25h' : display cursor
+        #   '\u001b[?25l' : hide cursor
+        escape_sequences = [
+            '\u001b[?25ha',
+            '\r\n\u001b[?25lb',
+            '\r\n\u001b[?25hc',
+        ]
 
-            records = term.replay(records, lambda x: x.data, 5000, None, 1000)
-            # Last blank line is the cursor
-            lines = [str(i) for i in range(nbr_records)] + [' ']
-            for i, record in enumerate(records):
-                # Skip header and cursor line
-                if i != 0:
-                    self.assertEqual(record.line[0], lines[i])
+        screen = pyte.Screen(80, 24)
+        stream = pyte.Stream(screen)
 
-        with self.subTest(case='Shell command spread over multiple lines'):
-            records = [AsciiCastV2Header(version=2, width=80, height=24, theme=theme)] + \
-                      [AsciiCastV2Event(time=i * 60,
-                                        event_type='o',
-                                        event_data=data.encode('utf-8'),
-                                        duration=None)
-                       for i, data in enumerate(commands)]
+        def hidden_cursor(x, y):
+            c = pyte.screens.Cursor(x, y)
+            c.hidden = True
+            return c
 
-            screen = {}
-            for record in term.replay(records, lambda x: x.data, 50, None, 1000):
-                if hasattr(record, 'line'):
-                    screen[record.row] = ''.join(record.line[i] for i in sorted(record.line))
+        expected_cursors = [
+            pyte.screens.Cursor(1, 0),
+            hidden_cursor(1, 1),
+            pyte.screens.Cursor(1, 2),
+        ]
+        z = itertools.zip_longest(expected_cursors, escape_sequences)
+        cursor = None
+        for count, (expected_cursor, escape_sequence) in enumerate(z):
+            with self.subTest(case='Hidden cursor - item #{}'.format(count)):
+                stream.feed(escape_sequence)
+                buffer, cursor = term._redraw_buffer(screen, cursor)
+                self.assertEqual(expected_cursor, cursor)
+                # Ensure old cursors are deleted
+                for row in buffer:
+                    for column in buffer[row]:
+                        if buffer[row][column].text == ' ':
+                            self.assertEqual((column, row),
+                                             (cursor.x, cursor.y))
 
-            cmds = [cmd for cmd in ''.join(commands).split('\r\n') if cmd]
-            cursor = [' ']
-            expected_screen = dict(enumerate(cmds + cursor))
-            self.assertEqual(expected_screen, screen)
+    def test__feed(self):
+        redraw_buffers = [
+            {
+                0: {0: anim.CharacterCell('1')},
+                1: {0: CURSOR_CHAR},
+            },
+            {
+                1: {0: anim.CharacterCell('2')},
+                2: {0: CURSOR_CHAR},
+            }
+        ]
 
-        with self.subTest(case='Hidden cursor'):
-            # '\u001b[?25h' : display cursor
-            # '\u001b[?25l' : hide cursor
-            records = [AsciiCastV2Header(version=2, width=80, height=24, theme=theme)] + \
-                      [
-                          AsciiCastV2Event(0, 'o', '\u001b[?25haaaa'.encode('utf-8'), None),
-                          AsciiCastV2Event(100, 'o', '\r\n\u001b[?25lbbbb'.encode('utf-8'), None),
-                          AsciiCastV2Event(200, 'o', '\r\n\u001b[?25hcccc'.encode('utf-8'), None),
-                      ]
+        all_expected_events = [
+            [
+                term.DisplayLine(0, {0: anim.CharacterCell('1')}, 0),
+                term.DisplayLine(1, {0: CURSOR_CHAR}, 0),
+            ],
+            [
+                term.DisplayLine(1, {0: CURSOR_CHAR}, 0, 1000),
+                term.DisplayLine(1, {0: anim.CharacterCell('2')}, 1000),
+                term.DisplayLine(2, {0: CURSOR_CHAR}, 1000),
+            ]
+        ]
 
-            gen = term.replay(records, anim.CharacterCell.from_pyte, 50, None, 1000)
-            header, *events = list(gen)
+        display_events = {}
+        time = 0
+        z = itertools.zip_longest(redraw_buffers, all_expected_events)
+        for buffer, expected_events in z:
+            display_events, events = term._feed(buffer, display_events, time)
+            with self.subTest(time=time):
+                self.assertEqual(expected_events, events)
+            time += 1000
 
-            # Event #0: First line - cursor displayed after 'aaaa'
-            self.assertEqual(events[0].row, 0)
-            self.assertEqual(events[0].line[4].color, 'background')
-            self.assertEqual(events[0].line[4].background_color, 'foreground')
+    def test_screen_events_simple_events(self):
+        records = [AsciiCastV2Header(version=2, width=80, height=24, theme=THEME)] + \
+                  [AsciiCastV2Event(time=i,
+                                    event_type='o',
+                                    event_data='{}\r\n'.format(i).encode('utf-8'),
+                                    duration=None)
+                   for i in range(0, 2)]
+        events = term.screen_events(records, 1, None, 42)
+        list_events = [next(events)]
+        list_events.extend([list(le) for le in events])
 
-            # Event #1: First line - cursor removed at position 4
-            self.assertEqual(events[1].row, 0)
-            self.assertNotIn(4, events[1].line)
+        expected_events = [
+            term.Configuration(80, 24),
+            [
+                term.DisplayLine(0, {0: anim.CharacterCell('0')}, 0),
+                term.DisplayLine(1, {0: CURSOR_CHAR}, 0),
+            ],
+            [
+                term.DisplayLine(1, {0: CURSOR_CHAR}, 0, 1000),
+                term.DisplayLine(1, {0: anim.CharacterCell('1')}, 1000),
+                term.DisplayLine(2, {0: CURSOR_CHAR}, 1000),
+            ],
+            [
+                term.DisplayLine(0, {0: anim.CharacterCell('0')}, 0, 1042),
+                term.DisplayLine(1, {0: anim.CharacterCell('1')}, 1000, 42),
+                term.DisplayLine(2, {0: CURSOR_CHAR}, 1000, 42),
+            ],
+        ]
 
-            # Event #2: Second line - cursor hidden
-            self.assertEqual(events[2].row, 1)
-            self.assertNotIn(4, events[2].line)
+        z = itertools.zip_longest(expected_events, list_events)
+        for count, (expected_item, item) in enumerate(z):
+            with self.subTest(case='Simple events - item #{}'.format(count)):
+                self.assertEqual(expected_item, item)
 
-            # Event #3: Third line - cursor displayed after 'cccc'
-            self.assertEqual(events[3].row, 2)
-            self.assertEqual(events[3].line[4].color, 'background')
-            self.assertEqual(events[3].line[4].background_color, 'foreground')
+    def test_screen_events_empty_groups(self):
+        """screen_events should never return an empty group of events"""
+        records = [
+            AsciiCastV2Header(version=2, width=80, height=24, theme=THEME),
+            AsciiCastV2Event(0, 'o', b'i', None),
+            AsciiCastV2Event(1, 'o', b'', None),
+            AsciiCastV2Event(2, 'o', b'', None),
+            AsciiCastV2Event(3, 'o', b'', None),
+        ]
+        expected_events = [
+            term.Configuration(80, 24),
+            [
+                term.DisplayLine(0, {0: anim.CharacterCell('i'), 1: CURSOR_CHAR}, 0),
+            ],
+            [
+                term.DisplayLine(0, {0: anim.CharacterCell('i'), 1: CURSOR_CHAR}, 0, 4000),
+            ]
+        ]
+
+        events = term.screen_events(records, 1, None, last_frame_dur=1000)
+
+        list_events = [next(events)]
+        list_events.extend([le for le in events])
+
+        z = itertools.zip_longest(expected_events, list_events)
+        for count, (expected_item, item) in enumerate(z):
+            with self.subTest(case='No empty group - item #{}'.format(count)):
+                self.assertEqual(expected_item, item)
 
     def test_get_terminal_size(self):
         with self.subTest(case='Successful get_terminal_size call'):

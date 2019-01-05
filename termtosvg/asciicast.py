@@ -2,7 +2,7 @@
 
 This module provides functions and classes to manipulate asciicast records. Both v1 and v2
 format are supported for decoding. For encoding, only the v2 format is available. The
-specification of the two formats are available here:
+specification of both formats are available here:
     [1] https://github.com/asciinema/asciinema/blob/develop/doc/asciicast-v1.md
     [2] https://github.com/asciinema/asciinema/blob/develop/doc/asciicast-v2.md
 """

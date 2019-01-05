@@ -1,3 +1,16 @@
+"""UNIX terminal recording functionalities
+
+This module exposes functions for
+    - recording the output of a shell process in asciicast v2 format (`record`)
+    - reporting updates made to the screen during a terminal session that
+    was recorded (`screen_events`)
+
+A context manager named `TerminalMode` is also provided and is to be used with
+the `record` function to ensure that the terminal state is always properly
+restored, otherwise a failure during a call to `record` could render the
+terminal unusable.
+"""
+
 import datetime
 import fcntl
 import os
@@ -7,19 +20,36 @@ import struct
 import termios
 import tty
 from copy import copy
-from functools import partial
+from collections import defaultdict, namedtuple
 from typing import Iterator
 
 import pyte
 import pyte.screens
 
-from termtosvg.anim import CharacterCellConfig, CharacterCellLineEvent
+from termtosvg import anim
 from termtosvg.asciicast import AsciiCastV2Event, AsciiCastV2Header
 
 
+def _cursor___eq__(self, other):
+    # TODO: See if upstream is interested in incorparating this
+    attributes = ['x', 'y', 'hidden']
+    return (isinstance(other, self.__class__) and
+            all(self.__getattribute__(a) == other.__getattribute__(a)
+                for a in attributes))
+
+
+# Monkey patch equality operator so that we can detect changes of a cursor
+pyte.screens.Cursor.__eq__ = _cursor___eq__
+
+
 class TerminalMode:
-    """Save terminal mode and size on entry, restore them on exit"""
-    def __init__(self, fileno: int):
+    """Save terminal mode and size on entry, restore them on exit
+
+    This context manager exists to ensure that the state of the terminal is
+    properly restored when functions like `_record` (which relies on setting
+    the terminal mode to raw and changing the geometry of the screen) fail.
+    """
+    def __init__(self, fileno):
         self.fileno = fileno
         self.mode = None
         self.ttysize = None
@@ -47,40 +77,21 @@ class TerminalMode:
             tty.tcsetattr(self.fileno, tty.TCSAFLUSH, self.mode)
 
 
-def record(process_args, columns, lines, input_fileno, output_fileno):
-    """Record a process in asciicast v2 format
-
-    The records returned are of two types:
-        - a single header with configuration information
-        - multiple event records with data captured from the terminal and timing information
-    """
-    yield AsciiCastV2Header(version=2, width=columns, height=lines, theme=None)
-
-    start = None
-    for data, time in _record(process_args, columns, lines, input_fileno, output_fileno):
-        if start is None:
-            start = time
-
-        yield AsciiCastV2Event(time=(time - start).total_seconds(),
-                               event_type='o',
-                               event_data=data,
-                               duration=None)
-
-
 def _record(process_args, columns, lines, input_fileno, output_fileno):
     """Record raw input and output of a process
 
-    This function forks the current process. The child process runs the command specified by
-    'process_args' which is a session leader and has a controlling terminal and is run in the
-    background. The parent process, which runs in the foreground, transmits data between the
-    standard input, output and the child process and logs it. From the user point of view, it
-    appears they are communicating with the process they intend to record (through their terminal
-    emulator) when in fact they communicate with our parent process which logs all data exchanges
-    with the user
+    This function forks the current process. The child process runs the command
+    specified by 'process_args' which is a session leader and has a controlling
+    terminal and is run in the background. The parent process, which runs in
+    the foreground, transmits data between the standard input, output and the
+    child process and logs it. From the user point of view, it appears they are
+    communicating with the process they intend to record (through their
+    terminal emulator) when in fact they communicate with our parent process
+    which logs all data exchanges with the user
 
-    The implementation of this method is mostly copied from the pty.spawn function of the
-    CPython standard library. It has been modified in order to make the record function a
-    generator.
+    The implementation of this method is mostly copied from the pty.spawn
+    function of the CPython standard library. It has been modified in order to
+    make the record function a generator.
     See https://github.com/python/cpython/blob/master/Lib/pty.py
 
     :param process_args: List of arguments to run the process to be recorded
@@ -104,7 +115,7 @@ def _record(process_args, columns, lines, input_fileno, output_fileno):
     except tty.error:
         pass
 
-    for data, time in _capture_data(input_fileno, output_fileno, master_fd):
+    for data, time in _capture_output(input_fileno, output_fileno, master_fd):
         yield data, time
 
     os.close(master_fd)
@@ -113,13 +124,14 @@ def _record(process_args, columns, lines, input_fileno, output_fileno):
     return child_exit_status
 
 
-def _capture_data(input_fileno, output_fileno, master_fd, buffer_size=1024):
-    """Send data from input_fileno to master_fd and send data from master_fd to output_fileno and
-    also return it to the caller
+def _capture_output(input_fileno, output_fileno, master_fd, buffer_size=1024):
+    """Send data from input_fileno to master_fd and send data from master_fd to
+    output_fileno and to the caller
 
-    The implementation of this method is mostly copied from the pty.spawn function of the
-    CPython standard library. It has been modified in order to make the record function a
-    generator.
+    The implementation of this method is mostly copied from the pty.spawn
+    function of the CPython standard library. It has been modified in order to
+    make the `record` function a generator.
+
     See https://github.com/python/cpython/blob/master/Lib/pty.py
     """
     rlist = [input_fileno, master_fd]
@@ -151,31 +163,45 @@ def _capture_data(input_fileno, output_fileno, master_fd, buffer_size=1024):
 
 
 def _group_by_time(event_records, min_rec_duration, max_rec_duration, last_rec_duration):
-    """Merge event records together if they are close enough and compute the duration between
-    consecutive events. The duration between two consecutive event records returned by the function
-    is guaranteed to be at least min_rec_duration.
+    """Merge event records together if they are close enough
+
+    The time elapsed between two consecutive event records returned by this
+    function is guaranteed to be at least min_rec_duration.
+
+    The duration of each record is also computed. Any record with a duration
+    greater than `max_rec_duration` will see its duration reduce to this value.
+    The duration of the last record can't be computed and is simply set to
+    `last_rec_duration`.
 
     :param event_records: Sequence of records in asciicast v2 format
-    :param min_rec_duration: Minimum time between two records returned by the function in
-    milliseconds. This helps avoiding 0s duration animations which break SVG animations.
-    :param max_rec_duration: Limit of the time elapsed between two records
+    :param min_rec_duration: Minimum time between two records returned by the
+    function in milliseconds.
+    :param max_rec_duration: Maximum duration of a record in milliseconds
     :param last_rec_duration: Duration of the last record in milliseconds
-    :return: Sequence of records
+    :return: Sequence of records with duration
     """
+    # TODO: itertools.accumulate?
     current_string = b''
     current_time = 0
     dropped_time = 0
 
+    if max_rec_duration:
+        max_rec_duration /= 1000
+
     for event_record in event_records:
+        assert isinstance(event_record, AsciiCastV2Event)
+        # Silently ignoring the duration on input records is a source
+        # of confusion so fail hard if the duration is set
+        assert event_record.duration is None
         if event_record.event_type != 'o':
             continue
 
         time_between_events = event_record.time - (current_time + dropped_time)
         if time_between_events * 1000 >= min_rec_duration:
             if max_rec_duration:
-                if max_rec_duration / 1000 < time_between_events:
-                    dropped_time += time_between_events - (max_rec_duration / 1000)
-                    time_between_events = max_rec_duration / 1000
+                if max_rec_duration < time_between_events:
+                    dropped_time += time_between_events - max_rec_duration
+                    time_between_events = max_rec_duration
             accumulator_event = AsciiCastV2Event(time=current_time,
                                                  event_type='o',
                                                  event_data=current_string,
@@ -186,117 +212,183 @@ def _group_by_time(event_records, min_rec_duration, max_rec_duration, last_rec_d
 
         current_string += event_record.event_data
 
-    if current_string:
-        accumulator_event = AsciiCastV2Event(time=current_time,
-                                             event_type='o',
-                                             event_data=current_string,
-                                             duration=last_rec_duration / 1000)
-        yield accumulator_event
+    accumulator_event = AsciiCastV2Event(time=current_time,
+                                         event_type='o',
+                                         event_data=current_string,
+                                         duration=last_rec_duration / 1000)
+    yield accumulator_event
 
 
-def replay(records, from_pyte_char, min_frame_duration, max_frame_duration, last_frame_duration=1000):
-    """Read the records of a terminal sessions, render the corresponding screens and return lines
-    of the screen that need updating.
+Configuration = namedtuple('Configuration', ['width', 'height'])
+DisplayLine = namedtuple('DisplayLine', ['row', 'line', 'time', 'duration'])
+DisplayLine.__new__.__defaults__ = (None,)
 
-    Records are merged together so that there is at least a 'min_frame_duration' seconds pause
-    between two rendered screens.
-    Lines returned are sorted by time and duration of their appearance on the screen so that lines
-    in need of updating at the same time can easily be grouped together.
-    The terminal screen is rendered using Pyte and then each character of the screen is converted
-    to the caller's format of choice using from_pyte_char
 
-    :param records: Records of the terminal session in asciicast v2 format. The first record must
-    be a header, which must be followed by event records.
-    :param from_pyte_char: Conversion function from pyte.screen.Char to any other format
-    :param min_frame_duration: Minimum frame duration in milliseconds. SVG animations break when
-    an animation duration is 0ms so setting this to at least 1ms is recommended.
-    :param max_frame_duration: Maximum duration of a frame in milliseconds. This is meant to limit
-    idle time during a recording.
-    :param last_frame_duration: Last frame duration in milliseconds
-    :return: Records in the CharacterCellRecord format:
-        1/ a header with configuration information (CharacterCellConfig)
-        2/ one event record for each line of the screen that need to be redrawn
-        (CharacterCellLineEvent)
+def record(process_args, columns, lines, input_fileno, output_fileno):
+    """Record a process in asciicast v2 format
+
+    The records returned by this method are:
+        - a single header containing configuration information
+        - multiple event records made of data captured from the terminal and
+        timing information (except for record duration which needs to be
+        computed separately)
+
+    :param process_args: Arguments required to spawn the process (list of
+    string)
+    :param columns: Width of the terminal screen (integer)
+    :param lines: Height of the terminal screen (integer)
+    :param input_fileno: File descriptor that will be used as the standard
+    input of the process
+    :param output_fileno: File descriptor that will be used as the standard
+    output of the process
+
+    When using `sys.stdout.fileno()` for `output_fileno` there is a risk
+    that the terminal is left in an unusable state if `record` fails. To
+    prevent this, `record` should be called inside the `TerminalMode`
+    context manager.
     """
-    def sort_by_time(d, row):
-        _, row_line_time, row_line_duration = d[row]
-        return row_line_time + row_line_duration, row
+    yield AsciiCastV2Header(version=2, width=columns, height=lines, theme=None)
 
+    # TODO: why start != 0?
+    start = None
+    for data, time in _record(process_args, columns, lines, input_fileno, output_fileno):
+        if start is None:
+            start = time
+
+        yield AsciiCastV2Event(time=(time - start).total_seconds(),
+                               event_type='o',
+                               event_data=data,
+                               duration=None)
+
+
+def screen_events(records, min_frame_dur=1, max_frame_dur=None, last_frame_dur=1000):
+    """Yields events describing updates to the screen for this recording
+
+    The first event yielded is an instance of Configuration which
+    describes the geometry of the screen.
+    All following events are instances of DisplayLine. Those
+    events describe the appearance of a line on the screen (if the duration
+    of the event is set to None) or the erasure of a line (if the duration
+    of the event is an integer).
+
+    Before updates to the screen are reported to the caller they will be
+    coalesced so that the mininum duration between two updates is at least
+    `min_frame_dur` milliseconds. Events with a duration greater than
+    `max_frame_dur` will see their duration reduced to that value.
+
+    The duration of all events lasting until the end of the animation
+    will be adjusted so that the last frame of the animation lasts
+    `last_frame_dur`
+
+    :param records: Terminal session record in Asciicast v2 format
+    :param min_frame_dur: Minimum frame duration in milliseconds (integer)
+    :param min_frame_dur: Minimum frame duration in milliseconds (integer)
+    :param max_frame_dur: Maximum frame duration in milliseconds (None or
+    integer)
+    :param last_frame_dur: Duration of the last frame of the animation
+    (integer)
+    """
     if not isinstance(records, Iterator):
         records = iter(records)
 
     header = next(records)
+    assert isinstance(header, AsciiCastV2Header)
+
+    if not max_frame_dur and header.idle_time_limit:
+        max_frame_dur = int(header.idle_time_limit * 1000)
+    yield Configuration(header.width, header.height)
 
     screen = pyte.Screen(header.width, header.height)
     stream = pyte.ByteStream(screen)
-    if not max_frame_duration and header.idle_time_limit:
-        max_frame_duration = int(header.idle_time_limit * 1000)
 
-    yield CharacterCellConfig(header.width, header.height)
-
-    pending_lines = {}
-    current_time = 0
+    timed_records = _group_by_time(records, min_frame_dur, max_frame_dur,
+                                   last_frame_dur)
     last_cursor = None
-    event_records = _group_by_time(records, min_frame_duration, max_frame_duration,
-                                   last_frame_duration)
-    for event_record in event_records:
-        stream.feed(event_record.event_data)
-
-        # Numbers of lines that must be redrawn
-        dirty_lines = set(screen.dirty)
-        if screen.cursor != last_cursor:
-            # Line where the cursor will be drawn
-            if not screen.cursor.hidden:
-                dirty_lines.add(screen.cursor.y)
-            if last_cursor is not None and not last_cursor.hidden:
-                # Line where the cursor will be erased
-                dirty_lines.add(last_cursor.y)
-
-        redraw_buffer = {}
-        for row in dirty_lines:
-            redraw_buffer[row] = {}
-            for column in screen.buffer[row]:
-                redraw_buffer[row][column] = from_pyte_char(screen.buffer[row][column])
-
-        if screen.cursor != last_cursor and not screen.cursor.hidden:
-            try:
-                data = screen.buffer[screen.cursor.y][screen.cursor.x].data
-            except KeyError:
-                data = ' '
-
-            cursor_char = pyte.screens.Char(data=data,
-                                            fg=screen.cursor.attrs.fg,
-                                            bg=screen.cursor.attrs.bg,
-                                            reverse=True)
-            redraw_buffer[screen.cursor.y][screen.cursor.x] = from_pyte_char(cursor_char)
-
-        last_cursor = copy(screen.cursor)
+    display_events = {}
+    time = 0
+    for record_ in timed_records:
+        assert isinstance(record_, AsciiCastV2Event)
+        stream.feed(record_.event_data)
+        redraw_buffer, last_cursor = _redraw_buffer(screen, last_cursor)
+        display_events, events = _feed(redraw_buffer, display_events, time)
+        if events:
+            yield events
         screen.dirty.clear()
+        time += int(1000 * record_.duration)
 
-        completed_lines = {}
-        duration = int(1000 * event_record.duration)
-        for row in pending_lines:
-            line, line_time, line_duration = pending_lines[row]
-            if row in redraw_buffer:
-                completed_lines[row] = line, line_time, line_duration
-            else:
-                pending_lines[row] = line, line_time, line_duration + duration
+    events = []
+    for row in list(display_events):
+        event_without_duration = display_events.pop(row)
+        duration = time - event_without_duration.time
+        events.append(event_without_duration._replace(duration=duration))
 
-        for row in redraw_buffer:
-            if redraw_buffer[row]:
-                pending_lines[row] = redraw_buffer[row], current_time, duration
-            elif row in pending_lines:
-                del pending_lines[row]
+    if events:
+        yield events
 
-        for row in sorted(completed_lines, key=partial(sort_by_time, completed_lines)):
-            args = (row, *completed_lines[row])
-            yield CharacterCellLineEvent(*args)
 
-        current_time += duration
+def _redraw_buffer(screen, last_cursor):
+    """Return lines of the screen to be redrawn and the current cursor
 
-    for row in sorted(pending_lines, key=partial(sort_by_time, pending_lines)):
-        args = (row, *pending_lines[row])
-        yield CharacterCellLineEvent(*args)
+    Most of the work is done by Pyte through Screen.dirty. We just
+    need to monitor updates to the cursor.
+    """
+    assert isinstance(screen, pyte.Screen)
+    assert isinstance(last_cursor, (type(None), pyte.screens.Cursor))
+
+    rows_changed = set(screen.dirty)
+    if screen.cursor != last_cursor:
+        if not screen.cursor.hidden:
+            rows_changed.add(screen.cursor.y)
+        if last_cursor is not None and not last_cursor.hidden:
+            rows_changed.add(last_cursor.y)
+
+    buffer = defaultdict(dict)
+    for row in rows_changed:
+        buffer[row] = {
+            column: anim.CharacterCell.from_pyte(screen.buffer[row][column])
+            for column in screen.buffer[row]
+        }
+
+    if screen.cursor != last_cursor and not screen.cursor.hidden:
+        row, column = screen.cursor.y, screen.cursor.x
+        try:
+            data = screen.buffer[row][column].data
+        except KeyError:
+            data = ' '
+
+        cursor_char = pyte.screens.Char(data=data,
+                                        fg=screen.cursor.attrs.fg,
+                                        bg=screen.cursor.attrs.bg,
+                                        reverse=True)
+        buffer[row][column] = anim.CharacterCell.from_pyte(cursor_char)
+
+    current_cursor = copy(screen.cursor)
+    return buffer, current_cursor
+
+
+def _feed(redraw_buffer, display_events, time):
+    """Return events based on the lines to redraw and the lines on screen
+
+    Warning: display_events is updated in place (and also returned)
+    """
+    events = []
+
+    # Send TerminalDisplayDuration event for old lines that were
+    # displayed on the screen and need to be redrawn
+    for row in list(display_events):
+        if row in redraw_buffer:
+            event_without_duration = display_events.pop(row)
+            duration = time - event_without_duration.time
+            events.append(event_without_duration._replace(duration=duration))
+
+    # Send TerminalDisplayLine event for non empty new (or updated) lines
+    for row in redraw_buffer:
+        if redraw_buffer[row]:
+            display_events[row] = DisplayLine(row, redraw_buffer[row], time,
+                                              None)
+            events.append(display_events[row])
+
+    return display_events, events
 
 
 def get_terminal_size(fileno):
