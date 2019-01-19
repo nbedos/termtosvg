@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" id="terminal"
+     baseProfile="full" viewBox="0 0 656 325" width="656" version="1.1">
+    <defs>
+        <termtosvg:template_settings xmlns:termtosvg="https://github.com/nbedos/termtosvg">
+            <termtosvg:screen_geometry columns="82" rows="19"/>
+        </termtosvg:template_settings>
+        <style type="text/css" id="generated-style"><![CDATA[:root {
+            --animation-duration: 26350ms;
+        }
+
+        #screen {
+            font-family: 'DejaVu Sans Mono', monospace;
+            font-style: normal;
+            font-size: 14px;
+        }
+
+        text {
+            dominant-baseline: text-before-edge;
+        }]]></style>
+        <style type="text/css" id="user-style">
+            /* gjm8 color theme (source: https://terminal.sexy/) */
+            .foreground {fill: #c5c5c5;}
+            .background {fill: #1c1c1c;}
+            .color0 {fill: #1c1c1c;}
+            .color1 {fill: #ff005b;}
+            .color2 {fill: #cee318;}
+            .color3 {fill: #ffe755;}
+            .color4 {fill: #048ac7;}
+            .color5 {fill: #833c9f;}
+            .color6 {fill: #0ac1cd;}
+            .color7 {fill: #e5e5e5;}
+            .color8 {fill: #1c1c1c;}
+            .color9 {fill: #ff005b;}
+            .color10 {fill: #cee318;}
+            .color11 {fill: #ffe755;}
+            .color12 {fill: #048ac7;}
+            .color13 {fill: #833c9f;}
+            .color14 {fill: #0ac1cd;}
+            .color15 {fill: #e5e5e5;}
+        </style>
+    </defs>
+    <svg id="screen" width="656" viewBox="0 0 656 323" preserveAspectRatio="xMidYMin meet">
+        <rect x="0" y="0" width="100%" height="100%" class="background"/>
+        <text x="0" y="17" class="foreground">foregound</text>
+        <text x="0" y="34" class="background">background</text>
+        <text x="0" y="51" class="color0">color0</text>
+        <text x="0" y="68" class="color1">color1</text>
+        <text x="0" y="85" class="color2">color2</text>
+        <text x="0" y="102" class="color3">color3</text>
+        <text x="0" y="119" class="color4">color4</text>
+        <text x="0" y="136" class="color5">color5</text>
+        <text x="0" y="153" class="color6">color6</text>
+        <text x="0" y="170" class="color7">color7</text>
+        <text x="0" y="187" class="color8">color8</text>
+        <text x="0" y="204" class="color9">color9</text>
+        <text x="0" y="221" class="color10">color10</text>
+        <text x="0" y="238" class="color11">color11</text>
+        <text x="0" y="255" class="color12">color12</text>
+        <text x="0" y="272" class="color13">color13</text>
+        <text x="0" y="289" class="color14">color14</text>
+        <text x="0" y="306" class="color15">color15</text>
+
+    </svg>
+    <svg id="play-icon" x="50%" y="50%" height="70" width="70" viewBox="0 0 1200 1200" overflow="visible">
+        <circle cx="0" cy="0" r="350" class="background"/>
+        <path class="foreground" d="M 0,600 C -331.24, 600 -600,331.35 -600,0 -600,-331.24 -331.24,-600 0,-600 c 331.35,0 600,268.65 600,600 0,331.35 -268.65,600 -600,600 z M -150,-299.55 -150,299.55 300,0 -150,-299.55 z"/>
+    </svg>
+</svg>

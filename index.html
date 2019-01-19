@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <title>termtosvg</title>
+    <link rel="stylesheet" href="theme/css/main.css"/>
+</head>
+
+<body id="index" class="home">
+<header id="banner" class="body">
+    <h1><a href="index.html">termtosvg</a></h1>
+    <nav>
+        <ul>
+            <li><a href="pages/examples.html">examples</a></li>
+            <li><a href="pages/templates.html">templates</a></li>
+            <li><a href="https://github.com/nbedos/termtosvg/blob/master/man/termtosvg.md">manual</a></li>
+            <li><a href="https://github.com/nbedos/termtosvg">github</a></li>
+        </ul>
+    </nav>
+</header><!-- /#banner -->
+<section id="content" class="body">
+    <p><b>termtosvg</b> is a Unix terminal recorder written in Python that renders your command
+        line sessions as standalone SVG animations.</p>
+
+    <h2>Features</h2>
+    <ul>
+        <li>Produce lightweight and clean looking animations embeddable on a project page</li>
+        <li>Custom color themes, terminal UI and animation controls via
+            <a href="pages/templates.html">SVG templates</a></li>
+        <li>Compatible with asciinema recording format</li>
+    </ul>
+
+    <p align="center">
+        <object data="examples/awesome_window_frame_js.svg" width="80%"></object>
+    </p>
+
+    <h2>Install</h2>
+    termtosvg is compatible with Linux, macOS and BSD OSes, requires Python >= 3.5 and can be installed using pip:
+    <pre>pip3 install --user termtosvg</pre>
+
+    <h2>Usage</h2>
+    Simply start recording a terminal session with:
+
+    <pre>$ termtosvg
+Recording started, enter "exit" command or Control-D to end
+</pre>
+    You are now in a subshell where you can type your commands as usual.
+    Once you are done, exit the shell to end the recording:
+
+    <pre>
+$ exit
+Recording ended, file is /tmp/termtosvg_exp5nsr4.svg
+</pre>
+    Finally, use your favorite web browser to play the animation:
+    <pre>
+$ firefox /tmp/termtosvg_exp5nsr4.svg
+</pre>
+
+
+</section>
+<section id="extras" class="body">
+</section><!-- /#extras -->
+
+<footer id="contentinfo" class="body">
+</footer><!-- /#contentinfo -->
+
+</body>
+</html>
