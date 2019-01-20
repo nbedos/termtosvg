@@ -24,6 +24,19 @@ termtosvg is compatible with Linux, macOS and BSD OSes, requires Python >= 3.5 a
 pip3 install --user termtosvg
 ```
 
+Various independently maintained, OS specific packages have been made available by the community:
+
+    
+| OS       | Repository  | Installation command  |
+|----------|-------------|---|
+| Archlinux  | [Arch](https://www.archlinux.org/packages/community/any/termtosvg/)  |`pacman -S termtosvg`   |
+| FreeBSD | [ports](https://www.freshports.org/graphics/py-termtosvg) | |
+| Gentoo | [media-gfx/termtosvg](https://packages.gentoo.org/packages/media-gfx/termtosvg) | `emerge media-gfx/termtosvg`|
+| macOS  | [Homebrew](https://formulae.brew.sh/formula/termtosvg)  |`brew install termtosvg`   |
+| OpenBSD  | [ports](https://github.com/openbsd/ports/tree/master/graphics/termtosvg)  |   |
+| NixOS | [nixpkgs](https://github.com/NixOS/nixpkgs/blob/master/pkgs/tools/misc/termtosvg/) | |
+
+
 ## Basic usage
 Start recording with:
 
