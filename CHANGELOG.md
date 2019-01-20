@@ -1,5 +1,11 @@
 # Changelog
 
+## Version 0.8.0 (2018-01-20)
+
+* Implement still frame rendering ([issue #50](https://github.com/nbedos/termtosvg/issues/50))
+* Properly handle zero width characters ([issue #89](https://github.com/nbedos/termtosvg/issues/89))
+* Remove unused options for record CLI subcommand (min & max-frame-duration)
+
 ## Version 0.7.0 (2018-12-09)
 
 * Add --command CLI option ([issue #83](https://github.com/nbedos/termtosvg/issues/83), [pull request #84](https://github.com/nbedos/termtosvg/pull/84))

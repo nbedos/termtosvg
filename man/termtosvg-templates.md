@@ -138,5 +138,5 @@ produced by rendering the terminal session.
 
 
 In the end, the animation produced by termtosvg has the same structure as the initial template
-which make it possible to use an animation as a template (provided the animation was created with
+which makes it possible to use an animation as a template (provided the animation was created with
 termtosvg >= 0.5.0).

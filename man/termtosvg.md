@@ -3,9 +3,9 @@
 % December 2018
 
 ## SYNOPSIS
-**termtosvg** [output_path] [-c COMMAND] [-g GEOMETRY] [-s] [-t TEMPLATE] [--help]
+**termtosvg** [output_path] [-c COMMAND] [-g GEOMETRY] [-m MIN_DURATION] [-M MAX_DURATION] [-s] [-t TEMPLATE] [--help]
 
-**termtosvg record** [output_path] [-c COMMAND] [-g GEOMETRY] [-m MIN_DURATION] [-M MAX_DURATION] [-h]
+**termtosvg record** [output_path] [-c COMMAND] [-g GEOMETRY] [-h]
 
 **termtosvg render** *input_file* [output_path] [-m MIN_DURATION] [-M MAX_DURATION] [-s] [-t TEMPLATE] [-h]
 

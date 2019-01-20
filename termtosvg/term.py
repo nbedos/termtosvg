@@ -11,6 +11,7 @@ restored, otherwise a failure during a call to `record` could render the
 terminal unusable.
 """
 
+import codecs
 import datetime
 import fcntl
 import os
@@ -251,13 +252,14 @@ def record(process_args, columns, lines, input_fileno, output_fileno):
 
     # TODO: why start != 0?
     start = None
+    utf8_decoder = codecs.getincrementaldecoder('utf-8')('replace')
     for data, time in _record(process_args, columns, lines, input_fileno, output_fileno):
         if start is None:
             start = time
 
         yield AsciiCastV2Event(time=(time - start).total_seconds(),
                                event_type='o',
-                               event_data=data.decode('utf-8'),
+                               event_data=utf8_decoder.decode(data),
                                duration=None)
 
 

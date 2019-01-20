@@ -47,8 +47,6 @@ class TestMain(unittest.TestCase):
         ['record', 'output_path'],
         ['record', 'output_path', '--screen-geometry', '82x19'],
         ['record', '--screen-geometry', '82x19'],
-        ['record', '-m', '42', '-M', '100'],
-        ['record', '-m', '42ms', '-M', '100ms'],
         ['render', 'input_filename'],
         ['render', 'input_filename'],
         ['render', 'input_filename', '--template', 'plain'],

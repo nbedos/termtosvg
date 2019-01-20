@@ -18,8 +18,7 @@ USAGE = """termtosvg [output_path] [-c COMMAND] [-g GEOMETRY] [-m MIN_DURATION]
 Record a terminal session and render an SVG animation on the fly
 """
 EPILOG = "See also 'termtosvg record --help' and 'termtosvg render --help'"
-RECORD_USAGE = """termtosvg record [output_path] [-c COMMAND] [-g GEOMETRY]
-                 [-m MIN_DURATION] [-M MAX_DURATION] [-h]"""
+RECORD_USAGE = "termtosvg record [output_path] [-c COMMAND] [-g GEOMETRY] [-h]"
 RENDER_USAGE = """termtosvg render input_file [output_path] [-m MIN_DURATION]
                  [-M MAX_DURATION] [-s] [-t TEMPLATE] [-h]"""
 
@@ -111,8 +110,8 @@ def parse(args, templates, default_template, default_geometry, default_min_dur, 
     )
     parser = argparse.ArgumentParser(
         prog='termtosvg',
-        parents=[command_parser, geometry_parser, min_duration_parser, max_duration_parser,
-                 still_frames_parser, template_parser],
+        parents=[command_parser, geometry_parser, min_duration_parser,
+                 max_duration_parser, still_frames_parser, template_parser],
         usage=USAGE,
         epilog=EPILOG
     )
@@ -129,7 +128,7 @@ def parse(args, templates, default_template, default_geometry, default_min_dur, 
         if args[0] == 'record':
             parser = argparse.ArgumentParser(
                 description='record the session to a file in asciicast v2 format',
-                parents=[command_parser, geometry_parser, min_duration_parser, max_duration_parser],
+                parents=[command_parser, geometry_parser],
                 usage=RECORD_USAGE
             )
             parser.add_argument(
