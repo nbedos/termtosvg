@@ -14,7 +14,7 @@ line sessions as standalone SVG animations.
 * [Manual page](man/termtosvg.md)
 
 ## Features
-* Produce lightweight and clean looking animations embeddable on a project page
+* Produce lightweight and clean looking animations or still frames embeddable on a project page
 * Custom color themes, terminal UI and animation controls via [SVG templates](man/termtosvg-templates.md)
 * Compatible with asciinema recording format
     
