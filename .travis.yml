@@ -70,9 +70,7 @@ jobs:
   - stage: Build and deploy
     name: Build and deploy Python package (production)
     if: tag =~ ^[0-9]+\.[0-9]+\.[0-9]+$
-    python: 3.7
-    dist: xenial
-    sudo: true
+    python: 3.6
     script:
     - make man
     addons:
@@ -93,6 +91,7 @@ jobs:
       password:
         secure: qJ+wi2PwEDeiJHhRie7FgxoZcfFBGxogGAEXT0SCfGpyLKe2RHmrUm9endsWm7b7fXS4Cc5sR/wJxeH1nrwawC6HAcFt4VAP3rKloXpxTNKDgi1Rqv/XVIE/FQu3JPoS7YS1tx/bEvX3R22s0e8til82aK9IIutlsIhps7kZi/HXNI64gF54AjnO939bNWTJIU7dQ4S7PuBLdv3mqbWJtA0ix0nzH3c1KbxfMCPt+ogcPBumP/Pm7Jwr97WWedvFXm6xHYOeBYdlMIlxCyRURGPwD1at/ArEYMsmHbq530ocfnIxqyy2/E+tpOF8T6UfS22O3KsQX+9LSbwhvVTWabzMQx/pvlFBIEG3zQDjzNwJPn3o8JmAtyZwujl5bZx9tKpmoU0UovquyAVr0d5ETS6X3gwWlhvHsZ6fJLIhWAlwskWZE0U1x1H44gVj8FgH6iUEsYzEw1+QSywA+5B2WkHWRp0eVnpHAnC74cnPNEgEEIj6KYbaKsR9T8OS1Ut0a254RKzd1XvIFF4p8NIdEc/9YBziEouSsO+SrzKyUDmFgqKLBXyU6gIPXzGO29z+0BHskhDA8kHIUiC6lsEFedE+oWT2MgcsiXVctluGqQ7yGo0yaKPkW88syJnYm7G4nQs3+xZ2VW8hgGpU/tibOHuUezTqdIga2m58c6cbKaE=
       skip_cleanup: true
+      skip_existing: true
       distributions: "sdist bdist_wheel"
       on:
         tags: true
@@ -100,9 +99,7 @@ jobs:
   - stage: Build and deploy
     name: Build and deploy Python package (staging)
     if: tag IS present AND ( NOT tag =~ ^[0-9]+\.[0-9]+\.[0-9]+$ )
-    python: 3.7
-    dist: xenial
-    sudo: true
+    python: 3.6
     script:
     - make man
     addons:
@@ -123,17 +120,16 @@ jobs:
       password:
         secure: uQm7cTyqbLLQwrKw2mzFLN3seGqeaTQxtB7BWO2JElR/NM+XUThGljIzy/WZ9E2YUTylR3x3Rr+EwEooergS+BaSVEnx0Zr27NZ6tdCPPkVXoPUiQXqy1c7XTEJsaTQ1y/LRu3jZPzO8p9J9ierBGipHvEgNN0cy+g7u+tZ29h7IDhLhFeaDyK8/ZIyxhj4weU0xP+LWQX2FsBQahK0n3qN/Jg0sB0ja2ffbga6QQNFwQ1/088UFuW8L8QmfefUDMzWhtIjiVJAXs3WH7QF/t0DHIjyNfQvHJL9Aoc8bnnmGxhlQISIo0lJChVQf4lEPuQQxhEfhq1jLQt/R1zINKzBN52ouQh2ZSeqUong2vDrnAZ+6zHA2uSX1XkaZ7rk+NtYG9OO9Lsx7Z8EKQFjFvPAD5MgwHPGNkKOT0nu3q+Cim5q1XjFxO7FbDAXPLBbULCbLgP1cufVUYM/4/3BWVXrmycKx4Kg5l2XTNEjYN0Cnrjq0dKLyqDO76MR4Ni2AcS/MubzHH/SSASfU5vHnadH1ZZcjFTEAJ+fJiENu0OGiry6aQj5ExcA+6ExwL+Ta6/1C4v21W5Sbgt7axBxnuJviHU2WsWGGC5J4QANSkTN6WbJF5FQMZmNKF0ntqIKuhvpn5c14yDoQI6ZlOgUCIz81TxE8bsJ6bV53wzLIOoQ=
       skip_cleanup: true
+      skip_existing: true
       distributions: "sdist bdist_wheel"
       server: https://test.pypi.org/legacy/
       on:
         tags: true
 
   - stage: Build and deploy
-    name: Build and deploy website (product)
+    name: Build and deploy website (production)
     if: tag =~ ^[0-9]+\.[0-9]+\.[0-9]+$
-    python: 3.7
-    dist: xenial
-    sudo: true
+    python: 3.6
     install:
     - make install
     script:
@@ -152,9 +148,7 @@ jobs:
   - stage: Build and deploy
     name: Build and deploy website (staging)
     if: tag IS present AND ( NOT tag =~ ^[0-9]+\.[0-9]+\.[0-9]+$ )
-    python: 3.7
-    dist: xenial
-    sudo: true
+    python: 3.6
     install:
     - make install
     script:
