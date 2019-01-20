@@ -1,4 +1,5 @@
-[![Build Status](https://travis-ci.org/nbedos/termtosvg.svg?branch=master)](https://travis-ci.org/nbedos/termtosvg) [![CircleCI](https://circleci.com/gh/nbedos/termtosvg.svg?style=svg)](https://circleci.com/gh/nbedos/termtosvg)
+[![Build Status](https://travis-ci.org/nbedos/termtosvg.svg?branch=develop)](https://travis-ci.org/nbedos/termtosvg) [![Coverage](https://codecov.io/gh/nbedos/termtosvg/branch/develop/graph/badge.svg)](https://codecov.io/gh/nbedos/termtosvg)
+
 
 # termtosvg
 termtosvg is a Unix terminal recorder written in Python that renders your command
