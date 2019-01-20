@@ -23,8 +23,8 @@ install:
 	$(PIP) freeze
 
 tests:
-	coverage run --branch --source termtosvg -m unittest -v
-	coverage report --omit 'termtosvg/tests/*'
+	coverage run --branch --source termtosvg -m unittest termtosvg.tests.suite -v
+	coverage report
 	codecov || exit "Uploading coverage report failed"
 	pylint -j 0 --extension-pkg-whitelist lxml termtosvg/*.py || exit 0
 
