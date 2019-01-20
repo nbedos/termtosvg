@@ -181,7 +181,7 @@ def _group_by_time(event_records, min_rec_duration, max_rec_duration, last_rec_d
     :return: Sequence of records with duration
     """
     # TODO: itertools.accumulate?
-    current_string = b''
+    current_string = ''
     current_time = 0
     dropped_time = 0
 
@@ -207,7 +207,7 @@ def _group_by_time(event_records, min_rec_duration, max_rec_duration, last_rec_d
                                                  event_data=current_string,
                                                  duration=time_between_events)
             yield accumulator_event
-            current_string = b''
+            current_string = ''
             current_time += time_between_events
 
         current_string += event_record.event_data
@@ -257,7 +257,7 @@ def record(process_args, columns, lines, input_fileno, output_fileno):
 
         yield AsciiCastV2Event(time=(time - start).total_seconds(),
                                event_type='o',
-                               event_data=data,
+                               event_data=data.decode('utf-8'),
                                duration=None)
 
 
@@ -299,7 +299,7 @@ def screen_events(records, min_frame_dur=1, max_frame_dur=None, last_frame_dur=1
     yield Configuration(header.width, header.height)
 
     screen = pyte.Screen(header.width, header.height)
-    stream = pyte.ByteStream(screen)
+    stream = pyte.Stream(screen)
 
     timed_records = _group_by_time(records, min_frame_dur, max_frame_dur,
                                    last_frame_dur)
@@ -308,7 +308,8 @@ def screen_events(records, min_frame_dur=1, max_frame_dur=None, last_frame_dur=1
     time = 0
     for record_ in timed_records:
         assert isinstance(record_, AsciiCastV2Event)
-        stream.feed(record_.event_data)
+        for char in record_.event_data:
+            stream.feed(char)
         redraw_buffer, last_cursor = _redraw_buffer(screen, last_cursor)
         display_events, events = _feed(redraw_buffer, display_events, time)
         if events:

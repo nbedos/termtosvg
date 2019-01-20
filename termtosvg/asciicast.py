@@ -12,8 +12,6 @@ import json
 from collections import namedtuple
 from typing import Iterable
 
-utf8_decoder = codecs.getincrementaldecoder('utf-8')('replace')
-
 
 class AsciiCastError(Exception):
     pass
@@ -76,7 +74,7 @@ def _read_v1_records(data):
             raise AsciiCastError('Invalid type for event: got object "{}" but expected '
                                  'type Tuple[Union[int, float], str]'.format(event))
         time += time_elapsed
-        yield AsciiCastV2Event(time, 'o', event_data.encode('utf-8'), None)
+        yield AsciiCastV2Event(time, 'o', event_data, None)
 
 
 def read_records(filename):
@@ -200,8 +198,8 @@ class AsciiCastV2Event(AsciiCastV2Record, _AsciiCastV2Event):
     """
     types = {
         'time': (int, float),
-        'event_type': str,
-        'event_data': (str, bytes),
+        'event_type': (str,),
+        'event_data': (str,),
         'duration': (type(None), int, float),
     }
 
@@ -215,8 +213,7 @@ class AsciiCastV2Event(AsciiCastV2Record, _AsciiCastV2Event):
         return self
 
     def to_json_line(self):
-        event_data = utf8_decoder.decode(self.event_data)
-        attributes = [self.time, self.event_type, event_data]
+        attributes = [self.time, self.event_type, self.event_data]
         return json.dumps(attributes, ensure_ascii=False)
 
     @classmethod
@@ -224,11 +221,6 @@ class AsciiCastV2Event(AsciiCastV2Record, _AsciiCastV2Event):
         try:
             time, event_type, event_data = json.loads(line)
         except (json.JSONDecodeError, ValueError) as exc:
-            raise AsciiCastError from exc
-
-        try:
-            event_data = event_data.encode('utf-8')
-        except AttributeError as exc:
             raise AsciiCastError from exc
 
         event = cls(time, event_type, event_data, None)

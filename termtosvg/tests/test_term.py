@@ -81,12 +81,11 @@ class TestTerm(unittest.TestCase):
             os.close(fd)
 
     def test__buffer_simple_events(self):
-        escape_sequences = ['{}\r\n'.format(i).encode('utf-8')
-                            for i in range(5)]
+        escape_sequences = ['{}\r\n'.format(i) for i in range(5)]
 
         screen = pyte.Screen(80, 24)
         screen.dirty.clear()
-        stream = pyte.ByteStream(screen)
+        stream = pyte.Stream(screen)
         last_cursor = None
         for count, escape_sequence in enumerate(escape_sequences):
             with self.subTest(case='Simple events (record #{})'.format(count)):
@@ -174,7 +173,7 @@ class TestTerm(unittest.TestCase):
         records = [AsciiCastV2Header(version=2, width=80, height=24, theme=THEME)] + \
                   [AsciiCastV2Event(time=i,
                                     event_type='o',
-                                    event_data='{}\r\n'.format(i).encode('utf-8'),
+                                    event_data='{}\r\n'.format(i),
                                     duration=None)
                    for i in range(0, 2)]
         events = term.screen_events(records, 1, None, 42)
@@ -208,10 +207,10 @@ class TestTerm(unittest.TestCase):
         """screen_events should never return an empty group of events"""
         records = [
             AsciiCastV2Header(version=2, width=80, height=24, theme=THEME),
-            AsciiCastV2Event(0, 'o', b'i', None),
-            AsciiCastV2Event(1, 'o', b'', None),
-            AsciiCastV2Event(2, 'o', b'', None),
-            AsciiCastV2Event(3, 'o', b'', None),
+            AsciiCastV2Event(0, 'o', 'i', None),
+            AsciiCastV2Event(1, 'o', '', None),
+            AsciiCastV2Event(2, 'o', '', None),
+            AsciiCastV2Event(3, 'o', '', None),
         ]
         expected_events = [
             term.Configuration(80, 24),
@@ -233,6 +232,33 @@ class TestTerm(unittest.TestCase):
             with self.subTest(case='No empty group - item #{}'.format(count)):
                 self.assertEqual(expected_item, item)
 
+    def test_screen_events_unprintable_chars(self):
+        # Ensure zero width characters in terminal output does not result
+        # in Pyte dropping all following data
+        # Issue https://github.com/nbedos/termtosvg/issues/89
+
+        # test_text = "e🕵️‍a"
+        test_text = (b'e' +
+                     b'\xf0\x9f\x95\xb5' +  # sleuth emoji
+                     b'\xef\xb8\x8f' +      # variation selector 16
+                     b'\xe2\x80\x8d' +      # zero width joiner
+                     b'a').decode('utf-8')  # character that should be preserved
+
+        records = [
+            AsciiCastV2Header(version=2, width=80, height=24, theme=THEME),
+            AsciiCastV2Event(0, 'o', test_text, None),
+        ]
+        events = term.screen_events(records, 1, None, last_frame_dur=1000)
+
+        # Skip configuration event
+        next(events)
+
+        characters = next(events)[0].line
+        line_text = ''.join(characters[c].text for c in sorted(characters))
+        # Ensure data following sleuth emoji wasn't ignored
+        # (rstrip() removes blank cursor character at end of line)
+        self.assertEqual(line_text.rstrip()[-1], test_text[-1])
+
     def test_get_terminal_size(self):
         with self.subTest(case='Successful get_terminal_size call'):
             term_size_mock = MagicMock(return_value=(42, 84))
@@ -243,36 +269,36 @@ class TestTerm(unittest.TestCase):
 
     def test__group_by_time(self):
         event_records = [
-            AsciiCastV2Event(0, 'o', b'1', None),
-            AsciiCastV2Event(5, 'o', b'2', None),
-            AsciiCastV2Event(8, 'o', b'3', None),
-            AsciiCastV2Event(20, 'o', b'4', None),
-            AsciiCastV2Event(21, 'o', b'5', None),
-            AsciiCastV2Event(30, 'o', b'6', None),
-            AsciiCastV2Event(31, 'o', b'7', None),
-            AsciiCastV2Event(32, 'o', b'8', None),
-            AsciiCastV2Event(33, 'o', b'9', None),
-            AsciiCastV2Event(43, 'o', b'10', None),
+            AsciiCastV2Event(0, 'o', '1', None),
+            AsciiCastV2Event(5, 'o', '2', None),
+            AsciiCastV2Event(8, 'o', '3', None),
+            AsciiCastV2Event(20, 'o', '4', None),
+            AsciiCastV2Event(21, 'o', '5', None),
+            AsciiCastV2Event(30, 'o', '6', None),
+            AsciiCastV2Event(31, 'o', '7', None),
+            AsciiCastV2Event(32, 'o', '8', None),
+            AsciiCastV2Event(33, 'o', '9', None),
+            AsciiCastV2Event(43, 'o', '10', None),
         ]
 
         with self.subTest(case='maximum record duration'):
             grouped_event_records_max = [
-                AsciiCastV2Event(0, 'o', b'1', 5),
-                AsciiCastV2Event(5, 'o', b'23', 6),
-                AsciiCastV2Event(11, 'o', b'45', 6),
-                AsciiCastV2Event(17, 'o', b'6789', 6),
-                AsciiCastV2Event(23, 'o', b'10', 1.234),
+                AsciiCastV2Event(0, 'o', '1', 5),
+                AsciiCastV2Event(5, 'o', '23', 6),
+                AsciiCastV2Event(11, 'o', '45', 6),
+                AsciiCastV2Event(17, 'o', '6789', 6),
+                AsciiCastV2Event(23, 'o', '10', 1.234),
             ]
             result = list(term._group_by_time(event_records, 5000, 6000, 1234))
             self.assertEqual(grouped_event_records_max, result)
 
         with self.subTest(case='no maximum record duration'):
             grouped_event_records_no_max = [
-                AsciiCastV2Event(0, 'o', b'1', 5),
-                AsciiCastV2Event(5, 'o', b'23', 15),
-                AsciiCastV2Event(20, 'o', b'45', 10),
-                AsciiCastV2Event(30, 'o', b'6789', 13),
-                AsciiCastV2Event(43, 'o', b'10', 1.234),
+                AsciiCastV2Event(0, 'o', '1', 5),
+                AsciiCastV2Event(5, 'o', '23', 15),
+                AsciiCastV2Event(20, 'o', '45', 10),
+                AsciiCastV2Event(30, 'o', '6789', 13),
+                AsciiCastV2Event(43, 'o', '10', 1.234),
             ]
             result = list(term._group_by_time(event_records, 5000, None, 1234))
             self.assertEqual(grouped_event_records_no_max, result)

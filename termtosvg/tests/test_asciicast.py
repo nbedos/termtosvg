@@ -51,9 +51,9 @@ class TestAsciicast(unittest.TestCase):
         AsciiCastV2Header(2, 212, 53, color_theme_16),
         AsciiCastV2Header(2, 212, 53, None),
         AsciiCastV2Header(2, 212, 53, None, 42),
-        AsciiCastV2Event(0.010303, 'o', '\u001b[1;31mnico \u001b[0;34m~\u001b[0m'.encode('utf-8'), None),
-        AsciiCastV2Event(1.146397, 'o', '❤ ☀ ☆ ☂ ☻ ♞ ☯ ☭ ☢ € →'.encode('utf-8'), None),
-        AsciiCastV2Event(2, 'o', b'\r\n', None),
+        AsciiCastV2Event(0.010303, 'o', '\u001b[1;31mnico \u001b[0;34m~\u001b[0m', None),
+        AsciiCastV2Event(1.146397, 'o', '❤ ☀ ☆ ☂ ☻ ♞ ☯ ☭ ☢ € →', None),
+        AsciiCastV2Event(2, 'o', '\r\n', None),
     ]
 
     def test_from_json(self):
@@ -104,10 +104,10 @@ class TestAsciicast(unittest.TestCase):
 
     cast_v1_events = [
         AsciiCastV2Header(2, 212, 53, None),
-        AsciiCastV2Event(0.010303, 'o', '\u001b[1;31mnico \u001b[0;34m~\u001b[0m'.encode('utf-8'),
+        AsciiCastV2Event(0.010303, 'o', '\u001b[1;31mnico \u001b[0;34m~\u001b[0m',
                          None),
-        AsciiCastV2Event(1.146397, 'o', '❤ ☀ ☆ ☂ ☻ ♞ ☯ ☭ ☢ € →'.encode('utf-8'), None),
-        AsciiCastV2Event(2, 'o', b'\r\n', None),
+        AsciiCastV2Event(1.146397, 'o', '❤ ☀ ☆ ☂ ☻ ♞ ☯ ☭ ☢ € →', None),
+        AsciiCastV2Event(2, 'o', '\r\n', None),
     ]
 
     def test__read_v1_records(self):
