@@ -132,16 +132,16 @@ class ConsecutiveWithSameAttributes:
         return self.group_index, key_attributes
 
 
-def render_animation(records, filename, template, cell_width=CELL_WIDTH, cell_height=CELL_HEIGHT):
-    def group_by_time(records):
-        def time_and_duration(record):
-            return record.time, record.duration
-        for record_group in records:
+def render_animation(frames, filename, template, cell_width=CELL_WIDTH, cell_height=CELL_HEIGHT):
+    def group_by_time(frames):
+        def time_and_duration(frame):
+            return frame.time, frame.duration
+        for record_group in frames:
             with_duration = [r for r in record_group if r.duration is not None]
             sorted_group = sorted(with_duration, key=time_and_duration)
             yield from groupby(sorted_group, key=time_and_duration)
 
-    event_records, root = _render_preparation(records, template, cell_width,
+    event_records, root = _render_preparation(frames, template, cell_width,
                                               cell_height)
 
     root = _render_animation(group_by_time(event_records), root, cell_width,
