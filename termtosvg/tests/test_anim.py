@@ -169,41 +169,62 @@ class TestAnim(unittest.TestCase):
             with self.subTest(case=case):
                 self.assertEqual(key(case), result)
 
-    def test_make_animated_group(self):
-        records = [
-            term.DisplayLine(1, line(1), None, None),
-            term.DisplayLine(2, line(2), None, None),
-            term.DisplayLine(3, line(3), None, None),
-            term.DisplayLine(4, line(4), None, None),
+    def test__render_timed_frame(self):
+        frames = [
+            term.TimedFrame(1, 1, {
+                1: line(1),
+            }),
+            term.TimedFrame(2, 1, {
+                1: line(1),
+                2: line(2),
+            }),
+            term.TimedFrame(3, 1, {
+                1: line(1),
+                2: line(2),
+                3: line(3),
+            }),
+            term.TimedFrame(4, 1, {
+                1: line(1),
+                2: line(2),
+                3: line(3),
+                4: line(4),
+            }),
             # Definition reuse
-            term.DisplayLine(5, line(4), None, None),
+            term.TimedFrame(5, 1, {
+                1: line(1),
+                2: line(2),
+                3: line(3),
+                5: line(4),
+            }),
         ]
 
-        for time, duration in [(10, 1), (None, None)]:
-            group, new_defs = anim._make_frame_group(records=records,
-                                                     time=time,
-                                                     duration=duration,
-                                                     cell_width=8,
-                                                     cell_height=17,
-                                                     definitions={})
+        all_definitions = {}
+        for frame in frames:
+            group, new_defs = anim._render_timed_frame(offset=0,
+                                                       buffer=frame.buffer,
+                                                       cell_width=8,
+                                                       cell_height=17,
+                                                       definitions={})
+            all_definitions.update(new_defs)
+
+        assert(len(all_definitions) == 4)
 
     def test_render_animation(self):
-        records = [
-            term.Configuration(80, 24),
-            [
-                term.DisplayLine(1, line(1), 0, None),
-            ],
-            [
-                term.DisplayLine(1, line(1), 0, 60),
-                term.DisplayLine(2, line(2), 60, None),
-            ],
-            [
-                term.DisplayLine(2, line(2), 60, 60),
-                term.DisplayLine(3, line(3), 120, None),
-            ],
+        frames = [
+            term.TimedFrame(0, 60, {
+                0: line(0),
+            }),
+            term.TimedFrame(60, 60, {
+                0: line(0),
+                1: line(1),
+            }),
+            term.TimedFrame(120, 60, {
+                2: line(2),
+                3: line(3),
+            }),
         ]
         _, filename = tempfile.mkstemp(prefix='termtosvg_', suffix='.svg')
-        anim.render_animation(records, filename, TEMPLATE)
+        anim.render_animation(frames, (80, 24), filename, TEMPLATE)
         with open(filename) as f:
             anim.validate_svg(f)
 
@@ -211,28 +232,32 @@ class TestAnim(unittest.TestCase):
         def line(s):
             return dict(enumerate([anim.CharacterCell(c) for c in s]))
 
-        records = [
-            term.Configuration(80, 24),
-            [
-                term.DisplayLine(1, line('a'), 0, None),
-                term.DisplayLine(2, line('b'), 0, None),
-            ],
-            [
-                term.DisplayLine(1, line('a'), 0, 120),
-                term.DisplayLine(3, line('c'), 120, None),
-                term.DisplayLine(4, line('d'), 120, None),
-            ],
-            [
-                term.DisplayLine(5, line('e'), 240, None),
-            ],
-            [
-                term.DisplayLine(5, line('e'), 240, 60),
-                term.DisplayLine(5, line('f'), 300, None),
-            ],
+        frames = [
+            term.TimedFrame(0, 0, {
+                1: line('a'),
+                2: line('b'),
+            }),
+            term.TimedFrame(120, 120, {
+                2: line('b'),
+                3: line('c'),
+                4: line('d'),
+            }),
+            term.TimedFrame(240, 60, {
+                2: line('b'),
+                3: line('c'),
+                4: line('d'),
+                5: line('e'),
+            }),
+            term.TimedFrame(300, 60, {
+                2: line('b'),
+                3: line('c'),
+                4: line('d'),
+                5: line('f'),
+            }),
         ]
 
-        grouped_records, root = anim._render_preparation(records, TEMPLATE, 9, 17)
-        frame_generator = anim._render_still_frames(grouped_records, root, 9, 17)
+        root = anim._render_preparation((80, 24), TEMPLATE, 9, 17)
+        frame_generator = anim._render_still_frames(frames, root, 9, 17)
 
         def extract_text_content(frame):
             svg_screen_elem = frame.find('.//{{{namespace}}}svg[@id="screen"]'
@@ -253,11 +278,13 @@ class TestAnim(unittest.TestCase):
                 self.assertEqual(texts, extract_text_content(frame))
 
     def test__embed_css(self):
-        for animation_duration in [None, 42]:
-            with self.subTest(case=animation_duration):
+        test_cases = [{'animation_duration': None, 'timings': {1: 100, 2: 200}},
+                      {'animation_duration': 42, 'timings': {12: 100, 33: 200}} ]
+        for args in test_cases:
+            with self.subTest(case=args['animation_duration']):
                 tree = etree.parse(io.BytesIO(TEMPLATE))
                 root = tree.getroot()
-                anim._embed_css(root, animation_duration)
+                anim._embed_css(root, **args)
                 assert b'{{' not in etree.tostring(root)
 
     def test_validate_svg(self):

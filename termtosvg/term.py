@@ -29,8 +29,7 @@ import pyte.screens
 from termtosvg import anim
 from termtosvg.asciicast import AsciiCastV2Event, AsciiCastV2Header
 
-TimedFrame = namedtuple('TimedFrame', ['time', 'duration', 'buffer', 'width',
-                                       'height'])
+TimedFrame = namedtuple('TimedFrame', ['time', 'duration', 'buffer'])
 
 
 class TerminalMode:
@@ -249,7 +248,8 @@ def record(process_args, columns, lines, input_fileno, output_fileno):
 
 
 def timed_frames(records, min_frame_dur=1, max_frame_dur=None, last_frame_dur=1000):
-    """Return instances of TimedFrame computed from asciicast records
+    """Return a tuple made of the geometry of the screen and a generator of
+    instances of TimedFrame computed from asciicast records
 
     Asciicast records are first coalesced so that the mininum duration between
     two frames is at least `min_frame_dur` milliseconds. Events with a duration
@@ -276,21 +276,21 @@ def timed_frames(records, min_frame_dur=1, max_frame_dur=None, last_frame_dur=10
     if not max_frame_dur and header.idle_time_limit:
         max_frame_dur = int(header.idle_time_limit * 1000)
 
-    screen = pyte.Screen(header.width, header.height)
-    stream = pyte.Stream(screen)
+    def generator():
+        screen = pyte.Screen(header.width, header.height)
+        stream = pyte.Stream(screen)
+        timed_records = _group_by_time(records, min_frame_dur, max_frame_dur,
+                                       last_frame_dur)
 
-    timed_records = _group_by_time(records, min_frame_dur, max_frame_dur,
-                                   last_frame_dur)
+        for record_ in timed_records:
+            assert isinstance(record_, AsciiCastV2Event)
+            for char in record_.event_data:
+                stream.feed(char)
+            yield TimedFrame(int(1000 * record_.time),
+                             int(1000 * record_.duration),
+                             _screen_buffer(screen))
 
-    for record_ in timed_records:
-        assert isinstance(record_, AsciiCastV2Event)
-        for char in record_.event_data:
-            stream.feed(char)
-        yield TimedFrame(int(1000 * record_.time),
-                         int(1000 * record_.duration),
-                         _screen_buffer(screen),
-                         header.width,
-                         header.height)
+    return (header.width, header.height), generator()
 
 
 def _screen_buffer(screen):

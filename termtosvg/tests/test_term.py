@@ -140,26 +140,26 @@ class TestTerm(unittest.TestCase):
                                     event_data='{}\r\n'.format(i),
                                     duration=None)
                    for i in range(0, 2)]
-        frames = list(term.timed_frames(records, 1, None, 42))
+        geometry, frames = term.timed_frames(records, 1, None, 42)
+
+        self.assertEqual(geometry, (80, 24))
 
         expected_frames = [
             term.TimedFrame(0, 1000, {
                 0: {0: anim.CharacterCell('0')},
                 1: {0: CURSOR_CHAR},
-            }, 80, 24),
+            }),
             term.TimedFrame(1000, 42, {
                 0: {0: anim.CharacterCell('0')},
                 1: {0: anim.CharacterCell('1')},
                 2: {0: CURSOR_CHAR},
-            }, 80, 24)
+            })
         ]
 
         z = itertools.zip_longest(expected_frames, frames)
         for (expected_frame, frame) in z:
             self.assertEqual(expected_frame.time, frame.time)
             self.assertEqual(expected_frame.duration, frame.duration)
-            self.assertEqual(expected_frame.width, frame.width)
-            self.assertEqual(expected_frame.height, frame.height)
             for row in frame.buffer:
                 if row in expected_frame.buffer:
                     self.assertEqual(expected_frame.buffer[row],
@@ -183,7 +183,7 @@ class TestTerm(unittest.TestCase):
             AsciiCastV2Header(version=2, width=80, height=24, theme=THEME),
             AsciiCastV2Event(0, 'o', test_text, None),
         ]
-        events = term.timed_frames(records, 1, None, last_frame_dur=1000)
+        _, events = term.timed_frames(records, 1, None, last_frame_dur=1000)
 
         frame = next(events)
         characters = ''.join(frame.buffer[0][col].text

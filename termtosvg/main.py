@@ -198,16 +198,18 @@ def render_subcommand(still, template, cast_filename, output_path,
 
     logger.info('Rendering started')
     asciicast_records = read_records(cast_filename)
-    frames = timed_frames(asciicast_records, min_frame_duration,
+    geometry, frames = timed_frames(asciicast_records, min_frame_duration,
                                     max_frame_duration)
     if still:
-        termtosvg.anim.render_still_frames(records=frames,
+        termtosvg.anim.render_still_frames(frames=frames,
+                                           geometry=geometry,
                                            directory=output_path,
                                            template=template)
         logger.info('Rendering ended, SVG frames are located at {}'
                     .format(output_path))
     else:
-        termtosvg.anim.render_animation(records=frames,
+        termtosvg.anim.render_animation(frames=frames,
+                                        geometry=geometry,
                                         filename=output_path,
                                         template=template)
         logger.info('Rendering ended, SVG animation is {}'.format(output_path))
@@ -230,14 +232,16 @@ def record_render_subcommand(process_args, still, template, geometry,
         # do not want two processes writing to the same terminal.
         asciicast_records = record(process_args, columns, lines, input_fileno,
                                    output_fileno)
-        frames = timed_frames(asciicast_records, min_frame_duration,
-                              max_frame_duration)
+        geometry, frames = timed_frames(asciicast_records, min_frame_duration,
+                                        max_frame_duration)
 
         if still:
-            termtosvg.anim.render_still_frames(frames, output_path, template)
+            termtosvg.anim.render_still_frames(frames, geometry, output_path,
+                                               template)
             end_msg = 'Rendering ended, SVG frames are located at {}'
         else:
-            termtosvg.anim.render_animation(frames, output_path, template)
+            termtosvg.anim.render_animation(frames, geometry, output_path,
+                                            template)
             end_msg = 'Rendering ended, SVG animation is {}'
 
     logger.info(end_msg.format(output_path))
