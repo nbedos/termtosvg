@@ -147,7 +147,7 @@ class AsciiCastV2Header(AsciiCastV2Record, _AsciiCastV2Header):
         'width': int,
         'height': int,
         'theme': (type(None), AsciiCastV2Theme),
-        'idle_time_limit': (type(None), int)
+        'idle_time_limit': (type(None), int, float)
     }
 
     def __new__(cls, version, width, height, theme, idle_time_limit=None):

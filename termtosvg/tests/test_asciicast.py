@@ -32,6 +32,8 @@ class TestAsciicast(unittest.TestCase):
         '{"version": 2, "width": 212, "height": 53, "timestamp": 123456798123}',
         # Header: idle_time_limit
         '{"version": 2, "width": 212, "height": 53, "timestamp": 123456798123, "idle_time_limit": 42}',
+        # Float idle time limit (https://github.com/nbedos/termtosvg/issues/97)
+        '{"version": 2, "width": 212, "height": 53, "idle_time_limit": 1.234}',
         # Event: Non printable characters
         '[0.010303, "o", "\\u001b[1;31mnico \\u001b[0;34m~\\u001b[0m"]',
         # Event: Unicode characters
@@ -51,6 +53,7 @@ class TestAsciicast(unittest.TestCase):
         AsciiCastV2Header(2, 212, 53, color_theme_16),
         AsciiCastV2Header(2, 212, 53, None),
         AsciiCastV2Header(2, 212, 53, None, 42),
+        AsciiCastV2Header(2, 212, 53, None, 1.234),
         AsciiCastV2Event(0.010303, 'o', '\u001b[1;31mnico \u001b[0;34m~\u001b[0m', None),
         AsciiCastV2Event(1.146397, 'o', '❤ ☀ ☆ ☂ ☻ ♞ ☯ ☭ ☢ € →', None),
         AsciiCastV2Event(2, 'o', '\r\n', None),
