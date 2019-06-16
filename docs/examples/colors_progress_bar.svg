@@ -13,7 +13,12 @@
             dominant-baseline: text-before-edge;
             white-space: pre;
         }
-     @keyframes roll {
+    
+            :root {
+                --animation-duration: 26450ms;
+            }
+
+            @keyframes roll {
                 0.000%{transform:translateY(0px)}
 4.635%{transform:translateY(-323px)}
 6.208%{transform:translateY(-646px)}
@@ -123,11 +128,11 @@
             }
 
             #screen_view {
-                animation-duration: 26450ms;
+                animation-duration: var(--animation-duration);
                 animation-iteration-count:infinite;
                 animation-name:roll;
                 animation-timing-function: steps(1,end);
-            }     
+            }
         ]]></style>
         <style type="text/css" id="user-style">
             /* gjm8 color theme (source: https://terminal.sexy/) */

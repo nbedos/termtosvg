@@ -498,17 +498,22 @@ def _embed_css(root, timings=None, animation_duration=None):
             for (time, offset) in sorted(timings.items())
         )
 
-        css_animation = """ @keyframes roll {{
+        css_animation = """
+            :root {{
+                --animation-duration: {duration}ms;
+            }}
+
+            @keyframes roll {{
                 {transforms}
             }}
 
             #screen_view {{
-                animation-duration: {duration}ms;
+                animation-duration: var(--animation-duration);
                 animation-iteration-count:infinite;
                 animation-name:roll;
                 animation-timing-function: steps(1,end);
-            }}     
-        """.format(transforms=transforms, duration=animation_duration)
+            }}
+        """.format(duration=animation_duration, transforms=transforms)
 
         style.text = etree.CDATA(css_body + css_animation)
 
