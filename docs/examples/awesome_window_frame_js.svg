@@ -2,124 +2,20 @@
     <defs>
         <termtosvg:template_settings xmlns:termtosvg="https://github.com/nbedos/termtosvg">
             <termtosvg:screen_geometry columns="82" rows="19"/>
+            <termtosvg:animation type="waapi"/>
         </termtosvg:template_settings>
-        <style type="text/css" id="generated-style"><![CDATA[#screen {
-                font-family: 'DejaVu Sans Mono', monospace;
-                font-style: normal;
-                font-size: 14px;
-            }
+        <style type="text/css" id="generated-style"><![CDATA[
+        #screen {
+            font-family: 'DejaVu Sans Mono', monospace;
+            font-style: normal;
+            font-size: 14px;
+        }
 
         text {
             dominant-baseline: text-before-edge;
             white-space: pre;
         }
-    
-            :root {
-                --animation-duration: 27349ms;
-            }
-
-            @keyframes roll {
-                0.000%{transform:translateY(0px)}
-1.426%{transform:translateY(-323px)}
-1.953%{transform:translateY(-646px)}
-2.216%{transform:translateY(-969px)}
-2.596%{transform:translateY(-1292px)}
-3.942%{transform:translateY(-1615px)}
-4.348%{transform:translateY(-1938px)}
-5.609%{transform:translateY(-2261px)}
-6.136%{transform:translateY(-2584px)}
-6.746%{transform:translateY(-2907px)}
-7.477%{transform:translateY(-3230px)}
-8.454%{transform:translateY(-3553px)}
-8.538%{transform:translateY(-3876px)}
-10.673%{transform:translateY(-4199px)}
-11.178%{transform:translateY(-4522px)}
-11.540%{transform:translateY(-4845px)}
-12.172%{transform:translateY(-5168px)}
-13.957%{transform:translateY(-5491px)}
-15.010%{transform:translateY(-5814px)}
-15.741%{transform:translateY(-6137px)}
-16.092%{transform:translateY(-6460px)}
-17.087%{transform:translateY(-6783px)}
-18.666%{transform:translateY(-7106px)}
-19.807%{transform:translateY(-7429px)}
-20.684%{transform:translateY(-7752px)}
-21.153%{transform:translateY(-8075px)}
-21.708%{transform:translateY(-8398px)}
-25.218%{transform:translateY(-8721px)}
-26.272%{transform:translateY(-9044px)}
-28.612%{transform:translateY(-9367px)}
-29.698%{transform:translateY(-9690px)}
-30.074%{transform:translateY(-10013px)}
-30.454%{transform:translateY(-10336px)}
-32.561%{transform:translateY(-10659px)}
-32.575%{transform:translateY(-10982px)}
-34.517%{transform:translateY(-11305px)}
-35.252%{transform:translateY(-11628px)}
-35.687%{transform:translateY(-11951px)}
-36.009%{transform:translateY(-12274px)}
-36.773%{transform:translateY(-12597px)}
-37.208%{transform:translateY(-12920px)}
-38.378%{transform:translateY(-13243px)}
-38.963%{transform:translateY(-13566px)}
-39.168%{transform:translateY(-13889px)}
-39.639%{transform:translateY(-14212px)}
-40.107%{transform:translateY(-14535px)}
-40.543%{transform:translateY(-14858px)}
-40.952%{transform:translateY(-15181px)}
-41.596%{transform:translateY(-15504px)}
-42.272%{transform:translateY(-15827px)}
-42.740%{transform:translateY(-16150px)}
-43.292%{transform:translateY(-16473px)}
-43.702%{transform:translateY(-16796px)}
-44.144%{transform:translateY(-17119px)}
-44.667%{transform:translateY(-17442px)}
-45.398%{transform:translateY(-17765px)}
-46.130%{transform:translateY(-18088px)}
-48.090%{transform:translateY(-18411px)}
-48.499%{transform:translateY(-18734px)}
-48.707%{transform:translateY(-19057px)}
-49.406%{transform:translateY(-19380px)}
-49.991%{transform:translateY(-19703px)}
-51.307%{transform:translateY(-20026px)}
-55.845%{transform:translateY(-20349px)}
-55.852%{transform:translateY(-20672px)}
-58.415%{transform:translateY(-20995px)}
-58.766%{transform:translateY(-21318px)}
-58.971%{transform:translateY(-21641px)}
-59.498%{transform:translateY(-21964px)}
-60.437%{transform:translateY(-22287px)}
-62.511%{transform:translateY(-22610px)}
-63.359%{transform:translateY(-22933px)}
-64.350%{transform:translateY(-23256px)}
-64.591%{transform:translateY(-23579px)}
-65.289%{transform:translateY(-23902px)}
-65.757%{transform:translateY(-24225px)}
-66.050%{transform:translateY(-24548px)}
-66.810%{transform:translateY(-24871px)}
-70.262%{transform:translateY(-25194px)}
-70.595%{transform:translateY(-25517px)}
-70.599%{transform:translateY(-25840px)}
-70.613%{transform:translateY(-26163px)}
-70.620%{transform:translateY(-26486px)}
-70.639%{transform:translateY(-26809px)}
-70.653%{transform:translateY(-27132px)}
-82.233%{transform:translateY(-27455px)}
-83.136%{transform:translateY(-27778px)}
-83.692%{transform:translateY(-28101px)}
-84.131%{transform:translateY(-28424px)}
-86.881%{transform:translateY(-28747px)}
-87.155%{transform:translateY(-29070px)}
-96.344%{transform:translateY(-29393px)}
-            }
-
-            #screen_view {
-                animation-duration: var(--animation-duration);
-                animation-iteration-count:infinite;
-                animation-name:roll;
-                animation-timing-function: steps(1,end);
-            }
-        ]]></style>
+    ]]></style>
         <style type="text/css" id="user-style">
             /* gjm8 color theme (source: https://terminal.sexy/) */
             .foreground {fill: #c5c5c5;}
@@ -140,6 +36,12 @@
             .color13 {fill: #833c9f;}
             .color14 {fill: #0ac1cd;}
             .color15 {fill: #e5e5e5;}
+            #play-button {
+                transform: translate(30px, calc(100% - 45px));
+            }
+            #pause-button {
+                transform: translate(30px, calc(100% - 45px));
+            }
             #wide_track {
                 transform: translate(150px, calc(100% - 45px));
             }
@@ -154,12 +56,6 @@
                 font-family: 'DejaVu Sans Mono', monospace;
                 font-style: normal;
                 font-size: 14px;
-            }
-            #play-button {
-                transform: translate(30px, calc(100% - 45px));
-            }
-            #pause-button {
-                transform: translate(30px, calc(100% - 45px));
             }
         </style>
         <rect id="slider_wide_track" height="30px" width="65%"/>
@@ -186,76 +82,172 @@
     <use xlink:href="#slider_wide_track" id="wide_track" class="background"/>
     <!-- Visible track -->
     <use xlink:href="#slider_track" id="track" class="foreground"/>
-    <use xlink:href="#slider_button" id="slider_1" x="0px">
-        <animate attributeName="x" begin="0ms;anim_slider_button.end" dur="0ms" from="0" to="0" id="anim_slider_button"/>
-    </use>
+    <use xlink:href="#slider_button" id="slider_1"/>
     <use xlink:href="#icon-play" id="play-button" class="foreground"/>
     <use xlink:href="#icon-pause" id="pause-button" class="foreground"/>
-    <script type="text/javascript">
-var terminal   = document.getElementById('terminal');
-var screen = terminal.getElementById('screen');
-var slider_1  = terminal.getElementById('slider_1');
-var anim_slider_button = document.getElementById('anim_slider_button');
-var style = getComputedStyle(terminal);
-var animation_duration = parseInt(style.getPropertyValue('--animation-duration')) / 1000;
-
-function getTranslateX(elem) {
-  var style = window.getComputedStyle(elem);
-  var matrix = new WebKitCSSMatrix(style.webkitTransform);
-  return parseInt(matrix.m41)
-}
-
-track_begin = getTranslateX(terminal.getElementById('track'))
-anim_slider_button.setAttribute('from', track_begin);
-
-var track_width = terminal.getElementById('track').getBoundingClientRect().width;
-anim_slider_button.setAttribute('to', track_begin + track_width);
-
+    <script type="text/javascript" id="generated-js"><![CDATA[
+        var termtosvg_vars = {
+            transforms: [
+                {transform: 'translate3D(0, 0px, 0)', easing: 'steps(1, end)'},
+{transform: 'translate3D(0, -323px, 0)', easing: 'steps(1, end)', offset: 0.014},
+{transform: 'translate3D(0, -646px, 0)', easing: 'steps(1, end)', offset: 0.020},
+{transform: 'translate3D(0, -969px, 0)', easing: 'steps(1, end)', offset: 0.022},
+{transform: 'translate3D(0, -1292px, 0)', easing: 'steps(1, end)', offset: 0.026},
+{transform: 'translate3D(0, -1615px, 0)', easing: 'steps(1, end)', offset: 0.039},
+{transform: 'translate3D(0, -1938px, 0)', easing: 'steps(1, end)', offset: 0.043},
+{transform: 'translate3D(0, -2261px, 0)', easing: 'steps(1, end)', offset: 0.056},
+{transform: 'translate3D(0, -2584px, 0)', easing: 'steps(1, end)', offset: 0.061},
+{transform: 'translate3D(0, -2907px, 0)', easing: 'steps(1, end)', offset: 0.067},
+{transform: 'translate3D(0, -3230px, 0)', easing: 'steps(1, end)', offset: 0.075},
+{transform: 'translate3D(0, -3553px, 0)', easing: 'steps(1, end)', offset: 0.085},
+{transform: 'translate3D(0, -3876px, 0)', easing: 'steps(1, end)', offset: 0.085},
+{transform: 'translate3D(0, -4199px, 0)', easing: 'steps(1, end)', offset: 0.107},
+{transform: 'translate3D(0, -4522px, 0)', easing: 'steps(1, end)', offset: 0.112},
+{transform: 'translate3D(0, -4845px, 0)', easing: 'steps(1, end)', offset: 0.115},
+{transform: 'translate3D(0, -5168px, 0)', easing: 'steps(1, end)', offset: 0.122},
+{transform: 'translate3D(0, -5491px, 0)', easing: 'steps(1, end)', offset: 0.140},
+{transform: 'translate3D(0, -5814px, 0)', easing: 'steps(1, end)', offset: 0.150},
+{transform: 'translate3D(0, -6137px, 0)', easing: 'steps(1, end)', offset: 0.157},
+{transform: 'translate3D(0, -6460px, 0)', easing: 'steps(1, end)', offset: 0.161},
+{transform: 'translate3D(0, -6783px, 0)', easing: 'steps(1, end)', offset: 0.171},
+{transform: 'translate3D(0, -7106px, 0)', easing: 'steps(1, end)', offset: 0.187},
+{transform: 'translate3D(0, -7429px, 0)', easing: 'steps(1, end)', offset: 0.198},
+{transform: 'translate3D(0, -7752px, 0)', easing: 'steps(1, end)', offset: 0.207},
+{transform: 'translate3D(0, -8075px, 0)', easing: 'steps(1, end)', offset: 0.212},
+{transform: 'translate3D(0, -8398px, 0)', easing: 'steps(1, end)', offset: 0.217},
+{transform: 'translate3D(0, -8721px, 0)', easing: 'steps(1, end)', offset: 0.252},
+{transform: 'translate3D(0, -9044px, 0)', easing: 'steps(1, end)', offset: 0.263},
+{transform: 'translate3D(0, -9367px, 0)', easing: 'steps(1, end)', offset: 0.286},
+{transform: 'translate3D(0, -9690px, 0)', easing: 'steps(1, end)', offset: 0.297},
+{transform: 'translate3D(0, -10013px, 0)', easing: 'steps(1, end)', offset: 0.301},
+{transform: 'translate3D(0, -10336px, 0)', easing: 'steps(1, end)', offset: 0.305},
+{transform: 'translate3D(0, -10659px, 0)', easing: 'steps(1, end)', offset: 0.326},
+{transform: 'translate3D(0, -10982px, 0)', easing: 'steps(1, end)', offset: 0.326},
+{transform: 'translate3D(0, -11305px, 0)', easing: 'steps(1, end)', offset: 0.345},
+{transform: 'translate3D(0, -11628px, 0)', easing: 'steps(1, end)', offset: 0.353},
+{transform: 'translate3D(0, -11951px, 0)', easing: 'steps(1, end)', offset: 0.357},
+{transform: 'translate3D(0, -12274px, 0)', easing: 'steps(1, end)', offset: 0.360},
+{transform: 'translate3D(0, -12597px, 0)', easing: 'steps(1, end)', offset: 0.368},
+{transform: 'translate3D(0, -12920px, 0)', easing: 'steps(1, end)', offset: 0.372},
+{transform: 'translate3D(0, -13243px, 0)', easing: 'steps(1, end)', offset: 0.384},
+{transform: 'translate3D(0, -13566px, 0)', easing: 'steps(1, end)', offset: 0.390},
+{transform: 'translate3D(0, -13889px, 0)', easing: 'steps(1, end)', offset: 0.392},
+{transform: 'translate3D(0, -14212px, 0)', easing: 'steps(1, end)', offset: 0.396},
+{transform: 'translate3D(0, -14535px, 0)', easing: 'steps(1, end)', offset: 0.401},
+{transform: 'translate3D(0, -14858px, 0)', easing: 'steps(1, end)', offset: 0.405},
+{transform: 'translate3D(0, -15181px, 0)', easing: 'steps(1, end)', offset: 0.410},
+{transform: 'translate3D(0, -15504px, 0)', easing: 'steps(1, end)', offset: 0.416},
+{transform: 'translate3D(0, -15827px, 0)', easing: 'steps(1, end)', offset: 0.423},
+{transform: 'translate3D(0, -16150px, 0)', easing: 'steps(1, end)', offset: 0.427},
+{transform: 'translate3D(0, -16473px, 0)', easing: 'steps(1, end)', offset: 0.433},
+{transform: 'translate3D(0, -16796px, 0)', easing: 'steps(1, end)', offset: 0.437},
+{transform: 'translate3D(0, -17119px, 0)', easing: 'steps(1, end)', offset: 0.441},
+{transform: 'translate3D(0, -17442px, 0)', easing: 'steps(1, end)', offset: 0.447},
+{transform: 'translate3D(0, -17765px, 0)', easing: 'steps(1, end)', offset: 0.454},
+{transform: 'translate3D(0, -18088px, 0)', easing: 'steps(1, end)', offset: 0.461},
+{transform: 'translate3D(0, -18411px, 0)', easing: 'steps(1, end)', offset: 0.481},
+{transform: 'translate3D(0, -18734px, 0)', easing: 'steps(1, end)', offset: 0.485},
+{transform: 'translate3D(0, -19057px, 0)', easing: 'steps(1, end)', offset: 0.487},
+{transform: 'translate3D(0, -19380px, 0)', easing: 'steps(1, end)', offset: 0.494},
+{transform: 'translate3D(0, -19703px, 0)', easing: 'steps(1, end)', offset: 0.500},
+{transform: 'translate3D(0, -20026px, 0)', easing: 'steps(1, end)', offset: 0.513},
+{transform: 'translate3D(0, -20349px, 0)', easing: 'steps(1, end)', offset: 0.558},
+{transform: 'translate3D(0, -20672px, 0)', easing: 'steps(1, end)', offset: 0.559},
+{transform: 'translate3D(0, -20995px, 0)', easing: 'steps(1, end)', offset: 0.584},
+{transform: 'translate3D(0, -21318px, 0)', easing: 'steps(1, end)', offset: 0.588},
+{transform: 'translate3D(0, -21641px, 0)', easing: 'steps(1, end)', offset: 0.590},
+{transform: 'translate3D(0, -21964px, 0)', easing: 'steps(1, end)', offset: 0.595},
+{transform: 'translate3D(0, -22287px, 0)', easing: 'steps(1, end)', offset: 0.604},
+{transform: 'translate3D(0, -22610px, 0)', easing: 'steps(1, end)', offset: 0.625},
+{transform: 'translate3D(0, -22933px, 0)', easing: 'steps(1, end)', offset: 0.634},
+{transform: 'translate3D(0, -23256px, 0)', easing: 'steps(1, end)', offset: 0.643},
+{transform: 'translate3D(0, -23579px, 0)', easing: 'steps(1, end)', offset: 0.646},
+{transform: 'translate3D(0, -23902px, 0)', easing: 'steps(1, end)', offset: 0.653},
+{transform: 'translate3D(0, -24225px, 0)', easing: 'steps(1, end)', offset: 0.658},
+{transform: 'translate3D(0, -24548px, 0)', easing: 'steps(1, end)', offset: 0.660},
+{transform: 'translate3D(0, -24871px, 0)', easing: 'steps(1, end)', offset: 0.668},
+{transform: 'translate3D(0, -25194px, 0)', easing: 'steps(1, end)', offset: 0.703},
+{transform: 'translate3D(0, -25517px, 0)', easing: 'steps(1, end)', offset: 0.706},
+{transform: 'translate3D(0, -25840px, 0)', easing: 'steps(1, end)', offset: 0.706},
+{transform: 'translate3D(0, -26163px, 0)', easing: 'steps(1, end)', offset: 0.706},
+{transform: 'translate3D(0, -26486px, 0)', easing: 'steps(1, end)', offset: 0.706},
+{transform: 'translate3D(0, -26809px, 0)', easing: 'steps(1, end)', offset: 0.706},
+{transform: 'translate3D(0, -27132px, 0)', easing: 'steps(1, end)', offset: 0.707},
+{transform: 'translate3D(0, -27455px, 0)', easing: 'steps(1, end)', offset: 0.822},
+{transform: 'translate3D(0, -27778px, 0)', easing: 'steps(1, end)', offset: 0.831},
+{transform: 'translate3D(0, -28101px, 0)', easing: 'steps(1, end)', offset: 0.837},
+{transform: 'translate3D(0, -28424px, 0)', easing: 'steps(1, end)', offset: 0.841},
+{transform: 'translate3D(0, -28747px, 0)', easing: 'steps(1, end)', offset: 0.869},
+{transform: 'translate3D(0, -29070px, 0)', easing: 'steps(1, end)', offset: 0.872},
+{transform: 'translate3D(0, -29393px, 0)', easing: 'steps(1, end)', offset: 0.963},
+{transform: 'translate3D(0, -29393px, 0)', easing: 'steps(1, end)'}
+            ],
+            timings: {
+                duration: 27349,
+                iterations: Infinity
+            }
+        };]]></script>
+<script type="text/javascript">
+var animation = document.getElementById("screen_view").animate(
+    termtosvg_vars.transforms,
+    termtosvg_vars.timings
+)
+var terminal   = document.getElementById('terminal')
 var play_button = terminal.getElementById('play-button');
 var pause_button = terminal.getElementById('pause-button');
+var is_playing = true;
 
-// Set slider button animation duration
-anim_slider_button.setAttribute('dur', style.getPropertyValue('--animation-duration'));
-
-play_button.setAttribute('display', 'none');
-pause_button.setAttribute('display', 'inline');
+animation.onfinish = function() {
+  play_button.setAttribute('display', 'inline')
+  pause_button.setAttribute('display', 'none')
+  is_playing = false;
+};
 
 function togglePlayPause() {
-    if (terminal.animationsPaused() || screen.animationsPaused()) {
-        terminal.unpauseAnimations()
-        screen.unpauseAnimations()
-        play_button.setAttribute('display', 'none')
-        pause_button.setAttribute('display', 'inline')
+    if (is_playing) {
+      animation.pause()
+      play_button.setAttribute('display', 'inline')
+      pause_button.setAttribute('display', 'none')
+      is_playing = false
     } else {
-        terminal.pauseAnimations()
-        screen.pauseAnimations()
-        play_button.setAttribute('display', 'inline')
-        pause_button.setAttribute('display', 'none')
+      animation.play()
+      play_button.setAttribute('display', 'none')
+      pause_button.setAttribute('display', 'inline')
+      is_playing = true
     }
 };
 
 play_button.addEventListener('click', togglePlayPause, false)
 pause_button.addEventListener('click', togglePlayPause, false)
 
-var limitLower = parseInt(anim_slider_button.getAttribute('from'));
-/* Subtract a few pixels so that bringing the button to the end of the track does make it jump to
-the beginning */
-var limitUpper = parseInt(anim_slider_button.getAttribute('to')) - 8;
 
+var style = getComputedStyle(terminal);
+var animation_duration = termtosvg_vars.timings.duration / 1000
 var timer = terminal.getElementById('timer')
 
-function timer_from_ms(t) {
+function timer_from_seconds(t) {
     minutes = Math.floor(t / 60);
     seconds = Math.floor(t % 60);
     return minutes + ':' + ("0" + seconds).slice(-2)
 }
+function update_timer() {
+    var current_time = (animation.currentTime / 1000) % animation_duration
+    timer.textContent =  timer_from_seconds(current_time) + "/" + timer_from_seconds(animation_duration)
+}
+setInterval(update_timer, "100ms")
 
-function update_timer(){
-    var current_time = terminal.getCurrentTime() % animation_duration
-    timer.textContent =  timer_from_ms(current_time) + "/" + timer_from_ms(animation_duration)
+
+
+
+var slider_1  = terminal.getElementById('slider_1');
+function getTranslateX(elem) {
+  var style = window.getComputedStyle(elem);
+  var matrix = new WebKitCSSMatrix(style.webkitTransform);
+  return parseInt(matrix.m41)
 }
 
-setInterval(update_timer, "100ms")
+var limitLower = parseInt(getTranslateX(terminal.getElementById('track')));
+var limitUpper = limitLower + parseInt(terminal.getElementById('track').getBoundingClientRect().width) - 8
 
 // Return X position for an event
 function mx(evt){
@@ -270,9 +262,7 @@ var move = function(evt){
     if ( cursor_position.x &lt; limitLower || cursor_position.x &gt; limitUpper ) {
         return;
     }
-    new_time = animation_duration * (cursor_position.x - limitLower) / (limitUpper - limitLower)
-    terminal.setCurrentTime(new_time)
-    screen.setCurrentTime(new_time)
+    animation.currentTime = animation_duration * 1000 * (cursor_position.x - limitLower) / (limitUpper - limitLower)
 };
 
 // Move the slider button to the cursor position when a click happens on the track of the slider
@@ -282,10 +272,10 @@ terminal.getElementById('track').addEventListener('click', move, false);
 // Enable slider button dragging along the track
 var dragging = false;
 slider_1.addEventListener('mousedown',function(evt){
-        is_playing = !(terminal.animationsPaused() &amp;&amp; screen.animationsPaused())
         if (is_playing) {
-            terminal.pauseAnimations()
-            screen.pauseAnimations()
+            animation.pause()
+            play_button.setAttribute('display', 'inline')
+            pause_button.setAttribute('display', 'none')
         }
 
         dragging = true;
@@ -293,11 +283,20 @@ slider_1.addEventListener('mousedown',function(evt){
         document.documentElement.addEventListener('mouseup', function(){
                 dragging = false;
                 if (is_playing) {
-                    terminal.unpauseAnimations()
-                    screen.unpauseAnimations()
+                    animation.play()
+                    play_button.setAttribute('display', 'none')
+                    pause_button.setAttribute('display', 'inline')
                 }
                 terminal.removeEventListener('mousemove', move, false);
         }, false);
 }, false);
+
+function update_slider_button() {
+    var current_time = (animation.currentTime / 1000) % animation_duration
+    var current_position = limitLower + (limitUpper - limitLower) * current_time / animation_duration
+    slider_1.setAttribute('x', parseInt(current_position)+'px')
+}
+
+setInterval(update_slider_button, "100ms")
 </script>
 </svg>

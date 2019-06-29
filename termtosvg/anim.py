@@ -212,27 +212,48 @@ def _render_animation(screen_height, frames, root, cell_width, cell_height):
         screen_view.append(frame_group)
         animation_duration = frame.time + frame.duration
         timings[frame.time] = -offset
-        definitions.update(frame_definitions )
+        definitions.update(frame_definitions)
 
     tree_defs = etree.SubElement(svg_screen_tag, 'defs')
     for definition in definitions.values():
         tree_defs.append(definition)
 
     svg_screen_tag.append(screen_view)
-    _embed_css(root, timings, animation_duration)
+    _add_animation(root, timings, animation_duration)
     return root
+
+
+def _add_animation(root, timings, animation_duration):
+    animators = {
+        'css': _embed_css,
+        'waapi': _embed_waapi,
+    }
+
+    settings = root.find('.//{{{}}}defs/{{{}}}template_settings'
+                         .format(SVG_NS, TERMTOSVG_NS))
+    if settings is None:
+        raise TemplateError('Missing "template_settings" element in definitions')
+
+    animation = settings.find('{{{}}}animation[@type]'.format(TERMTOSVG_NS))
+    if animation is None:
+        raise TemplateError('Missing or invalid "animation" element in "template_settings"')
+
+    f = animators.get(animation.attrib['type'].lower())
+    if f is None:
+        raise TemplateError("Attribute 'type' of element 'animation' must be one of {}"
+                            .format(', '.join(animators.keys())))
+
+    f(root, timings, animation_duration)
 
 
 def _render_timed_frame(offset, buffer, cell_height, cell_width, definitions):
     """Return a group element containing an SVG version of the provided frame.
-    This group is animated, that is to say displayed then removed according to
-    the timing arguments.
 
     :param buffer: 2D array of CharacterCells
     :param cell_height: Height of a character cell in pixels
     :param cell_width: Width of a character cell in pixels
     :param definitions: Existing definitions (updated in place)
-    :return: A tuple consisting of the animated group and the new definitions
+    :return: A tuple consisting of a group element and new definitions
     """
     frame_group_tag = etree.Element('g')
 
@@ -416,7 +437,7 @@ def resize_template(template, geometry, cell_width, cell_height):
         raise TemplateError('Missing "template_settings" element in definitions')
 
     svg_geometry = settings.find('{{{}}}screen_geometry[@columns][@rows]'
-                             .format(TERMTOSVG_NS))
+                                 .format(TERMTOSVG_NS))
     if svg_geometry is None:
         raise TemplateError('Missing "screen_geometry" element in "template_settings"')
 
@@ -492,11 +513,22 @@ def _embed_css(root, timings=None, animation_duration=None):
         if animation_duration == 0:
             raise ValueError('Animation duration must be greater than 0')
 
-        transforms = os.linesep.join(
-            "{time:.3f}%{{transform:translateY({offset}px)}}"
-                .format(time=100.0 * time/animation_duration, offset=offset)
-            for (time, offset) in sorted(timings.items())
-        )
+        transforms = []
+        last_offset = None
+        transform_format = "{time:.3f}%{{transform:translateY({offset}px)}}"
+        for time, offset in sorted(timings.items()):
+            transforms.append(
+                transform_format.format(
+                    time=100.0 * time/animation_duration,
+                    offset=offset
+                )
+            )
+            last_offset = offset
+
+        if last_offset is not None:
+            transforms.append(
+                transform_format.format(time=100, offset=last_offset)
+            )
 
         css_animation = """
             :root {{
@@ -512,10 +544,88 @@ def _embed_css(root, timings=None, animation_duration=None):
                 animation-iteration-count:infinite;
                 animation-name:roll;
                 animation-timing-function: steps(1,end);
+                animation-fill-mode: forwards;
             }}
-        """.format(duration=animation_duration, transforms=transforms)
+        """.format(
+            duration=animation_duration,
+            transforms=os.linesep.join(transforms)
+        )
 
         style.text = etree.CDATA(css_body + css_animation)
+
+    return root
+
+
+def _embed_waapi(root, timings=None, animation_duration=None):
+    try:
+        style = root.find('.//{{{ns}}}defs/{{{ns}}}style[@id="generated-style"]'
+                          .format(ns=SVG_NS))
+    except etree.Error as exc:
+        raise TemplateError('Invalid template') from exc
+
+    if style is None:
+        raise TemplateError('Missing <style id="generated-style" ...> element '
+                            'in "defs"')
+
+    css_body = """
+        #screen {
+            font-family: 'DejaVu Sans Mono', monospace;
+            font-style: normal;
+            font-size: 14px;
+        }
+
+        text {
+            dominant-baseline: text-before-edge;
+            white-space: pre;
+        }
+    """
+
+    style.text = etree.CDATA(css_body)
+
+    if animation_duration and timings:
+        if animation_duration == 0:
+            raise ValueError('Animation duration must be greater than 0')
+
+        script_element = root.find('.//{{{ns}}}script[@id="generated-js"]'
+                                   .format(ns=SVG_NS))
+        if script_element is None:
+            raise TemplateError(
+                'Missing <script id="generated-js" ...> element')
+
+
+        transform_no_offset = "{{transform: 'translate3D(0, {y_pos}px, 0)', easing: 'steps(1, end)'}}"
+        transform_with_offset = "{{transform: 'translate3D(0, {y_pos}px, 0)', easing: 'steps(1, end)', offset: {offset:.3f}}}"
+
+        transforms = []
+        last_pos = None
+        for time, y_pos in sorted(timings.items()):
+            if last_pos is None:
+                transforms.append(transform_no_offset.format(y_pos=y_pos))
+            else:
+                transforms.append(
+                    transform_with_offset
+                    .format(offset=time / animation_duration, y_pos=y_pos)
+                )
+            last_pos = y_pos
+
+        if last_pos is not None:
+            transforms.append(transform_no_offset.format(y_pos=last_pos))
+
+        js_animation = """
+        var termtosvg_vars = {{
+            transforms: [
+                {transforms}
+            ],
+            timings: {{
+                duration: {duration},
+                iterations: Infinity
+            }}
+        }};""".format(
+            transforms=',{}'.format(os.linesep).join(transforms),
+            duration=animation_duration
+        )
+
+        script_element.text = etree.CDATA(js_animation)
 
     return root
 

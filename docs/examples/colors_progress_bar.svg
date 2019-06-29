@@ -2,6 +2,7 @@
     <defs>
         <termtosvg:template_settings xmlns:termtosvg="https://github.com/nbedos/termtosvg">
             <termtosvg:screen_geometry columns="82" rows="19"/>
+            <termtosvg:animation type="css"/>
         </termtosvg:template_settings>
         <style type="text/css" id="generated-style"><![CDATA[#screen {
                 font-family: 'DejaVu Sans Mono', monospace;
@@ -125,6 +126,7 @@
 94.858%{transform:translateY(-33269px)}
 95.433%{transform:translateY(-33592px)}
 96.219%{transform:translateY(-33915px)}
+100.000%{transform:translateY(-33915px)}
             }
 
             #screen_view {
@@ -132,6 +134,7 @@
                 animation-iteration-count:infinite;
                 animation-name:roll;
                 animation-timing-function: steps(1,end);
+                animation-fill-mode: forwards;
             }
         ]]></style>
         <style type="text/css" id="user-style">
