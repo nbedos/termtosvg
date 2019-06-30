@@ -9,12 +9,11 @@ line sessions as standalone SVG animations.
 
 * [Gallery of examples](https://nbedos.github.io/termtosvg/pages/examples.html)
 * [Gallery of templates](https://nbedos.github.io/termtosvg/pages/templates.html)
-* [Manual page](man/termtosvg.md)
 
 ## Features
 * Produce lightweight and clean looking animations or still frames embeddable on a project page
-* Custom color themes, terminal UI and animation controls via [SVG templates](man/termtosvg-templates.md)
-* Compatible with asciinema recording format
+* Custom color themes, terminal UI and animation controls via user-defined [SVG templates](man/termtosvg-templates.md)
+* Rendering of recordings in asciicast format made with asciinema
     
 ## Installation
 termtosvg is compatible with Linux, macOS and BSD OSes, requires Python >= 3.5 and can be installed using pip:
@@ -24,7 +23,6 @@ pip3 install --user termtosvg
 
 Various independently maintained, OS specific packages have been made available by the community:
 
-    
 | OS       | Repository  | Installation command  |
 |----------|-------------|---|
 | Archlinux  | [Arch](https://www.archlinux.org/packages/community/any/termtosvg/)  |`pacman -S termtosvg`   |
@@ -50,10 +48,18 @@ Once you are done, exit the shell to end the recording:
 $ exit
 Recording ended, file is /tmp/termtosvg_exp5nsr4.svg
 ```
-Finally, use your favorite web browser to play the animation:
+Then, use your favorite web browser to play the animation:
 ```
 $ firefox /tmp/termtosvg_exp5nsr4.svg
 ```
+
+Finally, embedding the animation in e.g. a [README.md](README.md) file on GitHub can
+be achieved with a relative link to the animation:
+```markdown
+![Example](./docs/examples/awesome_window_frame.svg)
+```
+
+See the [manual page](man/termtosvg.md) for more details.
 
 ## Dependencies
 termtosvg uses:
