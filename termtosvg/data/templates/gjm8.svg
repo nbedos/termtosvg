@@ -118,7 +118,7 @@
             #screen_view {
                 animation-fill-mode: forwards;
                 animation-duration: var(--animation-duration);
-                animation-iteration-count:1;
+                animation-iteration-count:infinite;
                 animation-name:roll;
                 animation-timing-function: steps(1,end);
             }

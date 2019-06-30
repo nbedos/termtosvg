@@ -9,7 +9,8 @@ templates are SVG files in which termtosvg embeds animations. Using templates ma
 * Add a terminal UI or window frame to the animation
 * Have interactive animations (for example play/pause buttons)
 
-See [here](https://nbedos.github.io/termtosvg/pages/templates.html) for a gallery of the templates included with termtosvg
+See [here](https://nbedos.github.io/termtosvg/pages/templates.html) for a gallery of the templates
+included with termtosvg
 
 ## TEMPLATE STRUCTURE
 
@@ -21,6 +22,7 @@ Here is the basic structure of a template:
     <defs>
         <termtosvg:template_settings xmlns:termtosvg="https://github.com/nbedos/termtosvg">
             <termtosvg:screen_geometry columns="82" rows="19"/>
+            <termtosvg:animation type="css"/>
         </termtosvg:template_settings>
         <style type="text/css" id="generated-style">
             <!-- [snip!] -->
@@ -32,6 +34,9 @@ Here is the basic structure of a template:
     <svg id="screen" width="656" viewBox="0 0 656 323" preserveAspectRatio="xMidYMin meet">
         <!-- [snip!] -->
     </svg>
+    <script type="text/javascript" id="generated-js">
+        <!-- [snip!] -->
+    </script>
 </svg>
 ```
 
@@ -39,10 +44,81 @@ Overall, one can identify:
 
 * An `svg` element with id "terminal"
 * A `defs` element which includes:
-    * A termtosvg specific `template_settings` element used to specify the terminal size (number of columns and rows) for which the template is made
+    * A termtosvg specific `template_settings` element used to specify:
+        * the terminal size (number of columns and rows) for which the template is made
+        * the animation rendering methods ("css" for CSS or "waapi" for Web Animations API)
     * A `style` element with id "generated-style" that will be overwritten by termtosvg
     * Another `style` element with id "user-style" that should contain at least the terminal color theme. This element is defined by the template creator and won't be overwritten by termtosvg
 * An inner `svg` element with id "screen" which will contain the animation produced by termtosvg
+* A machine generated script element with id "generated-js"
+
+### Animation rendering: CSS vs Web Animations API
+termtosvg can create animations using either CSS or Web Animations API.
+
+#### Choice of the rendering method
+The rendering method used for a specific template is defined by an element `termtosvg:animation`
+of the template which has an attribute "type" set to either "css" or "waapi".
+
+#### CSS animations
+When set to use CSS animations, termtosvg defines a single CSS animation for the element
+with id `screen_view` as shown below. If need be, this animation can be overriden in another,
+user defined, style element.
+
+```SVG
+<style type="text/css" id="generated-style"><![CDATA[
+/* Snip! */
+
+@keyframes roll {
+    0.000%{transform:translateY(0px)}
+    1.426%{transform:translateY(-323px)}
+    1.953%{transform:translateY(-646px)}
+    /* Snip! */
+    96.344%{transform:translateY(-29393px)}
+}
+
+#screen_view {
+    animation-duration: var(--animation-duration);
+    animation-iteration-count:infinite;
+    animation-name:roll;
+    animation-timing-function: steps(1,end);
+}
+]]></style>
+```
+
+CSS animations makes it a little bit harder to add interactivity using JS code but have a better
+chance to be displayed as is by online platforms.
+
+#### Web Animations API
+When using Web Animations API, termtosvg defines an object `termtosvg_vars` with two attributes
+named `transforms` and `timings` as shown below.
+```SVG
+<script type="text/javascript" id="generated-js"><![CDATA[
+var termtosvg_vars = {
+    transforms: [
+        {transform: 'translate3D(0, 0px, 0)', easing: 'steps(1, end)'},
+        {transform: 'translate3D(0, -323px, 0)', easing: 'steps(1, end)', offset: 0.014},
+        {transform: 'translate3D(0, -646px, 0)', easing: 'steps(1, end)', offset: 0.020},
+        /* Snip! */
+        {transform: 'translate3D(0, -29393px, 0)', easing: 'steps(1, end)'}
+    ],
+    timings: {
+        duration: 27349,
+        iterations: Infinity
+    }
+};]]></script>
+```
+These two attributes should be used in another user-defined script element to create an animation
+for the element with id "screen_view". Here is an abridged example taken from the window_frame_js
+template.
+
+```SVG
+<script type="text/javascript">
+var animation = document.getElementById("screen_view").animate(
+    termtosvg_vars.transforms,
+    termtosvg_vars.timings
+)
+</script>
+```
 
 
 ## TEMPLATE CUSTOMIZATION
@@ -95,6 +171,17 @@ Complete example here: [window_frame.svg](../termtosvg/data/templates/window_fra
 Just add your code in a new `script` element.
 
 Complete example here: [window_frame_js](../termtosvg/data/templates/window_frame_js.svg)
+
+### Restricting the animation to a single loop
+For a template using CSS, simple add a custom style element specifying the number of loops like so:
+```SVG
+<style type="text/css" id="user-style">
+    #screen_view {
+        animation-iteration-count:1;
+    }
+</style>
+```
+Complete example here: [window_frame_js](../termtosvg/data/templates/gjm8_single_loop.svg)
 
 ## termtosvg internal template usage
 In order to produce the final animation, termtosvg will modify the template in a number of ways.

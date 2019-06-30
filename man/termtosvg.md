@@ -3,11 +3,11 @@
 % December 2018
 
 ## SYNOPSIS
-**termtosvg** [output_path] [-c COMMAND] [-g GEOMETRY] [-m MIN_DURATION] [-M MAX_DURATION] [-s] [-t TEMPLATE] [--help]
+**termtosvg** [output_path] [-c COMMAND] [-D DELAY] [-g GEOMETRY] [-m MIN_DURATION] [-M MAX_DURATION] [-s] [-t TEMPLATE] [--help]
 
 **termtosvg record** [output_path] [-c COMMAND] [-g GEOMETRY] [-h]
 
-**termtosvg render** *input_file* [output_path] [-m MIN_DURATION] [-M MAX_DURATION] [-s] [-t TEMPLATE] [-h]
+**termtosvg render** *input_file* [output_path] [-D DELAY] [-m MIN_DURATION] [-M MAX_DURATION] [-s] [-t TEMPLATE] [-h]
 
 ### DESCRIPTION
 termtosvg makes recordings of terminal sessions in animated SVG format. If no output
@@ -35,6 +35,9 @@ program to execute together will all arguments to be made available to the progr
 `--command='python -h'` would make termtosvg record the usage of the Python interpreter. If this
 option is not set, termtosvg will record the program specified by the $SHELL environment variable
 or `/bin/sh`.
+
+#### -D, --loop-delay=DELAY
+Duration of the delay between two consecutive loops of the animation in milliseconds.
 
 ##### -g, --screen-geometry=GEOMETRY
 geometry of the terminal screen used for rendering the animation. The geometry must
@@ -115,6 +118,11 @@ termtosvg render recording.cast animation.svg
 Enforce both minimal and maximal frame durations
 ```
 termtosvg -m 17 -M 2000
+```
+
+Specify a 2 seconds delay between animation loops
+```
+termtosvg -D 2000
 ```
 
 Render still frames instead of an animated SVG using a specific template

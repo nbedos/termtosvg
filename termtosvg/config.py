@@ -8,6 +8,7 @@ PKG_TEMPLATE_PATH = 'data/templates'
 DEFAULT_TEMPLATES_NAMES = [
     'gjm8.svg',
     'gjm8_play.svg',
+    'gjm8_single_loop.svg',
     'dracula.svg',
     'solarized_dark.svg',
     'solarized_light.svg',
