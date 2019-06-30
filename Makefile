@@ -46,7 +46,6 @@ html:
 	termtosvg render $(CASTS_DIR)/htop.cast $(EXAMPLES_DIR)/htop_gjm8.svg -t gjm8
 	termtosvg render $(CASTS_DIR)/ipython.cast $(EXAMPLES_DIR)/ipython_window_frame.svg -t window_frame
 	termtosvg render $(CASTS_DIR)/unittest.cast $(EXAMPLES_DIR)/unittest_solarized_dark.svg -t solarized_dark
-	rm -rf $(CASTS_DIR)
 
 deploy_test:
 	twine upload -r pypitest dist/*

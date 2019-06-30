@@ -2,8 +2,8 @@
 
 This module exposes functions for
     - recording the output of a shell process in asciicast v2 format (`record`)
-    - reporting updates made to the screen during a terminal session that
-    was recorded (`screen_events`)
+    - producing frames (2D array of CharacterCell) from the raw output of
+    `record` (`timed_frames`)
 
 A context manager named `TerminalMode` is also provided and is to be used with
 the `record` function to ensure that the terminal state is always properly
@@ -20,7 +20,6 @@ import select
 import struct
 import termios
 import tty
-from copy import copy
 from collections import defaultdict, namedtuple
 from typing import Iterator
 
@@ -30,17 +29,7 @@ import pyte.screens
 from termtosvg import anim
 from termtosvg.asciicast import AsciiCastV2Event, AsciiCastV2Header
 
-
-def _cursor___eq__(self, other):
-    # TODO: See if upstream is interested in incorparating this
-    attributes = ['x', 'y', 'hidden']
-    return (isinstance(other, self.__class__) and
-            all(self.__getattribute__(a) == other.__getattribute__(a)
-                for a in attributes))
-
-
-# Monkey patch equality operator so that we can detect changes of a cursor
-pyte.screens.Cursor.__eq__ = _cursor___eq__
+TimedFrame = namedtuple('TimedFrame', ['time', 'duration', 'buffer'])
 
 
 class TerminalMode:
@@ -220,11 +209,6 @@ def _group_by_time(event_records, min_rec_duration, max_rec_duration, last_rec_d
     yield accumulator_event
 
 
-Configuration = namedtuple('Configuration', ['width', 'height'])
-DisplayLine = namedtuple('DisplayLine', ['row', 'line', 'time', 'duration'])
-DisplayLine.__new__.__defaults__ = (None,)
-
-
 def record(process_args, columns, lines, input_fileno, output_fileno):
     """Record a process in asciicast v2 format
 
@@ -263,22 +247,15 @@ def record(process_args, columns, lines, input_fileno, output_fileno):
                                duration=None)
 
 
-def screen_events(records, min_frame_dur=1, max_frame_dur=None, last_frame_dur=1000):
-    """Yields events describing updates to the screen for this recording
+def timed_frames(records, min_frame_dur=1, max_frame_dur=None, last_frame_dur=1000):
+    """Return a tuple made of the geometry of the screen and a generator of
+    instances of TimedFrame computed from asciicast records
 
-    The first event yielded is an instance of Configuration which
-    describes the geometry of the screen.
-    All following events are instances of DisplayLine. Those
-    events describe the appearance of a line on the screen (if the duration
-    of the event is set to None) or the erasure of a line (if the duration
-    of the event is an integer).
+    Asciicast records are first coalesced so that the mininum duration between
+    two frames is at least `min_frame_dur` milliseconds. Events with a duration
+    greater than `max_frame_dur` will see their duration reduced to that value.
 
-    Before updates to the screen are reported to the caller they will be
-    coalesced so that the mininum duration between two updates is at least
-    `min_frame_dur` milliseconds. Events with a duration greater than
-    `max_frame_dur` will see their duration reduced to that value.
-
-    The duration of all events lasting until the end of the animation
+    The duration of all frames lasting until the end of the animation
     will be adjusted so that the last frame of the animation lasts
     `last_frame_dur`
 
@@ -298,61 +275,35 @@ def screen_events(records, min_frame_dur=1, max_frame_dur=None, last_frame_dur=1
 
     if not max_frame_dur and header.idle_time_limit:
         max_frame_dur = int(header.idle_time_limit * 1000)
-    yield Configuration(header.width, header.height)
 
-    screen = pyte.Screen(header.width, header.height)
-    stream = pyte.Stream(screen)
+    def generator():
+        screen = pyte.Screen(header.width, header.height)
+        stream = pyte.Stream(screen)
+        timed_records = _group_by_time(records, min_frame_dur, max_frame_dur,
+                                       last_frame_dur)
 
-    timed_records = _group_by_time(records, min_frame_dur, max_frame_dur,
-                                   last_frame_dur)
-    last_cursor = None
-    display_events = {}
-    time = 0
-    for record_ in timed_records:
-        assert isinstance(record_, AsciiCastV2Event)
-        for char in record_.event_data:
-            stream.feed(char)
-        redraw_buffer, last_cursor = _redraw_buffer(screen, last_cursor)
-        display_events, events = _feed(redraw_buffer, display_events, time)
-        if events:
-            yield events
-        screen.dirty.clear()
-        time += int(1000 * record_.duration)
+        for record_ in timed_records:
+            assert isinstance(record_, AsciiCastV2Event)
+            for char in record_.event_data:
+                stream.feed(char)
+            yield TimedFrame(int(1000 * record_.time),
+                             int(1000 * record_.duration),
+                             _screen_buffer(screen))
 
-    events = []
-    for row in list(display_events):
-        event_without_duration = display_events.pop(row)
-        duration = time - event_without_duration.time
-        events.append(event_without_duration._replace(duration=duration))
-
-    if events:
-        yield events
+    return (header.width, header.height), generator()
 
 
-def _redraw_buffer(screen, last_cursor):
-    """Return lines of the screen to be redrawn and the current cursor
-
-    Most of the work is done by Pyte through Screen.dirty. We just
-    need to monitor updates to the cursor.
-    """
+def _screen_buffer(screen):
     assert isinstance(screen, pyte.Screen)
-    assert isinstance(last_cursor, (type(None), pyte.screens.Cursor))
-
-    rows_changed = set(screen.dirty)
-    if screen.cursor != last_cursor:
-        if not screen.cursor.hidden:
-            rows_changed.add(screen.cursor.y)
-        if last_cursor is not None and not last_cursor.hidden:
-            rows_changed.add(last_cursor.y)
 
     buffer = defaultdict(dict)
-    for row in rows_changed:
+    for row in range(screen.lines):
         buffer[row] = {
             column: anim.CharacterCell.from_pyte(screen.buffer[row][column])
             for column in screen.buffer[row]
         }
 
-    if screen.cursor != last_cursor and not screen.cursor.hidden:
+    if not screen.cursor.hidden:
         row, column = screen.cursor.y, screen.cursor.x
         try:
             data = screen.buffer[row][column].data
@@ -364,34 +315,7 @@ def _redraw_buffer(screen, last_cursor):
                                         bg=screen.cursor.attrs.bg,
                                         reverse=True)
         buffer[row][column] = anim.CharacterCell.from_pyte(cursor_char)
-
-    current_cursor = copy(screen.cursor)
-    return buffer, current_cursor
-
-
-def _feed(redraw_buffer, display_events, time):
-    """Return events based on the lines to redraw and the lines on screen
-
-    Warning: display_events is updated in place (and also returned)
-    """
-    events = []
-
-    # Send TerminalDisplayDuration event for old lines that were
-    # displayed on the screen and need to be redrawn
-    for row in list(display_events):
-        if row in redraw_buffer:
-            event_without_duration = display_events.pop(row)
-            duration = time - event_without_duration.time
-            events.append(event_without_duration._replace(duration=duration))
-
-    # Send TerminalDisplayLine event for non empty new (or updated) lines
-    for row in redraw_buffer:
-        if redraw_buffer[row]:
-            display_events[row] = DisplayLine(row, redraw_buffer[row], time,
-                                              None)
-            events.append(display_events[row])
-
-    return display_events, events
+    return buffer
 
 
 def get_terminal_size(fileno):

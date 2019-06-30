@@ -31,6 +31,8 @@ class TestMain(unittest.TestCase):
         [],
         ['-c', 'sh'],
         ['--screen-geometry', '82x19'],
+        ['-D', '1234'],
+        ['--loop-delay', '1234'],
         ['-g', '82x19'],
         ['--template', 'plain'],
         ['-t', 'plain'],
@@ -59,13 +61,16 @@ class TestMain(unittest.TestCase):
     def test_parse(self):
         for args in self.test_cases:
             with self.subTest(case=args):
-                cmd, parsed_args = termtosvg.main.parse(args=args,
-                                                        templates={'plain': b''},
-                                                        default_template='plain',
-                                                        default_geometry='48x95',
-                                                        default_min_dur=2,
-                                                        default_max_dur=None,
-                                                        default_cmd='sh')
+                cmd, parsed_args = termtosvg.main.parse(
+                    args=args,
+                    templates={'plain': b''},
+                    default_template='plain',
+                    default_geometry='48x95',
+                    default_min_dur=2,
+                    default_max_dur=None,
+                    default_cmd='sh',
+                    default_loop_delay=1000
+                )
 
     @staticmethod
     def run_main(args, process_input):
@@ -115,8 +120,8 @@ class TestMain(unittest.TestCase):
             args = ['termtosvg', 'render', cast_filename, svg_filename]
             TestMain.run_main(args, [])
 
-        with self.subTest(case='render (with geometry)'):
-            args = ['termtosvg', 'render', cast_filename]
+        with self.subTest(case='render (with delay)'):
+            args = ['termtosvg', 'render', cast_filename, '-D', '1234']
             TestMain.run_main(args, [])
 
         with self.subTest(case='render (with template)'):
@@ -150,20 +155,22 @@ class TestMain(unittest.TestCase):
             args = ['termtosvg', svg_filename, '--template', 'window_frame']
             TestMain.run_main(args, SHELL_INPUT)
 
-        cast_v1_data = '\r\n'.join(['{',
-                                    '  "version": 1,',
-                                    '  "width": 80,',
-                                    '  "height": 32,',
-                                    '  "duration": 10,',
-                                    '  "command": "/bin/zsh",',
-                                    '  "title": "",',
-                                    '  "env": {},',
-                                    '  "stdout": [',
-                                    '    [0.010303, "\\u001b[1;31mnico \\u001b[0;34m~\\u001b[0m"],',
-                                    '    [1.136094, "❤ ☀ ☆ ☂ ☻ ♞ ☯ ☭ ☢ € →"],',
-                                    '    [0.853603, "\\r\\n"]',
-                                    '  ]',
-                                    '}'])
+        cast_v1_data = '\r\n'.join([
+            '{',
+            '  "version": 1,',
+            '  "width": 80,',
+            '  "height": 32,',
+            '  "duration": 10,',
+            '  "command": "/bin/zsh",',
+            '  "title": "",',
+            '  "env": {},',
+            '  "stdout": [',
+            '    [0.010303, "\\u001b[1;31mnico \\u001b[0;34m~\\u001b[0m"],',
+            '    [1.136094, "❤ ☀ ☆ ☂ ☻ ♞ ☯ ☭ ☢ € →"],',
+            '    [0.853603, "\\r\\n"]',
+            '  ]',
+            '}',
+        ])
 
         with self.subTest(case='render v1 cast file'):
             _, cast_filename_v1 = tempfile.mkstemp(prefix='termtosvg_', suffix='.cast')
@@ -181,5 +188,8 @@ class TestMain(unittest.TestCase):
         ]
         for case in test_cases:
             with self.subTest(case=case):
-                self.assertEqual(termtosvg.main.integral_duration(case), 100)
+                self.assertEqual(
+                    termtosvg.main.integral_duration_validation(case),
+                    100
+                )
 
