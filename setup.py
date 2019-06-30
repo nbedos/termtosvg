@@ -37,6 +37,7 @@ setup(
     install_requires=[
         'lxml',
         'pyte',
+        'wcwidth',
     ],
     extras_require={
         'dev': [

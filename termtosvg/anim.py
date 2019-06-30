@@ -8,6 +8,7 @@ from itertools import groupby
 import pyte.graphics
 import pyte.screens
 from lxml import etree
+from wcwidth import wcswidth
 
 # Ugliest hack: Replace the first 16 colors rgb values by their names so that
 # termtosvg can distinguish FG_BG_256[0] (which defaults to black #000000 but
@@ -341,9 +342,15 @@ def _render_line_bg_colors(screen_line, height, cell_height, cell_width):
                             if cell.background_color != 'background']
 
     key = ConsecutiveWithSameAttributes(['background_color'])
-    rect_tags = [_make_rect_tag(column, len(list(group)), height, cell_width, cell_height,
-                                attributes['background_color'])
-                 for (column, attributes), group in groupby(non_default_bg_cells, key)]
+    rect_tags = [
+        _make_rect_tag(
+            column,
+            wcswidth(''.join(t[1].text for t in group)),
+            height,
+            cell_width,
+            cell_height,
+            attributes['background_color']
+        ) for (column, attributes), group in groupby(non_default_bg_cells, key)]
 
     return rect_tags
 
@@ -352,7 +359,7 @@ def _make_text_tag(column, attributes, text, cell_width):
     """Build SVG text element based on content and style attributes"""
     text_tag_attributes = {
         'x': str(column * cell_width),
-        'textLength': str(len(text) * cell_width),
+        'textLength': str(wcswidth(text) * cell_width),
     }
     if attributes['bold']:
         text_tag_attributes['font-weight'] = 'bold'
