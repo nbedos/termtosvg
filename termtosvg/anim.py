@@ -538,16 +538,12 @@ def _embed_css(root, timings=None, animation_duration=None):
             )
 
         css_animation = """
-            :root {{
-                --animation-duration: {duration}ms;
-            }}
-
             @keyframes roll {{
                 {transforms}
             }}
 
             #screen_view {{
-                animation-duration: var(--animation-duration);
+                animation-duration: {duration}ms;
                 animation-iteration-count:infinite;
                 animation-name:roll;
                 animation-timing-function: steps(1,end);

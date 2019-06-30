@@ -15,10 +15,6 @@
             white-space: pre;
         }
     
-            :root {
-                --animation-duration: 26450ms;
-            }
-
             @keyframes roll {
                 0.000%{transform:translateY(0px)}
 4.635%{transform:translateY(-323px)}
@@ -130,7 +126,7 @@
             }
 
             #screen_view {
-                animation-duration: var(--animation-duration);
+                animation-duration: 26450ms;
                 animation-iteration-count:infinite;
                 animation-name:roll;
                 animation-timing-function: steps(1,end);
