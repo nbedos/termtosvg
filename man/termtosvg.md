@@ -10,11 +10,12 @@
 **termtosvg render** *input_file* [output_path] [-D DELAY] [-m MIN_DURATION] [-M MAX_DURATION] [-s] [-t TEMPLATE] [-h]
 
 ### DESCRIPTION
-termtosvg makes recordings of terminal sessions in animated SVG format. If no output
-filename is provided, a random temporary filename will be automatically generated.
+termtosvg makes recordings of terminal sessions in animated SVG format.
 
 #### COMMANDS
-The default behavior of termtosvg is to render an SVG animation of a shell session
+The default behavior of termtosvg is to render an SVG animation of a shell
+session.  If no output filename is provided, a random temporary filename will
+be automatically generated.
 
 ##### termtosvg record
 Record a terminal session in asciicast v2 format. The recording is a text file which
@@ -30,7 +31,7 @@ is also possible.
 ## OPTIONS
 
 #### -c, --command=COMMAND
-specify the program to record with optional arguments. COMMAND must be a string listing the
+Specify the program to record with optional arguments. COMMAND must be a string listing the
 program to execute together will all arguments to be made available to the program. For example
 `--command='python -h'` would make termtosvg record the usage of the Python interpreter. If this
 option is not set, termtosvg will record the program specified by the $SHELL environment variable
@@ -40,7 +41,7 @@ or `/bin/sh`.
 Duration of the delay between two consecutive loops of the animation in milliseconds.
 
 ##### -g, --screen-geometry=GEOMETRY
-geometry of the terminal screen used for rendering the animation. The geometry must
+Geometry of the terminal screen used for rendering the animation. The geometry must
 be given as the number of columns and the number of rows on the screen separated by
 the character "x". For example "82x19" for an 82 columns by 19 rows screen.
 

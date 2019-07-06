@@ -130,9 +130,8 @@ def parse(args, templates, default_template, default_geometry, default_min_dur,
 
     parser = argparse.ArgumentParser(
         prog='termtosvg',
-        parents=[command_parser, geometry_parser, min_duration_parser,
-                 max_duration_parser, still_frames_parser, template_parser,
-                 loop_delay_parser],
+        parents=[command_parser, loop_delay_parser, geometry_parser, min_duration_parser,
+                 max_duration_parser, still_frames_parser, template_parser],
         usage=USAGE,
         epilog=EPILOG
     )
@@ -164,9 +163,8 @@ def parse(args, templates, default_template, default_geometry, default_min_dur,
         if args[0] == 'render':
             parser = argparse.ArgumentParser(
                 description='render an asciicast recording as an SVG animation',
-                parents=[template_parser, min_duration_parser,
-                         max_duration_parser, still_frames_parser,
-                         loop_delay_parser],
+                parents=[loop_delay_parser,  min_duration_parser,
+                         max_duration_parser, still_frames_parser, template_parser],
                 usage=RENDER_USAGE
             )
             parser.add_argument(

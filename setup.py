@@ -4,7 +4,7 @@ from setuptools import setup
 
 setup(
     name='termtosvg',
-    version='0.9.0rc0',
+    version='0.9.0',
     license='BSD 3-clause license',
     author='Nicolas Bedos',
     author_email='nicolas.bedos@gmail.com',
