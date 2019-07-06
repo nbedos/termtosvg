@@ -41,7 +41,7 @@ setup(
     ],
     extras_require={
         'dev': [
-            'codecov',
+            'coverage',
             'pylint',
             'twine',
             'wheel',

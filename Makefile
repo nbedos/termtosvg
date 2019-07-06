@@ -25,7 +25,6 @@ install:
 tests:
 	coverage run --branch --source termtosvg -m unittest termtosvg.tests.suite -v
 	coverage report
-	codecov || exit "Uploading coverage report failed"
 	pylint -j 0 --extension-pkg-whitelist lxml termtosvg/*.py || exit 0
 
 build:

@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/nbedos/termtosvg.svg?branch=develop)](https://travis-ci.org/nbedos/termtosvg) [![Coverage](https://codecov.io/gh/nbedos/termtosvg/branch/develop/graph/badge.svg)](https://codecov.io/gh/nbedos/termtosvg)
+[![Build Status](https://travis-ci.org/nbedos/termtosvg.svg?branch=develop)](https://travis-ci.org/nbedos/termtosvg)
 
 
 # termtosvg

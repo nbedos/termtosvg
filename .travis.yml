@@ -6,8 +6,6 @@
 #       - Linux, Python 3.7
 #       - Linux, Python 3.8-dev
 #       - macOS, Python 3.6
-#   Coverage analysis reports are uploaded to
-#   https://codecov.io/gh/nbedos/termtosvg
 #
 # 2/ Artifact deployment:
 #     - For tags x.y.z:
