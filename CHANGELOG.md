@@ -1,5 +1,15 @@
 # Changelog
 
+## Version 0.9.0rc0 (2019-07-06)
+
+* Switch from SMIL animations to animations created via CSS or the Web Animations API (issues[#75](https://github.com/nbedos/termtosvg/issues/75),
+[#86](https://github.com/nbedos/termtosvg/issues/86),
+[#94](https://github.com/nbedos/termtosvg/issues/94))
+* Add CLI option `--loop-delay` for customization of the delay between two loops of the animation ([issue #95](https://github.com/nbedos/termtosvg/issues/95))
+* Fix text length computation involving wide Unicode characters ([issue #96](https://github.com/nbedos/termtosvg/issues/96))
+* Fix invalid type restriction for the timeout parameter of asciicast v2 headers ([issue #97](https://github.com/nbedos/termtosvg/issues/97))
+
+
 ## Version 0.8.0 (2018-01-20)
 
 * Implement still frame rendering ([issue #50](https://github.com/nbedos/termtosvg/issues/50))

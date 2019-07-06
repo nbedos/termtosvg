@@ -1,6 +1,6 @@
 % TERMTOSVG(1)
 % Nicolas Bedos
-% December 2018
+% July 2019
 
 ## SYNOPSIS
 **termtosvg** [output_path] [-c COMMAND] [-D DELAY] [-g GEOMETRY] [-m MIN_DURATION] [-M MAX_DURATION] [-s] [-t TEMPLATE] [--help]
