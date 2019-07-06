@@ -201,7 +201,10 @@ def _render_animation(screen_height, frames, root, cell_width, cell_height):
     timings = {}
     animation_duration = None
     for frame_count, frame in enumerate(frames):
-        offset = frame_count * screen_height * cell_height
+        # To prevent line jumping up and down by one pixel between two frames,
+        # add screen_height % 2 so that offset is an even number.  (issue
+        # noticed in Firefox only)
+        offset = frame_count * (screen_height + screen_height % 2) * cell_height
         frame_group, frame_definitions = _render_timed_frame(
             offset=offset,
             buffer=frame.buffer,
