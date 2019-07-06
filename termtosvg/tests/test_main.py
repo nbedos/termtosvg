@@ -151,8 +151,8 @@ class TestMain(unittest.TestCase):
             args = ['termtosvg', '--screen-geometry', '82x19']
             TestMain.run_main(args, SHELL_INPUT)
 
-        with self.subTest(case='record and render on the fly (window_frame template)'):
-            args = ['termtosvg', svg_filename, '--template', 'window_frame']
+        with self.subTest(case='record and render on the fly (window_frame_js template)'):
+            args = ['termtosvg', svg_filename, '--template', 'window_frame_js']
             TestMain.run_main(args, SHELL_INPUT)
 
         cast_v1_data = '\r\n'.join([

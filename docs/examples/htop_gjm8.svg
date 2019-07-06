@@ -15,6 +15,10 @@
             white-space: pre;
         }
     
+            :root {
+                --animation-duration: 13857ms;
+            }
+
             @keyframes roll {
                 0.000%{transform:translateY(0px)}
 0.808%{transform:translateY(-340px)}

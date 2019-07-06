@@ -99,13 +99,16 @@ Complete example here: [gjm8.svg](../termtosvg/data/templates/gjm8.svg)
 ### Custom terminal UI
 Complete example here: [window_frame.svg](../termtosvg/data/templates/window_frame.svg)
 
+### CSS progress bar
+Complete example here: [colors_progress_bar.svg](../termtosvg/data/templates/colors_progress_bar.svg)
+
 ### Embedding JavaScript
 Just add your code in a new `script` element.
 
 Complete example here: [window_frame_js](../termtosvg/data/templates/window_frame_js.svg)
 
 ### Restricting the animation to a single loop
-For a template using CSS, simple add a custom style element specifying the number of loops like so:
+For a template using CSS, simply add a custom style element specifying the number of loops like so:
 ```SVG
 <style type="text/css" id="user-style">
     #screen_view {

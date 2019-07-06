@@ -546,6 +546,10 @@ def _embed_css(root, timings=None, animation_duration=None):
             )
 
         css_animation = """
+            :root {{
+                --animation-duration: {duration}ms;
+            }}
+
             @keyframes roll {{
                 {transforms}
             }}
@@ -596,6 +600,13 @@ def _embed_waapi(root, timings=None, animation_duration=None):
     if animation_duration and timings:
         if animation_duration == 0:
             raise ValueError('Animation duration must be greater than 0')
+
+        css_body += """
+        :root {{
+            --animation-duration: {duration}ms;
+        }}
+
+        """.format(duration=animation_duration)
 
         script_element = root.find('.//{{{ns}}}script[@id="generated-js"]'
                                    .format(ns=SVG_NS))
