@@ -37,6 +37,10 @@ BG_RECT_TAG = etree.Element('rect', _BG_RECT_TAG_ATTRIBUTES)
 CELL_WIDTH = 8
 CELL_HEIGHT = 17
 
+# The number of character cells to leave when placing successive frames
+# so content does not bleed into adjacent frames
+FRAME_CELL_SPACING = 1
+
 # XML namespaces
 SVG_NS = 'http://www.w3.org/2000/svg'
 TERMTOSVG_NS = 'https://github.com/nbedos/termtosvg'
@@ -202,9 +206,10 @@ def _render_animation(screen_height, frames, root, cell_width, cell_height):
     animation_duration = None
     for frame_count, frame in enumerate(frames):
         # To prevent line jumping up and down by one pixel between two frames,
-        # add screen_height % 2 so that offset is an even number.  (issue
-        # noticed in Firefox only)
-        offset = frame_count * (screen_height + screen_height % 2) * cell_height
+        # add h % 2 so that offset is an even number.  (issue noticed in
+        # Firefox only)
+        h = screen_height + FRAME_CELL_SPACING
+        offset = frame_count * (h + h % 2) * cell_height
         frame_group, frame_definitions = _render_timed_frame(
             offset=offset,
             buffer=frame.buffer,
