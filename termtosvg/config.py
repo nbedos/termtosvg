@@ -15,7 +15,12 @@ DEFAULT_TEMPLATES_NAMES = [
     'base16_default_dark.svg',
     'progress_bar.svg',
     'window_frame.svg',
-    'window_frame_js.svg'
+    'window_frame_js.svg',
+    'powershell.svg',
+    'putty.svg',
+    'terminal_app.svg',
+    'ubuntu.svg',
+    'xterm.svg',
 ]
 
 

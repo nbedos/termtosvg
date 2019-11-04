@@ -280,7 +280,7 @@ def main(args=None, input_fileno=None, output_fileno=None):
     logger.setLevel(logging.INFO)
 
     templates = termtosvg.config.default_templates()
-    default_template = 'gjm8' if 'gjm8' in templates else sorted(templates)[0]
+    default_template = 'powershell'
     default_cmd = os.environ.get('SHELL', 'sh')
     command, args = parse(args[1:], templates, default_template, None, 1,
                           None, default_cmd, DEFAULT_LOOP_DELAY)

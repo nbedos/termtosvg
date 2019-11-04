@@ -5,6 +5,7 @@ import time
 import unittest
 
 import termtosvg.main
+import termtosvg.config
 
 SHELL_INPUT = [
     'echo $SHELL && sleep 0.1;\r\n',
@@ -154,6 +155,11 @@ class TestMain(unittest.TestCase):
         with self.subTest(case='record and render on the fly (window_frame_js template)'):
             args = ['termtosvg', svg_filename, '--template', 'window_frame_js']
             TestMain.run_main(args, SHELL_INPUT)
+
+        for template in termtosvg.config.default_templates():
+            with self.subTest(case='record and render on the fly ({} template)'.format(template)):
+                args = ['termtosvg', '-t', template]
+                TestMain.run_main(args, SHELL_INPUT)
 
         cast_v1_data = '\r\n'.join([
             '{',

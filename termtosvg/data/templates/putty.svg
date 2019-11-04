@@ -8,25 +8,25 @@
         <style type="text/css" id="user-style">
             /* The colors defined below are the default 16 colors used for rendering text of the terminal. Adjust
                them as needed.
-               base16-default-dark color theme (source: http://chriskempson.com/projects/base16/) */
-            .foreground {fill: #d8d8d8;}
-            .background {fill: #181818;}
-            .color0 {fill: #181818;}
-            .color1 {fill: #ab4642;}
-            .color2 {fill: #a1b56c;}
-            .color3 {fill: #f7ca88;}
-            .color4 {fill: #7cafc2;}
-            .color5 {fill: #ba8baf;}
-            .color6 {fill: #86c1b9;}
-            .color7 {fill: #d8d8d8;}
-            .color8 {fill: #585858;}
-            .color9 {fill: #ab4642;}
-            .color10 {fill: #a1b56C;}
-            .color11 {fill: #f7ca88;}
-            .color12 {fill: #7cafc2;}
-            .color13 {fill: #ba8baf;}
-            .color14 {fill: #86c1b9;}
-            .color15 {fill: #f8f8f8;}
+               putty colors based on https://en.wikipedia.org/wiki/ANSI_escape_code#Colors */
+            .foreground {fill: #bbbbbb;}
+            .background {fill: #000000;}
+            .color0 {fill: #000000;}
+            .color1 {fill: #bb0000;}
+            .color2 {fill: #00bb00;}
+            .color3 {fill: #bbbb00;}
+            .color4 {fill: #0000bb;}
+            .color5 {fill: #bb00bb;}
+            .color6 {fill: #00bbbb;}
+            .color7 {fill: #bbbbbb;}
+            .color8 {fill: #555555;}
+            .color9 {fill: #ff5555;}
+            .color10 {fill: #55ff55;}
+            .color11 {fill: #ffff55;}
+            .color12 {fill: #5555ff;}
+            .color13 {fill: #ff55ff;}
+            .color14 {fill: #55ffff;}
+            .color15 {fill: #ffffff;}
         </style>
     </defs>
     <svg id="screen" width="656" height="323" viewBox="0 0 656 323" preserveAspectRatio="xMidYMin slice">

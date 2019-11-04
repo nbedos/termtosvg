@@ -4,20 +4,11 @@
             <termtosvg:screen_geometry columns="82" rows="19"/>
             <termtosvg:animation type="waapi"/>
         </termtosvg:template_settings>
-        <style type="text/css" id="generated-style"><![CDATA[
-        #screen {
-            font-family: 'DejaVu Sans Mono', monospace;
-            font-style: normal;
-            font-size: 14px;
-        }
-
-        text {
-            dominant-baseline: text-before-edge;
-            white-space: pre;
-        }
-    ]]></style>
+        <style type="text/css" id="generated-style"></style>
         <style type="text/css" id="user-style">
-            /* gjm8 color theme (source: https://terminal.sexy/) */
+            /* The colors defined below are the default 16 colors used for rendering text of the terminal. Adjust
+               them as needed.
+               gjm8 color theme (source: https://terminal.sexy/) */
             .foreground {fill: #c5c5c5;}
             .background {fill: #1c1c1c;}
             .color0 {fill: #1c1c1c;}
@@ -85,109 +76,8 @@
     <use xlink:href="#slider_button" id="slider_1"/>
     <use xlink:href="#icon-play" id="play-button" class="foreground"/>
     <use xlink:href="#icon-pause" id="pause-button" class="foreground"/>
-    <script type="text/javascript" id="generated-js"><![CDATA[
-        var termtosvg_vars = {
-            transforms: [
-                {transform: 'translate3D(0, 0px, 0)', easing: 'steps(1, end)'},
-{transform: 'translate3D(0, -340px, 0)', easing: 'steps(1, end)', offset: 0.014},
-{transform: 'translate3D(0, -680px, 0)', easing: 'steps(1, end)', offset: 0.020},
-{transform: 'translate3D(0, -1020px, 0)', easing: 'steps(1, end)', offset: 0.022},
-{transform: 'translate3D(0, -1360px, 0)', easing: 'steps(1, end)', offset: 0.026},
-{transform: 'translate3D(0, -1700px, 0)', easing: 'steps(1, end)', offset: 0.039},
-{transform: 'translate3D(0, -2040px, 0)', easing: 'steps(1, end)', offset: 0.043},
-{transform: 'translate3D(0, -2380px, 0)', easing: 'steps(1, end)', offset: 0.056},
-{transform: 'translate3D(0, -2720px, 0)', easing: 'steps(1, end)', offset: 0.061},
-{transform: 'translate3D(0, -3060px, 0)', easing: 'steps(1, end)', offset: 0.067},
-{transform: 'translate3D(0, -3400px, 0)', easing: 'steps(1, end)', offset: 0.075},
-{transform: 'translate3D(0, -3740px, 0)', easing: 'steps(1, end)', offset: 0.085},
-{transform: 'translate3D(0, -4080px, 0)', easing: 'steps(1, end)', offset: 0.085},
-{transform: 'translate3D(0, -4420px, 0)', easing: 'steps(1, end)', offset: 0.107},
-{transform: 'translate3D(0, -4760px, 0)', easing: 'steps(1, end)', offset: 0.112},
-{transform: 'translate3D(0, -5100px, 0)', easing: 'steps(1, end)', offset: 0.115},
-{transform: 'translate3D(0, -5440px, 0)', easing: 'steps(1, end)', offset: 0.122},
-{transform: 'translate3D(0, -5780px, 0)', easing: 'steps(1, end)', offset: 0.140},
-{transform: 'translate3D(0, -6120px, 0)', easing: 'steps(1, end)', offset: 0.150},
-{transform: 'translate3D(0, -6460px, 0)', easing: 'steps(1, end)', offset: 0.157},
-{transform: 'translate3D(0, -6800px, 0)', easing: 'steps(1, end)', offset: 0.161},
-{transform: 'translate3D(0, -7140px, 0)', easing: 'steps(1, end)', offset: 0.171},
-{transform: 'translate3D(0, -7480px, 0)', easing: 'steps(1, end)', offset: 0.187},
-{transform: 'translate3D(0, -7820px, 0)', easing: 'steps(1, end)', offset: 0.198},
-{transform: 'translate3D(0, -8160px, 0)', easing: 'steps(1, end)', offset: 0.207},
-{transform: 'translate3D(0, -8500px, 0)', easing: 'steps(1, end)', offset: 0.212},
-{transform: 'translate3D(0, -8840px, 0)', easing: 'steps(1, end)', offset: 0.217},
-{transform: 'translate3D(0, -9180px, 0)', easing: 'steps(1, end)', offset: 0.252},
-{transform: 'translate3D(0, -9520px, 0)', easing: 'steps(1, end)', offset: 0.263},
-{transform: 'translate3D(0, -9860px, 0)', easing: 'steps(1, end)', offset: 0.286},
-{transform: 'translate3D(0, -10200px, 0)', easing: 'steps(1, end)', offset: 0.297},
-{transform: 'translate3D(0, -10540px, 0)', easing: 'steps(1, end)', offset: 0.301},
-{transform: 'translate3D(0, -10880px, 0)', easing: 'steps(1, end)', offset: 0.305},
-{transform: 'translate3D(0, -11220px, 0)', easing: 'steps(1, end)', offset: 0.326},
-{transform: 'translate3D(0, -11560px, 0)', easing: 'steps(1, end)', offset: 0.326},
-{transform: 'translate3D(0, -11900px, 0)', easing: 'steps(1, end)', offset: 0.345},
-{transform: 'translate3D(0, -12240px, 0)', easing: 'steps(1, end)', offset: 0.353},
-{transform: 'translate3D(0, -12580px, 0)', easing: 'steps(1, end)', offset: 0.357},
-{transform: 'translate3D(0, -12920px, 0)', easing: 'steps(1, end)', offset: 0.360},
-{transform: 'translate3D(0, -13260px, 0)', easing: 'steps(1, end)', offset: 0.368},
-{transform: 'translate3D(0, -13600px, 0)', easing: 'steps(1, end)', offset: 0.372},
-{transform: 'translate3D(0, -13940px, 0)', easing: 'steps(1, end)', offset: 0.384},
-{transform: 'translate3D(0, -14280px, 0)', easing: 'steps(1, end)', offset: 0.390},
-{transform: 'translate3D(0, -14620px, 0)', easing: 'steps(1, end)', offset: 0.392},
-{transform: 'translate3D(0, -14960px, 0)', easing: 'steps(1, end)', offset: 0.396},
-{transform: 'translate3D(0, -15300px, 0)', easing: 'steps(1, end)', offset: 0.401},
-{transform: 'translate3D(0, -15640px, 0)', easing: 'steps(1, end)', offset: 0.405},
-{transform: 'translate3D(0, -15980px, 0)', easing: 'steps(1, end)', offset: 0.410},
-{transform: 'translate3D(0, -16320px, 0)', easing: 'steps(1, end)', offset: 0.416},
-{transform: 'translate3D(0, -16660px, 0)', easing: 'steps(1, end)', offset: 0.423},
-{transform: 'translate3D(0, -17000px, 0)', easing: 'steps(1, end)', offset: 0.427},
-{transform: 'translate3D(0, -17340px, 0)', easing: 'steps(1, end)', offset: 0.433},
-{transform: 'translate3D(0, -17680px, 0)', easing: 'steps(1, end)', offset: 0.437},
-{transform: 'translate3D(0, -18020px, 0)', easing: 'steps(1, end)', offset: 0.441},
-{transform: 'translate3D(0, -18360px, 0)', easing: 'steps(1, end)', offset: 0.447},
-{transform: 'translate3D(0, -18700px, 0)', easing: 'steps(1, end)', offset: 0.454},
-{transform: 'translate3D(0, -19040px, 0)', easing: 'steps(1, end)', offset: 0.461},
-{transform: 'translate3D(0, -19380px, 0)', easing: 'steps(1, end)', offset: 0.481},
-{transform: 'translate3D(0, -19720px, 0)', easing: 'steps(1, end)', offset: 0.485},
-{transform: 'translate3D(0, -20060px, 0)', easing: 'steps(1, end)', offset: 0.487},
-{transform: 'translate3D(0, -20400px, 0)', easing: 'steps(1, end)', offset: 0.494},
-{transform: 'translate3D(0, -20740px, 0)', easing: 'steps(1, end)', offset: 0.500},
-{transform: 'translate3D(0, -21080px, 0)', easing: 'steps(1, end)', offset: 0.513},
-{transform: 'translate3D(0, -21420px, 0)', easing: 'steps(1, end)', offset: 0.558},
-{transform: 'translate3D(0, -21760px, 0)', easing: 'steps(1, end)', offset: 0.559},
-{transform: 'translate3D(0, -22100px, 0)', easing: 'steps(1, end)', offset: 0.584},
-{transform: 'translate3D(0, -22440px, 0)', easing: 'steps(1, end)', offset: 0.588},
-{transform: 'translate3D(0, -22780px, 0)', easing: 'steps(1, end)', offset: 0.590},
-{transform: 'translate3D(0, -23120px, 0)', easing: 'steps(1, end)', offset: 0.595},
-{transform: 'translate3D(0, -23460px, 0)', easing: 'steps(1, end)', offset: 0.604},
-{transform: 'translate3D(0, -23800px, 0)', easing: 'steps(1, end)', offset: 0.625},
-{transform: 'translate3D(0, -24140px, 0)', easing: 'steps(1, end)', offset: 0.634},
-{transform: 'translate3D(0, -24480px, 0)', easing: 'steps(1, end)', offset: 0.643},
-{transform: 'translate3D(0, -24820px, 0)', easing: 'steps(1, end)', offset: 0.646},
-{transform: 'translate3D(0, -25160px, 0)', easing: 'steps(1, end)', offset: 0.653},
-{transform: 'translate3D(0, -25500px, 0)', easing: 'steps(1, end)', offset: 0.658},
-{transform: 'translate3D(0, -25840px, 0)', easing: 'steps(1, end)', offset: 0.660},
-{transform: 'translate3D(0, -26180px, 0)', easing: 'steps(1, end)', offset: 0.668},
-{transform: 'translate3D(0, -26520px, 0)', easing: 'steps(1, end)', offset: 0.703},
-{transform: 'translate3D(0, -26860px, 0)', easing: 'steps(1, end)', offset: 0.706},
-{transform: 'translate3D(0, -27200px, 0)', easing: 'steps(1, end)', offset: 0.706},
-{transform: 'translate3D(0, -27540px, 0)', easing: 'steps(1, end)', offset: 0.706},
-{transform: 'translate3D(0, -27880px, 0)', easing: 'steps(1, end)', offset: 0.706},
-{transform: 'translate3D(0, -28220px, 0)', easing: 'steps(1, end)', offset: 0.706},
-{transform: 'translate3D(0, -28560px, 0)', easing: 'steps(1, end)', offset: 0.707},
-{transform: 'translate3D(0, -28900px, 0)', easing: 'steps(1, end)', offset: 0.822},
-{transform: 'translate3D(0, -29240px, 0)', easing: 'steps(1, end)', offset: 0.831},
-{transform: 'translate3D(0, -29580px, 0)', easing: 'steps(1, end)', offset: 0.837},
-{transform: 'translate3D(0, -29920px, 0)', easing: 'steps(1, end)', offset: 0.841},
-{transform: 'translate3D(0, -30260px, 0)', easing: 'steps(1, end)', offset: 0.869},
-{transform: 'translate3D(0, -30600px, 0)', easing: 'steps(1, end)', offset: 0.872},
-{transform: 'translate3D(0, -30940px, 0)', easing: 'steps(1, end)', offset: 0.963},
-{transform: 'translate3D(0, -30940px, 0)', easing: 'steps(1, end)'}
-            ],
-            timings: {
-                duration: 27349,
-                iterations: Infinity
-            }
-        };]]></script>
-<script type="text/javascript">
+    <script type="text/javascript" id="generated-js"></script>
+    <script type="text/javascript">
 var animation = document.getElementById("screen_view").animate(
     termtosvg_vars.transforms,
     termtosvg_vars.timings
