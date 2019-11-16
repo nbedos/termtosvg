@@ -1,5 +1,8 @@
 # Changelog
 
+## Next version
+* Add more templates that follow the standard color palette for terminal colors. Change default template to 'powershell'. (issue [#105](https://github.com/nbedos/termtosvg/issues/105))
+
 ## Version 0.9.0 (2019-07-06)
 
 * Switch from SMIL animations to animations created via CSS or the Web Animations API (issues [#75](https://github.com/nbedos/termtosvg/issues/75),

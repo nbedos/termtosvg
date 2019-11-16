@@ -5,7 +5,7 @@
 termtosvg is a Unix terminal recorder written in Python that renders your command
 line sessions as standalone SVG animations.
 
-![Example](./docs/examples/awesome_window_frame.svg)
+![Example](./docs/examples/awesome_window_frame_powershell.svg)
 
 * [Gallery of examples](https://nbedos.github.io/termtosvg/pages/examples.html)
 * [Gallery of templates](https://nbedos.github.io/termtosvg/pages/templates.html)

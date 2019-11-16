@@ -17,7 +17,9 @@
         }
     ]]></style>
         <style type="text/css" id="user-style">
-            /* gjm8 color theme (source: https://terminal.sexy/) */
+            /* The colors defined below are the default 16 colors used for rendering text of the terminal. Adjust
+               them as needed.
+               gjm8 color theme (source: https://terminal.sexy/) */
             .foreground {fill: #c5c5c5;}
             .background {fill: #1c1c1c;}
             .color0 {fill: #1c1c1c;}
@@ -187,7 +189,7 @@
                 iterations: Infinity
             }
         };]]></script>
-<script type="text/javascript">
+    <script type="text/javascript">
 var animation = document.getElementById("screen_view").animate(
     termtosvg_vars.transforms,
     termtosvg_vars.timings

@@ -38,13 +38,17 @@ man:
 
 html:
 	cp -r termtosvg/data/templates/ docs/
-	rm -rf $(EXAMPLES_DIR)/*.svg
-	termtosvg render $(CASTS_DIR)/awesome.cast $(EXAMPLES_DIR)/awesome_window_frame.svg -t window_frame
+	termtosvg render $(CASTS_DIR)/awesome.cast $(EXAMPLES_DIR)/awesome_window_frame_powershell.svg -t window_frame_powershell
 	termtosvg render $(CASTS_DIR)/awesome.cast $(EXAMPLES_DIR)/awesome_window_frame_js.svg -t window_frame_js
 	termtosvg render $(CASTS_DIR)/colors.cast $(EXAMPLES_DIR)/colors_progress_bar.svg -t progress_bar
 	termtosvg render $(CASTS_DIR)/htop.cast $(EXAMPLES_DIR)/htop_gjm8.svg -t gjm8
 	termtosvg render $(CASTS_DIR)/ipython.cast $(EXAMPLES_DIR)/ipython_window_frame.svg -t window_frame
 	termtosvg render $(CASTS_DIR)/unittest.cast $(EXAMPLES_DIR)/unittest_solarized_dark.svg -t solarized_dark
+	for template in $$(ls termtosvg/data/templates/*.svg | grep -v gjm8_play); \
+	    do \
+	    	filename="$$(basename $$template)"; \
+		termtosvg render "$(CASTS_DIR)/awesome.cast" "$(EXAMPLES_DIR)/$$filename" -t "$$template"; \
+	    done
 
 deploy_test:
 	twine upload -r pypitest dist/*

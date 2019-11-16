@@ -6,20 +6,21 @@ PKG_TEMPLATE_PATH = 'data/templates'
 # does not seem worth it: it adds a dependency and slows down the invocation of termtosvg
 # by 150ms ('time termtosvg --help' execution time goes from 200ms to 350ms)
 DEFAULT_TEMPLATES_NAMES = [
-    'gjm8.svg',
+    'base16_default_dark.svg',
+    'dracula.svg',
     'gjm8_play.svg',
     'gjm8_single_loop.svg',
-    'dracula.svg',
+    'gjm8.svg',
+    'powershell.svg',
+    'progress_bar.svg',
+    'putty.svg',
     'solarized_dark.svg',
     'solarized_light.svg',
-    'base16_default_dark.svg',
-    'progress_bar.svg',
-    'window_frame.svg',
-    'window_frame_js.svg',
-    'powershell.svg',
-    'putty.svg',
     'terminal_app.svg',
     'ubuntu.svg',
+    'window_frame_js.svg',
+    'window_frame_powershell.svg',
+    'window_frame.svg',
     'xterm.svg',
 ]
 
