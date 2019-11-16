@@ -62,8 +62,10 @@ milliseconds will simply see their duration reduced to MAX_DURATION.
 
 ##### -t, --template=TEMPLATE
 Set the SVG template used for rendering the SVG animation. TEMPLATE may either be
-one of the default templates (gjm8, dracula, solarized_dark, solarized_light,
- progress_bar, window_frame, window_frame_js) or a path to a valid template.
+one of the default templates (base16_default_dark, dracula, gjm8_play,
+gjm8_single_loop, gjm8, powershell, progress_bar, putty, solarized_dark,
+solarized_light, terminal_app, ubuntu, window_frame_js,
+window_frame_powershell, window_frame, xterm) or a path to a valid template.
 
 ##### -s, --still-frames
 Output still frames in SVG format instead of an animated SVG. If this option is specified,
