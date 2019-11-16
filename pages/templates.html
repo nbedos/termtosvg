@@ -15,51 +15,474 @@
             <li class="active"><a href="templates.html">templates</a></li>
             <li>
                 <a href="https://github.com/nbedos/termtosvg/blob/master/man/termtosvg.md">manual</a>
-                <li><a href="https://github.com/nbedos/termtosvg">github</a></li>
+            <li><a href="https://github.com/nbedos/termtosvg">github</a></li>
         </ul>
     </nav>
 </header><!-- /#banner -->
 <section id="content" class="body">
     <h1 class="entry-title">templates</h1>
 
-    <p>This is a gallery containing some of the default templates of termtosvg. All templates can
-    be found <a href="https://github.com/nbedos/termtosvg/tree/develop/termtosvg/data/templates">on GitHub</a>.</p>
-    <p>If you're interested in creating your own template, see the
-    <a href="https://github.com/nbedos/termtosvg/blob/develop/man/termtosvg-templates.md">dedicated manual page</a>.</p>
+    <p>This is the list of the default templates of termtosvg. All templates can
+        be found <a href="https://github.com/nbedos/termtosvg/tree/develop/termtosvg/data/templates">on GitHub</a>.</p>
+    <p>If you're interested in creating your own template or customizing an existing one, see the
+        <a href="https://github.com/nbedos/termtosvg/blob/develop/man/termtosvg-templates.md">dedicated manual page</a>.
+    </p>
 
-    <h2>gjm8</h2>
-    <p align="center">
-        <object data="../templates/gjm8.svg"></object>
-    </p>
-    <h2>dracula</h2>
-    <p align="center">
-        <object data="../templates/dracula.svg"></object>
-    </p>
-    <h2>base16_default_dark</h2>
-    <p align="center">
-        <object data="../templates/base16_default_dark.svg"></object>
-    <p>
-    <h2>solarized_dark</h2>
-    <p align="center">
-        <object data="../templates/solarized_dark.svg"></object>
-    </p>
-    <h2>solarized_light</h2>
-    <p align="center">
-        <object data="../templates/solarized_light.svg"></object>
-    </p>
-    <h2>progress_bar</h2>
-    <p align="center">
-        <object data="../templates/progress_bar.svg"></object>
-    </p>
-    <h2>window_frame</h2>
-    <p align="center">
-        <object data="../templates/window_frame.svg"></object>
-    </p>
-    <h2>window_frame_js</h2>
-    Adds play/pause button and an interactive timeline.
-    <p align="center">
-        <object data="../templates/window_frame_js.svg"></object>
-    </p>
+
+    <table style="width:100%">
+        <tr>
+            <th align="center">Name</th>
+            <th align="center">Description</th>
+            <th align="center">Palette</th>
+            <th align="center">Example</th>
+        </tr>
+        <tr>
+            <td>base16_default_dark</td>
+            <td>basic template with no terminal UI</td>
+            <td>
+                <table>
+                    <tr style="border-bottom: 1px solid white;">
+                        <td style="background:#181818"></td>
+                        <td style="background:#ab4642"></td>
+                        <td style="background:#a1b56c"></td>
+                        <td style="background:#f7ca88"></td>
+                        <td style="background:#7cafc2"></td>
+                        <td style="background:#ba8baf"></td>
+                        <td style="background:#86c1b9"></td>
+                        <td style="background:#d8d8d8"></td>
+                    </tr>
+                    <tr>
+                        <td style="background:#585858"></td>
+                        <td style="background:#ab4642"></td>
+                        <td style="background:#a1b56C"></td>
+                        <td style="background:#f7ca88"></td>
+                        <td style="background:#7cafc2"></td>
+                        <td style="background:#ba8baf"></td>
+                        <td style="background:#86c1b9"></td>
+                        <td style="background:#f8f8f8"></td>
+                    </tr>
+                </table>
+            </td>
+            <td><a href="../examples/base16_default_dark.svg">here</a></td>
+        </tr>
+        <tr>
+            <td>dracula</td>
+            <td>basic template with no terminal UI</td>
+            <td>
+                <table>
+                    <tr style="border-bottom: 1px solid white;">
+                        <td style="background:#282936"></td>
+                        <td style="background:#ea51b2"></td>
+                        <td style="background:#ebff87"></td>
+                        <td style="background:#00f769"></td>
+                        <td style="background:#62d6e8"></td>
+                        <td style="background:#b45bcf"></td>
+                        <td style="background:#a1efe4"></td>
+                        <td style="background:#e9e9f4"></td>
+                    </tr>
+                    <tr>
+                        <td style="background:#626483"></td>
+                        <td style="background:#b45bcf"></td>
+                        <td style="background:#3a3c4e"></td>
+                        <td style="background:#4d4f68"></td>
+                        <td style="background:#62d6e8"></td>
+                        <td style="background:#f1f2f8"></td>
+                        <td style="background:#00f769"></td>
+                        <td style="background:#f7f7fb"></td>
+                    </tr>
+                </table>
+            </td>
+            <td><a href="../examples/dracula.svg">here</a></td>
+        </tr>
+        <tr>
+            <td>gjm8</td>
+            <td>basic template with no terminal UI</td>
+            <td>
+                <table>
+                    <tr style="border-bottom: 1px solid white;">
+                        <td style="background:#1c1c1c"></td>
+                        <td style="background:#ff005b"></td>
+                        <td style="background:#cee318"></td>
+                        <td style="background:#ffe755"></td>
+                        <td style="background:#048ac7"></td>
+                        <td style="background:#833c9f"></td>
+                        <td style="background:#0ac1cd"></td>
+                        <td style="background:#e5e5e5"></td>
+                    </tr>
+                    <tr>
+                        <td style="background:#1c1c1c"></td>
+                        <td style="background:#ff005b"></td>
+                        <td style="background:#cee318"></td>
+                        <td style="background:#ffe755"></td>
+                        <td style="background:#048ac7"></td>
+                        <td style="background:#833c9f"></td>
+                        <td style="background:#0ac1cd"></td>
+                        <td style="background:#e5e5e5"></td>
+                    </tr>
+                </table>
+            </td>
+            <td><a href="../examples/gjm8.svg">here</a></td>
+        </tr>
+        <tr>
+            <td>gjm8_play</td>
+            <td>gjm8 template with a play button overlay. Useful to generate screenshots that link to the actual
+                animation.
+            </td>
+            <td>
+                <table>
+                    <tr style="border-bottom: 1px solid white;">
+                        <td style="background:#1c1c1c"></td>
+                        <td style="background:#ff005b"></td>
+                        <td style="background:#cee318"></td>
+                        <td style="background:#ffe755"></td>
+                        <td style="background:#048ac7"></td>
+                        <td style="background:#833c9f"></td>
+                        <td style="background:#0ac1cd"></td>
+                        <td style="background:#e5e5e5"></td>
+                    </tr>
+                    <tr>
+                        <td style="background:#1c1c1c"></td>
+                        <td style="background:#ff005b"></td>
+                        <td style="background:#cee318"></td>
+                        <td style="background:#ffe755"></td>
+                        <td style="background:#048ac7"></td>
+                        <td style="background:#833c9f"></td>
+                        <td style="background:#0ac1cd"></td>
+                        <td style="background:#e5e5e5"></td>
+                    </tr>
+                </table>
+            </td>
+            <td><a href="../examples/gjm8_play.svg">here</a></td>
+        </tr>
+        <tr>
+            <td>gjm8_single_loop</td>
+            <td>gjm8 template with animation looping disabled</td>
+            <td>
+                <table>
+                    <tr style="border-bottom: 1px solid white;">
+                        <td style="background:#1c1c1c"></td>
+                        <td style="background:#ff005b"></td>
+                        <td style="background:#cee318"></td>
+                        <td style="background:#ffe755"></td>
+                        <td style="background:#048ac7"></td>
+                        <td style="background:#833c9f"></td>
+                        <td style="background:#0ac1cd"></td>
+                        <td style="background:#e5e5e5"></td>
+                    </tr>
+                    <tr>
+                        <td style="background:#1c1c1c"></td>
+                        <td style="background:#ff005b"></td>
+                        <td style="background:#cee318"></td>
+                        <td style="background:#ffe755"></td>
+                        <td style="background:#048ac7"></td>
+                        <td style="background:#833c9f"></td>
+                        <td style="background:#0ac1cd"></td>
+                        <td style="background:#e5e5e5"></td>
+                    </tr>
+                </table>
+            </td>
+            <td><a href="../examples/gjm8_single_loop.svg">here</a></td>
+        </tr>
+        <tr>
+            <td>powershell</td>
+            <td>basic template based on the default colors of PowerShell</td>
+            <td>
+                <table>
+                    <tr style="border-bottom: 1px solid white;">
+                        <td style="background:#0c0c0c"></td>
+                        <td style="background:#c50f1f"></td>
+                        <td style="background:#13a10e"></td>
+                        <td style="background:#c19c00"></td>
+                        <td style="background:#0037da"></td>
+                        <td style="background:#881798"></td>
+                        <td style="background:#3a96dd"></td>
+                        <td style="background:#cccccc"></td>
+                    </tr>
+                    <tr>
+                        <td style="background:#767676"></td>
+                        <td style="background:#e74856"></td>
+                        <td style="background:#16c60c"></td>
+                        <td style="background:#f9f1a5"></td>
+                        <td style="background:#3b78ff"></td>
+                        <td style="background:#b4009e"></td>
+                        <td style="background:#61d6d6"></td>
+                        <td style="background:#f2f2f2"></td>
+                    </tr>
+                </table>
+            </td>
+            <td><a href="../examples/powershell.svg">here</a></td>
+        </tr>
+        <tr>
+            <td>progress_bar</td>
+            <td>gjm8 template with a CSS progress bar</td>
+            <td>
+                <table>
+                    <tr style="border-bottom: 1px solid white;">
+                        <td style="background:#1c1c1c"></td>
+                        <td style="background:#ff005b"></td>
+                        <td style="background:#cee318"></td>
+                        <td style="background:#ffe755"></td>
+                        <td style="background:#048ac7"></td>
+                        <td style="background:#833c9f"></td>
+                        <td style="background:#0ac1cd"></td>
+                        <td style="background:#e5e5e5"></td>
+                    </tr>
+                    <tr>
+                        <td style="background:#1c1c1c"></td>
+                        <td style="background:#ff005b"></td>
+                        <td style="background:#cee318"></td>
+                        <td style="background:#ffe755"></td>
+                        <td style="background:#048ac7"></td>
+                        <td style="background:#833c9f"></td>
+                        <td style="background:#0ac1cd"></td>
+                        <td style="background:#e5e5e5"></td>
+                    </tr>
+                </table>
+            </td>
+            <td><a href="../examples/progress_bar.svg">here</a></td>
+        </tr>
+        <tr>
+            <td>putty</td>
+            <td>basic template based on the default colors of PuTTY</td>
+            <td>
+                <table>
+                    <tr style="border-bottom: 1px solid white;">
+                        <td style="background:#000000"></td>
+                        <td style="background:#bb0000"></td>
+                        <td style="background:#00bb00"></td>
+                        <td style="background:#bbbb00"></td>
+                        <td style="background:#0000bb"></td>
+                        <td style="background:#bb00bb"></td>
+                        <td style="background:#00bbbb"></td>
+                        <td style="background:#bbbbbb"></td>
+                    </tr>
+                    <tr>
+                        <td style="background:#555555"></td>
+                        <td style="background:#ff5555"></td>
+                        <td style="background:#55ff55"></td>
+                        <td style="background:#ffff55"></td>
+                        <td style="background:#5555ff"></td>
+                        <td style="background:#ff55ff"></td>
+                        <td style="background:#55ffff"></td>
+                        <td style="background:#ffffff"></td>
+                </table>
+            </td>
+            <td><a href="../examples/putty.svg">here</a></td>
+        </tr>
+        <tr>
+            <td>solarized_dark</td>
+            <td>basic template based on the <a href="https://ethanschoonover.com/solarized/">solarized</a> dark color
+                scheme
+            </td>
+            <td>
+                <table>
+                    <tr style="border-bottom: 1px solid white;">
+                        <td style="background:#002b36"></td>
+                        <td style="background:#dc322f"></td>
+                        <td style="background:#859900"></td>
+                        <td style="background:#b58900"></td>
+                        <td style="background:#268bd2"></td>
+                        <td style="background:#6c71c4"></td>
+                        <td style="background:#2aa198"></td>
+                        <td style="background:#93a1a1"></td>
+                    </tr>
+                    <tr>
+                        <td style="background:#657b83"></td>
+                        <td style="background:#cb4b16"></td>
+                        <td style="background:#073642"></td>
+                        <td style="background:#586e75"></td>
+                        <td style="background:#839496"></td>
+                        <td style="background:#eee8d5"></td>
+                        <td style="background:#d33682"></td>
+                        <td style="background:#fdf6e3"></td>
+                    </tr>
+                </table>
+            </td>
+            <td><a href="../examples/solarized_dark.svg">here</a></td>
+        </tr>
+        <tr>
+            <td>solarized_light</td>
+            <td>basic template based on the <a href="https://ethanschoonover.com/solarized/">solarized</a> light color
+                scheme
+            </td>
+            <td>
+                <table>
+                    <tr style="border-bottom: 1px solid white;">
+                        <td style="background:#fdf6e3"></td>
+                        <td style="background:#dc322f"></td>
+                        <td style="background:#859900"></td>
+                        <td style="background:#b58900"></td>
+                        <td style="background:#268bd2"></td>
+                        <td style="background:#6c71c4"></td>
+                        <td style="background:#2aa198"></td>
+                        <td style="background:#586e75"></td>
+
+                    </tr>
+                    <tr>
+                        <td style="background:#839496"></td>
+                        <td style="background:#cb4b16"></td>
+                        <td style="background:#eee8d5"></td>
+                        <td style="background:#93a1a1"></td>
+                        <td style="background:#657b83"></td>
+                        <td style="background:#073642"></td>
+                        <td style="background:#d33682"></td>
+                        <td style="background:#002b36"></td>
+                    </tr>
+                </table>
+            </td>
+            <td><a href="../examples/solarized_light.svg">here</a></td>
+        </tr>
+        <tr>
+            <td>terminal_app</td>
+            <td>basic template based on the default colors of Terminal.app</td>
+            <td>
+                <table>
+                    <tr style="border-bottom: 1px solid white;">
+                        <td style="background:#000000"></td>
+                        <td style="background:#c23621"></td>
+                        <td style="background:#25bc24"></td>
+                        <td style="background:#adad27"></td>
+                        <td style="background:#492ee1"></td>
+                        <td style="background:#d338d3"></td>
+                        <td style="background:#33bbc8"></td>
+                        <td style="background:#cbcccd"></td>
+
+                    </tr>
+                    <tr>
+                        <td style="background:#818383"></td>
+                        <td style="background:#fc391f"></td>
+                        <td style="background:#31e722"></td>
+                        <td style="background:#eaec23"></td>
+                        <td style="background:#5833ff"></td>
+                        <td style="background:#f935f8"></td>
+                        <td style="background:#14f0f0"></td>
+                        <td style="background:#e9ebeb"></td>
+                    </tr>
+                </table>
+            </td>
+            <td><a href="../examples/terminal_app.svg">here</a></td>
+        </tr>
+        <tr>
+            <td>ubuntu</td>
+            <td>basic template based on the colors of the default terminal of Ubuntu</td>
+            <td>
+                <table>
+                    <tr style="border-bottom: 1px solid white;">
+                        <td style="background:#010101"></td>
+                        <td style="background:#de382b"></td>
+                        <td style="background:#39b54a"></td>
+                        <td style="background:#ffc706"></td>
+                        <td style="background:#006fb8"></td>
+                        <td style="background:#762671"></td>
+                        <td style="background:#2cb5e9"></td>
+                        <td style="background:#cccccc"></td>
+
+                    </tr>
+                    <tr>
+                        <td style="background:#808080"></td>
+                        <td style="background:#ff0000"></td>
+                        <td style="background:#00ff00"></td>
+                        <td style="background:#ffff00"></td>
+                        <td style="background:#0000ff"></td>
+                        <td style="background:#ff00ff"></td>
+                        <td style="background:#00ffff"></td>
+                        <td style="background:#ffffff"></td>
+                    </tr>
+                </table>
+            </td>
+            <td><a href="../examples/ubuntu.svg">here</a></td>
+        </tr>
+        <tr>
+            <td>window_frame</td>
+            <td>gjm8 template with a window frame</td>
+            <td>
+                <table>
+                    <tr style="border-bottom: 1px solid white;">
+                        <td style="background:#272822"></td>
+                        <td style="background:#f92672"></td>
+                        <td style="background:#a6e22e"></td>
+                        <td style="background:#f4bf75"></td>
+                        <td style="background:#66d9ef"></td>
+                        <td style="background:#ae81ff"></td>
+                        <td style="background:#a1efe4"></td>
+                        <td style="background:#f8f8f2"></td>
+
+                    </tr>
+                    <tr>
+                        <td style="background:#75715e"></td>
+                        <td style="background:#fd971f"></td>
+                        <td style="background:#383830"></td>
+                        <td style="background:#49483e"></td>
+                        <td style="background:#a59f85"></td>
+                        <td style="background:#f5f4f1"></td>
+                        <td style="background:#cc6633"></td>
+                        <td style="background:#f9f8f5"></td>
+                    </tr>
+                </table>
+            </td>
+            <td><a href="../examples/window_frame.svg">here</a></td>
+        </tr>
+        <tr>
+            <td>window_frame_js</td>
+            <td>gjm8 template with a window frame and animation controls (play, pause, seek)</td>
+            <td>
+                <table>
+                    <tr style="border-bottom: 1px solid white;">
+                        <td style="background:#272822"></td>
+                        <td style="background:#f92672"></td>
+                        <td style="background:#a6e22e"></td>
+                        <td style="background:#f4bf75"></td>
+                        <td style="background:#66d9ef"></td>
+                        <td style="background:#ae81ff"></td>
+                        <td style="background:#a1efe4"></td>
+                        <td style="background:#f8f8f2"></td>
+
+                    </tr>
+                    <tr>
+                        <td style="background:#75715e"></td>
+                        <td style="background:#fd971f"></td>
+                        <td style="background:#383830"></td>
+                        <td style="background:#49483e"></td>
+                        <td style="background:#a59f85"></td>
+                        <td style="background:#f5f4f1"></td>
+                        <td style="background:#cc6633"></td>
+                        <td style="background:#f9f8f5"></td>
+                    </tr>
+                </table>
+            </td>
+            <td><a href="../examples/window_frame_js.svg">here</a></td>
+        </tr>
+        <tr>
+            <td>window_frame_powershell</td>
+            <td>powershell template with a window frame</td>
+            <td>
+                <table>
+                    <tr style="border-bottom: 1px solid white;">
+                        <td style="background:#0c0c0c"></td>
+                        <td style="background:#c50f1f"></td>
+                        <td style="background:#13a10e"></td>
+                        <td style="background:#c19c00"></td>
+                        <td style="background:#0037da"></td>
+                        <td style="background:#881798"></td>
+                        <td style="background:#3a96dd"></td>
+                        <td style="background:#cccccc"></td>
+                    </tr>
+                    <tr>
+                        <td style="background:#767676"></td>
+                        <td style="background:#e74856"></td>
+                        <td style="background:#16c60c"></td>
+                        <td style="background:#f9f1a5"></td>
+                        <td style="background:#3b78ff"></td>
+                        <td style="background:#b4009e"></td>
+                        <td style="background:#61d6d6"></td>
+                        <td style="background:#f2f2f2"></td>
+                    </tr>
+                </table>
+            </td>
+            <td><a href="../examples/window_frame_powershell.svg">here</a></td>
+        </tr>
+    </table>
+
 </section>
 <section id="extras" class="body">
 </section><!-- /#extras -->

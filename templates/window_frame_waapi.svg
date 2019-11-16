@@ -4,22 +4,7 @@
             <termtosvg:screen_geometry columns="80" rows="24"/>
             <termtosvg:animation type="waapi"/>
         </termtosvg:template_settings>
-        <style type="text/css" id="generated-style"><![CDATA[#screen {
-                font-family: 'DejaVu Sans Mono', monospace;
-                font-style: normal;
-                font-size: 14px;
-            }
-
-        text {
-            dominant-baseline: text-before-edge;
-            white-space: pre;
-        }
-
-        :root {
-            --animation-duration: 5000ms;
-        }
-
-        ]]></style>
+        <style type="text/css" id="generated-style"></style>
         <style type="text/css" id="user-style">
             /* gjm8 color theme (source: https://terminal.sexy/) */
             .foreground {fill: #c5c5c5;}
@@ -89,33 +74,7 @@
     <use xlink:href="#slider_button" id="slider_1"/>
     <use xlink:href="#icon-play" id="play-button" class="foreground"/>
     <use xlink:href="#icon-pause" id="pause-button" class="foreground"/>
-    <script type="text/javascript" id="generated-js">
-var transforms = [
-  { transform: 'translate3D(0, -408px, 0)', easing: 'steps(1, end)' },
-  { transform: 'translate3D(0, -816px, 0)', easing: 'steps(1, end)', offset: 0.1},
-  { transform: 'translate3D(0, -1224px, 0)', easing: 'steps(1, end)', offset: 0.2},
-  { transform: 'translate3D(0, -1632px, 0)', easing: 'steps(1, end)', offset: 0.3},
-  { transform: 'translate3D(0, -2040px, 0)', easing: 'steps(1, end)', offset: 0.4},
-  { transform: 'translate3D(0, -2448px, 0)', easing: 'steps(1, end)', offset: 0.5},
-  { transform: 'translate3D(0, -2856px, 0)', easing: 'steps(1, end)', offset: 0.6},
-  { transform: 'translate3D(0, -3264px, 0)', easing: 'steps(1, end)', offset: 0.7},
-  { transform: 'translate3D(0, -3672px, 0)', easing: 'steps(1, end)', offset: 0.8},
-  { transform: 'translate3D(0, -4080px, 0)', easing: 'steps(1, end)', offset: 0.9},
-  { transform: 'translate3D(0, -4488px, 0)', easing: 'steps(1, end)'}
-];
-
-var animationTiming = {
-  duration: 5000,
-  iterations: Infinity
-}
-
-var termtosvg_vars = {
-    screen_view_animation: document.getElementById("screen_view").animate(
-      transforms,
-      animationTiming
-    )
-};
-</script>
+    <script type="text/javascript" id="generated-js"></script>
 <script type="text/javascript">
 var animation = termtosvg_vars.screen_view_animation
 var terminal   = document.getElementById('terminal')
