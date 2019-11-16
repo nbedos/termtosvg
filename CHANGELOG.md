@@ -1,7 +1,9 @@
 # Changelog
 
-## Next version
+## Version 1.0.0 (2019-11-16)
+
 * Add more templates that follow the standard color palette for terminal colors. Change default template to 'powershell'. (issue [#105](https://github.com/nbedos/termtosvg/issues/105))
+
 
 ## Version 0.9.0 (2019-07-06)
 
