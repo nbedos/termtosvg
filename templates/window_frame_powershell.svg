@@ -8,25 +8,25 @@
         <style type="text/css" id="user-style">
             /* The colors defined below are the default 16 colors used for rendering text of the terminal. Adjust
                them as needed.
-               gjm8 color theme (source: https://terminal.sexy/) */
-            .foreground {fill: #f8f8f2}
-            .background {fill: #272822}
-            .color0 {fill: #272822}
-            .color1 {fill: #f92672}
-            .color2 {fill: #a6e22e}
-            .color3 {fill: #f4bf75}
-            .color4 {fill: #66d9ef}
-            .color5 {fill: #ae81ff}
-            .color6 {fill: #a1efe4}
-            .color7 {fill: #f8f8f2}
-            .color8 {fill: #75715e}
-            .color9 {fill: #fd971f}
-            .color10 {fill: #383830}
-            .color11 {fill: #49483e}
-            .color12 {fill: #a59f85}
-            .color13 {fill: #f5f4f1}
-            .color14 {fill: #cc6633}
-            .color15 {fill: #f9f8f5}
+               PowerShell colors based on https://en.wikipedia.org/wiki/ANSI_escape_code#Colors */
+            .foreground {fill: #cccccc;}
+            .background {fill: #0c0c0c;}
+            .color0 {fill: #0c0c0c;}
+            .color1 {fill: #c50f1f;}
+            .color2 {fill: #13a10e;}
+            .color3 {fill: #c19c00;}
+            .color4 {fill: #0037da;}
+            .color5 {fill: #881798;}
+            .color6 {fill: #3a96dd;}
+            .color7 {fill: #cccccc;}
+            .color8 {fill: #767676;}
+            .color9 {fill: #e74856;}
+            .color10 {fill: #16c60c;}
+            .color11 {fill: #f9f1a5;}
+            .color12 {fill: #3b78ff;}
+            .color13 {fill: #b4009e;}
+            .color14 {fill: #61d6d6;}
+            .color15 {fill: #f2f2f2;}
         </style>
     </defs>
     <rect id="terminalui" class="background" width="100%" height="100%" ry="4.5826941"/>

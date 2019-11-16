@@ -4,7 +4,17 @@
             <termtosvg:screen_geometry columns="82" rows="19"/>
             <termtosvg:animation type="css"/>
         </termtosvg:template_settings>
-        <style type="text/css" id="generated-style"></style>
+        <style type="text/css" id="generated-style"><![CDATA[#screen {
+                font-family: 'DejaVu Sans Mono', monospace;
+                font-style: normal;
+                font-size: 14px;
+            }
+
+        text {
+            dominant-baseline: text-before-edge;
+            white-space: pre;
+        }
+    ]]></style>
         <style type="text/css" id="user-style">
             /* The colors defined below are the default 16 colors used for rendering text of the terminal. Adjust
                them as needed.
@@ -29,5 +39,9 @@
             .color15 {fill: #e5e5e5;}
         </style>
     </defs>
-    <svg id="screen" width="656" height="323" viewBox="0 0 656 323" preserveAspectRatio="xMidYMin slice"></svg>
+    <svg id="screen" width="656" height="323" viewBox="0 0 656 323" preserveAspectRatio="xMidYMin slice"><rect class="background" height="100%" width="100%" x="0" y="0"/><defs><g id="g1"><text x="0" textLength="40" class="color1">nico </text><text x="40" textLength="8" class="color4">~</text><text x="48" textLength="24" class="color1"> $ </text><text x="72" textLength="8" class="background"> </text></g></defs><g><rect x="72" y="0" width="8" height="17" class="foreground"/><use xlink:href="#g1" y="0"/></g></svg>
+    <svg id="play-icon" x="50%" y="50%" height="70" width="70" viewBox="0 0 1200 1200" overflow="visible">
+        <circle cx="0" cy="0" r="350" class="background"/>
+        <path class="foreground" d="M 0,600 C -331.24, 600 -600,331.35 -600,0 -600,-331.24 -331.24,-600 0,-600 c 331.35,0 600,268.65 600,600 0,331.35 -268.65,600 -600,600 z M -150,-299.55 -150,299.55 300,0 -150,-299.55 z"/>
+    </svg>
 </svg>
