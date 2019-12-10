@@ -204,6 +204,13 @@ def _render_animation(screen_height, frames, root, cell_width, cell_height):
     definitions = {}
     timings = {}
     animation_duration = None
+
+    # Unwind the generator to be able to drop last recording.
+    frames = list(frames)
+
+    # Remove last command printed as 'exit' when stopping the recording with ^D.
+    frames = frames[:-1]
+
     for frame_count, frame in enumerate(frames):
         # To prevent line jumping up and down by one pixel between two frames,
         # add h % 2 so that offset is an even number.  (issue noticed in
