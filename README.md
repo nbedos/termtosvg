@@ -16,10 +16,15 @@ line sessions as standalone SVG animations.
 * Rendering of recordings in asciicast format made with asciinema
     
 ## Installation
-termtosvg is compatible with Linux, macOS and BSD OSes, requires Python >= 3.5 and can be installed using pip:
+termtosvg is compatible with Linux, macOS and BSD OSes, requires Python >= 3.5 and can be installed as follows using pip:
+```shell
+# Create virtualenv named '.venv'
+python3 -m venv .venv
+# Activate virtualenv
+source .venv/bin/activate
+pip3 install termtosvg
 ```
-pip3 install --user termtosvg
-```
+Then run termtosvg by calling either `termtosvg` or `python3 -m termtosvg`.
 
 Various independently maintained, OS specific packages have been made available by the community:
 
