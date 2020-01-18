@@ -1,4 +1,8 @@
 # Changelog
+## Version 1.1.0 (2020-01-18)
+
+* Allow invocation through runpy (issue [#111](https://github.com/nbedos/termtosvg/issues/111))
+
 
 ## Version 1.0.0 (2019-11-16)
 
