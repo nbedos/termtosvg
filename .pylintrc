@@ -1,5 +1,5 @@
 [MASTER]
-fail-under=9
+#fail-under=9.26
 
 jobs=0
 

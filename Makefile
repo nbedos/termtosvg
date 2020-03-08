@@ -25,7 +25,7 @@ install:
 tests:
 	coverage run -m unittest termtosvg.tests.suite -v
 	coverage report
-	python scripts/run_pylint.py --fail-under=9 termtosvg/*.py
+	$(PYTHON) scripts/run_pylint.py --fail-under=9.26 termtosvg/*.py
 
 build:
 	rm -rf dist && \
