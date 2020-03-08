@@ -23,7 +23,7 @@ install:
 	$(PIP) freeze
 
 tests:
-	coverage run --branch --source termtosvg -m unittest termtosvg.tests.suite -v
+	coverage run -m unittest termtosvg.tests.suite -v
 	coverage report
 	python scripts/run_pylint.py --fail-under=9 termtosvg/*.py
 
