@@ -6,6 +6,7 @@ import os
 import shlex
 import sys
 import tempfile
+import pkg_resources
 
 import termtosvg.config
 import termtosvg.anim
@@ -56,6 +57,17 @@ def parse(args, templates, default_template, default_geometry, default_min_dur,
     arguments
     """
     command_parser = argparse.ArgumentParser(add_help=False)
+
+    # https://stackoverflow.com/questions/15405636/pythons-argparse-to-show-programs-version-with-prog-and-version-string-formatt
+    # https://stackoverflow.com/questions/2058802/how-can-i-get-the-version-defined-in-setup-py-setuptools-in-my-package
+    command_parser.add_argument(
+        '-v', '--version',
+        action='version',
+        version='%(prog)s {}'.format(
+            pkg_resources.require('termtosvg')[0].version
+        )
+    )
+
     command_parser.add_argument(
         '-c', '--command',
         help=(('specify the program to record with optional arguments '
