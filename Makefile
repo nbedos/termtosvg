@@ -25,7 +25,7 @@ install:
 tests:
 	coverage run --branch --source termtosvg -m unittest termtosvg.tests.suite -v
 	coverage report
-	python scripts/run_pylint.py -j 0 --extension-pkg-whitelist lxml termtosvg/*.py || exit 0
+	python scripts/run_pylint.py --fail-under=9 termtosvg/*.py
 
 build:
 	rm -rf dist && \

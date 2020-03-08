@@ -1,0 +1,6 @@
+[MASTER]
+fail-under=9
+
+jobs=0
+
+extension-pkg-whitelist=lxml
