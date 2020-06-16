@@ -100,7 +100,7 @@ Complete example here: [gjm8.svg](../termtosvg/data/templates/gjm8.svg)
 Complete example here: [window_frame.svg](../termtosvg/data/templates/window_frame.svg)
 
 ### CSS progress bar
-Complete example here: [colors_progress_bar.svg](../termtosvg/data/templates/colors_progress_bar.svg)
+Complete example here: [progress_bar.svg](../termtosvg/data/templates/progress_bar.svg)
 
 ### Embedding JavaScript
 Just add your code in a new `script` element.
