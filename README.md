@@ -1,5 +1,4 @@
-[![Build Status](https://travis-ci.com/nbedos/termtosvg.svg?branch=develop)](https://travis-ci.com/nbedos/termtosvg)
-
+**Note: As of June 2020 I do not have time to maintain termtosvg anymore and this repository is now read-only.**
 
 # termtosvg
 termtosvg is a Unix terminal recorder written in Python that renders your command
